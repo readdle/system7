@@ -11,8 +11,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import "S7Types.h"
-
 @protocol S7Command <NSObject>
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments;

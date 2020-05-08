@@ -8,7 +8,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import "S7Parser.h"
+#import "S7Diff.h"
 
 @interface diffTests : XCTestCase
 
@@ -30,16 +30,16 @@
         [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"c1913e99e9b8fffc5405ccfe2d0f53f8c623da11" branch:@"master"]
     ]];
 
-    NSArray<S7SubrepoDescription *> *subreposToDelete = nil;
-    NSArray<S7SubrepoDescription *> *subreposToUpdate = nil;
-    NSArray<S7SubrepoDescription *> *subreposToAdd = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
 
     diffConfigs(fromConfig, toConfig, &subreposToDelete, &subreposToUpdate, &subreposToAdd);
 
     XCTAssert(0 == subreposToDelete.count);
     XCTAssert(0 == subreposToUpdate.count);
 
-    XCTAssertEqualObjects(subreposToAdd, toConfig.subrepoDescriptions);
+    XCTAssertEqualObjects(subreposToAdd, toConfig.pathToDescriptionMap);
 }
 
 - (void)testUpdateSubrepo {
@@ -50,16 +50,16 @@
         [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"e11e50dfb5d2e8ef7e96f9683128e5820755b026" branch:@"master"]
     ]];
 
-    NSArray<S7SubrepoDescription *> *subreposToDelete = nil;
-    NSArray<S7SubrepoDescription *> *subreposToUpdate = nil;
-    NSArray<S7SubrepoDescription *> *subreposToAdd = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
 
     diffConfigs(fromConfig, toConfig, &subreposToDelete, &subreposToUpdate, &subreposToAdd);
 
     XCTAssert(0 == subreposToDelete.count);
     XCTAssert(0 == subreposToAdd.count);
 
-    XCTAssertEqualObjects(subreposToUpdate, toConfig.subrepoDescriptions);
+    XCTAssertEqualObjects(subreposToUpdate, toConfig.pathToDescriptionMap);
 }
 
 - (void)testRemoveSubrepo {
@@ -68,16 +68,16 @@
     ]];
     S7Config *toConfig = [[S7Config alloc] initWithSubrepoDescriptions:@[]];
 
-    NSArray<S7SubrepoDescription *> *subreposToDelete = nil;
-    NSArray<S7SubrepoDescription *> *subreposToUpdate = nil;
-    NSArray<S7SubrepoDescription *> *subreposToAdd = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
 
     diffConfigs(fromConfig, toConfig, &subreposToDelete, &subreposToUpdate, &subreposToAdd);
 
     XCTAssert(0 == subreposToAdd.count);
     XCTAssert(0 == subreposToUpdate.count);
 
-    XCTAssertEqualObjects(subreposToDelete, fromConfig.subrepoDescriptions);
+    XCTAssertEqualObjects(subreposToDelete, fromConfig.pathToDescriptionMap);
 }
 
 - (void)testAllInOneTransaction {
@@ -98,23 +98,42 @@
         [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/rdsubscriptionkit" url:@"git@github.com:readdle/rdsubscriptionkit" revision:@"491500e4bb70402f1f1fde8aeb10a597eba301df" branch:@"master"],
     ]];
 
-    NSArray<S7SubrepoDescription *> *subreposToDelete = nil;
-    NSArray<S7SubrepoDescription *> *subreposToUpdate = nil;
-    NSArray<S7SubrepoDescription *> *subreposToAdd = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
 
     diffConfigs(fromConfig, toConfig, &subreposToDelete, &subreposToUpdate, &subreposToAdd);
 
-    XCTAssertEqualObjects(subreposToDelete, @[[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/rdkeychain" url:@"git@github.com:readdle/rdkeychain" revision:@"1952a059e7a9e7d96715ce2fc34b564dfe5b0d0e" branch:@"master"]]);
+    NSDictionary *expectedDeletes = @{ @"Dependencies/rdkeychain" : [[S7SubrepoDescription alloc]
+                                                                     initWithPath:@"Dependencies/rdkeychain"
+                                                                     url:@"git@github.com:readdle/rdkeychain"
+                                                                     revision:@"1952a059e7a9e7d96715ce2fc34b564dfe5b0d0e"
+                                                                     branch:@"master"]};
+    XCTAssertEqualObjects(subreposToDelete, expectedDeletes);
 
-    XCTAssertEqualObjects(subreposToAdd, @[[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/rdsubscriptionkit" url:@"git@github.com:readdle/rdsubscriptionkit" revision:@"491500e4bb70402f1f1fde8aeb10a597eba301df" branch:@"master"]]);
+    NSDictionary *expectedAdds = @{ @"Dependencies/rdsubscriptionkit" : [[S7SubrepoDescription alloc]
+                                                                         initWithPath:@"Dependencies/rdsubscriptionkit"
+                                                                         url:@"git@github.com:readdle/rdsubscriptionkit"
+                                                                         revision:@"491500e4bb70402f1f1fde8aeb10a597eba301df"
+                                                                         branch:@"master"]};
+    XCTAssertEqualObjects(subreposToAdd, expectedAdds);
 
-    NSSet<S7SubrepoDescription *> *expectedSubreposToUpdate = [NSSet setWithArray:
-    @[[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"7a98ac1d616d4cbe8e7932b3fdb6f4d61407c6cd" branch:@"master"],  // just update
-      [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/rdcifs" url:@"git@github.com:readdle/rdcifs" revision:@"61b7aa1fff3b4d628d7d6ff97f76a51169724d99" branch:@"master"]
-    ]];
+    NSDictionary *expectedUpdates =
+    @{
+        @"Dependencies/ReaddleLib" : [[S7SubrepoDescription alloc]
+                                      initWithPath:@"Dependencies/ReaddleLib"
+                                      url:@"git@github.com:readdle/readdlelib"
+                                      revision:@"7a98ac1d616d4cbe8e7932b3fdb6f4d61407c6cd"
+                                      branch:@"master"],  // just update
 
-    NSSet<S7SubrepoDescription *> *actualSubreposToUpdate = [NSSet setWithArray:subreposToUpdate];
-    XCTAssertEqualObjects(actualSubreposToUpdate, expectedSubreposToUpdate);
+        @"Dependencies/rdcifs" : [[S7SubrepoDescription alloc]
+                                  initWithPath:@"Dependencies/rdcifs"
+                                  url:@"git@github.com:readdle/rdcifs"
+                                  revision:@"61b7aa1fff3b4d628d7d6ff97f76a51169724d99"
+                                  branch:@"master"]
+    };
+
+    XCTAssertEqualObjects(subreposToUpdate, expectedUpdates);
 }
 
 @end

@@ -20,6 +20,12 @@
 @synthesize pasteyRd2Repo = _pasteyRd2Repo;
 @synthesize nikRd2Repo = _nikRd2Repo;
 
+@synthesize githubRd2Repo = _githubRd2Repo;
+@synthesize githubReaddleLibRepo = _githubReaddleLibRepo;
+@synthesize githubRDSFTPRepo = _githubRDSFTPRepo;
+@synthesize githubRDPDFKitRepo = _githubRDPDFKitRepo;
+@synthesize githubFormCalcRepo = _githubFormCalcRepo;
+
 - (instancetype)init {
     self = [super init];
     if (nil == self) {
@@ -46,8 +52,6 @@
         NSParameterAssert(NO);
         return nil;
     }
-
-    [self initializeGitHubRepos];
 
     return self;
 }
@@ -89,48 +93,75 @@
     int exitStatus = 0;
     GitRepository *repo = [GitRepository initializeRepositoryAtPath:absoluteFilePath bare:YES exitStatus:&exitStatus];
     NSAssert(0 == exitStatus, @"");
-    return repo;
-}
-
-- (void)initializeGitHubRepos {
-    NSAssert(nil == _githubRd2Repo, @"must be called only once!");
-
-    _githubRd2Repo = [self initializeRemoteRepoAtRelativePath:@"github/rd2"];
-    NSAssert(_githubRd2Repo, @"");
 
     executeInDirectory(self.root, ^int {
-        // make rd2 non-empty by default
+        // make repo non-empty by default
         int gitCloneExitStatus = 0;
-        GitRepository *tmpRd2Repo = [GitRepository cloneRepoAtURL:@"github/rd2" destinationPath:@"tmp" exitStatus:&gitCloneExitStatus];
-        NSParameterAssert(tmpRd2Repo);
+        GitRepository *tmpRepo = [GitRepository cloneRepoAtURL:relativePath destinationPath:@"tmp" exitStatus:&gitCloneExitStatus];
+        NSParameterAssert(tmpRepo);
         NSParameterAssert(0 == gitCloneExitStatus);
 
-        [self touch:[self.root stringByAppendingPathComponent:@"tmp/.gitignore"]];
-        [tmpRd2Repo add:@[@".gitignore"]];
-        [tmpRd2Repo commitWithMessage:@"add .gitignore"];
-        [tmpRd2Repo pushAll];
+        [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
+        [tmpRepo add:@[@".gitignore"]];
+        [tmpRepo commitWithMessage:@"add .gitignore"];
+        [tmpRepo pushAll];
+
+        NSParameterAssert([NSFileManager.defaultManager removeItemAtPath:@"tmp" error:nil]);
 
         return 0;
     });
 
-    _githubReaddleLibRepo = [self initializeRemoteRepoAtRelativePath:@"github/ReaddleLib"];
-    NSAssert(_githubReaddleLibRepo, @"");
+    return repo;
+}
 
-    _githubRDSFTPRepo = [self initializeRemoteRepoAtRelativePath:@"github/RDSFTPOnlineClient"];
-    NSAssert(_githubRDSFTPRepo, @"");
+- (GitRepository *)githubRd2Repo {
+    if (nil == _githubRd2Repo) {
+        _githubRd2Repo = [self initializeRemoteRepoAtRelativePath:@"github/rd2"];
+        NSAssert(_githubRd2Repo, @"");
+    }
 
-    _githubRDPDFKitRepo = [self initializeRemoteRepoAtRelativePath:@"github/RDPDFKit"];
-    NSAssert(_githubRDPDFKitRepo, @"");
+    return _githubRd2Repo;
+}
 
-    _githubFormCalcRepo = [self initializeRemoteRepoAtRelativePath:@"github/FormCalc"];
-    NSAssert(_githubFormCalcRepo, @"");
+- (GitRepository *)githubReaddleLibRepo {
+    if (nil == _githubReaddleLibRepo) {
+        _githubReaddleLibRepo = [self initializeRemoteRepoAtRelativePath:@"github/ReaddleLib"];
+        NSAssert(_githubReaddleLibRepo, @"");
+    }
+    return _githubReaddleLibRepo;
+}
+
+- (GitRepository *)githubRDSFTPRepo {
+    if (nil == _githubRDSFTPRepo) {
+        _githubRDSFTPRepo = [self initializeRemoteRepoAtRelativePath:@"github/RDSFTPOnlineClient"];
+        NSAssert(_githubRDSFTPRepo, @"");
+    }
+    return _githubRDSFTPRepo;
+}
+
+- (GitRepository *)githubRDPDFKitRepo {
+    if (nil == _githubRDPDFKitRepo) {
+        _githubRDPDFKitRepo = [self initializeRemoteRepoAtRelativePath:@"github/RDPDFKit"];
+        NSAssert(_githubRDPDFKitRepo, @"");
+    }
+    return _githubRDPDFKitRepo;
+}
+
+- (GitRepository *)githubFormCalcRepo {
+    if (nil == _githubFormCalcRepo) {
+        _githubFormCalcRepo = [self initializeRemoteRepoAtRelativePath:@"github/FormCalc"];
+        NSAssert(_githubFormCalcRepo, @"");
+    }
+    return _githubFormCalcRepo;
 }
 
 - (GitRepository *)pasteyRd2Repo {
     if (nil == _pasteyRd2Repo) {
         executeInDirectory(self.root, ^int{
             int gitCloneExitStatus = 0;
-            _pasteyRd2Repo = [GitRepository cloneRepoAtURL:@"github/rd2" destinationPath:@"pastey/projects/rd2" exitStatus:&gitCloneExitStatus];
+            _pasteyRd2Repo = [GitRepository cloneRepoAtURL:self.githubRd2Repo.absolutePath
+                                           destinationPath:@"pastey/projects/rd2"
+                                                exitStatus:&gitCloneExitStatus];
             NSParameterAssert(_pasteyRd2Repo);
             NSParameterAssert(0 == gitCloneExitStatus);
             return gitCloneExitStatus;
@@ -144,7 +175,9 @@
     if (nil == _nikRd2Repo) {
         executeInDirectory(self.root, ^int{
             int gitCloneExitStatus = 0;
-            _nikRd2Repo = [GitRepository cloneRepoAtURL:@"github/rd2" destinationPath:@"nik/rd2" exitStatus:&gitCloneExitStatus];
+            _nikRd2Repo = [GitRepository cloneRepoAtURL:self.githubRd2Repo.absolutePath
+                                        destinationPath:@"nik/rd2"
+                                             exitStatus:&gitCloneExitStatus];
             NSParameterAssert(_nikRd2Repo);
             NSParameterAssert(0 == gitCloneExitStatus);
             return gitCloneExitStatus;

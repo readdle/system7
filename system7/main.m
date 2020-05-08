@@ -60,7 +60,7 @@
 
 // git clone rd2
 // result empty rd2 + .s7config
-// s7 update
+// s7 checkout
 // ============
 // s7 clone url
 // ============
@@ -68,7 +68,7 @@
 // git clone url (s7 update – automatically)
 
 // 1. надо склонить проект со всеми сабрепами (это делается только хаками через https://git-scm.com/docs/git-init#_template_directory
-//    либо делать руками – s7 update)
+//    либо делать руками – s7 checkout)
 // 1* clone recursively
 //
 // 2. пописал что-то в ПДФ-ките. Надо обновить RD2 на новую ревизию
@@ -100,12 +100,12 @@
 // 10. я что-то поменял в ките, и в rd2 – хочу сделать пуш
 // 11. все это дело должно работать на Jenkins-е без всяких шаманств
 
-// TODO: validate config – check that there're no duplicates
+// validate config – check that there're no duplicates
 
-//Транзакции
-//Последняя ревизия в файле на случай работы из command line
+// Транзакции
+// Последняя ревизия в файле на случай работы из command line?
 
-// standartize exit codes?
+// пройти по всем exit кодам, и перейти на S7ExitCode
 
 // verbose/quite modes?
 
@@ -122,8 +122,6 @@
 //  old state 'a8ce1d5234908ee65f59c831a803c83893920c2f' (master) - red
 //  new state 'f1e7add16515f003ed756324f91c66b699a5a48c' (master) - green
 
-// почитать реализацию .hgsub в hg
-
 
 // push – возможно заюзать хак с diff-stat, чтобы не мотаться на сервер для каждой сабрепы.
 //        либо сделать на своих файлах, но это стремно. Можно сотворить неконсистентность на ровном месте
@@ -139,32 +137,32 @@
 
 // todo: make all commands recursive: rebind, push, checkout, status, etc.?
 
-// не парюсь по поводу другого имени для remote – везде забиваю origin
-
 // make `s7 init` install hooks?
 
+// add --recursive/-R option to rebind? Would be handy if you want to commit subrepo with subrepos. Seems to be a rare
+// case – not adding now
+// but `s7 commit` sounds like a good stuff – commit both main repo and subrepos. Should think about it.
 
-int handleUpdate(NSString *fromRevision, NSString *toRevision) {
-//    git show from-rev:.s7state
-//    git show to-rev:.s7state
+// add custom merge-tool for .s7config file, so that git would call `s7 merge` if this file needs merging
 
-//    get from-rev subrepos set
-//    get to-rev subrepos set
-//
-//    remove all deleted subrepos
-//    add all added subrepos
-//    checkout right revisions in all common subrepos
-
-    return 0;
-}
+// use libgit2 if git process run overhead starts to bother us
 
 void printHelp() {
     puts("usage: s7 <command> [<arguments>]");
     puts("\nAvailable commands:");
-    puts("  help      command help or this overview, if called without arguments");
+    puts("");
+    puts("  help      show help for a given command or this a help overview");
+    puts("");
+    puts("  init      create all necessary config files in the git repo");
+    puts("");
     puts("  add       add a new subrepo");
+    puts("  remove    removes a subrepo(s)");
+    puts("");
     puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
-    puts("  push      pushes changes from the repo and all it's subrepos");
+    puts("  push      push changes from the repo and all it's subrepos");
+    puts("");
+    puts("  checkout  update subrepos to the state saved in a checked out revision");
+    puts("  merge     incorporate changes to subrepos from two revisions");
 }
 
 NSObject<S7Command> *commandByName(NSString *commandName) {
@@ -204,8 +202,8 @@ int main(int argc, const char * argv[]) {
     NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
-        puts("s7 must be run in the root of a git repo.");
-        return 1;
+        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        return S7ExitCodeNotGitRepository;
     }
 
     if (argc < 2) {

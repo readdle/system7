@@ -10,8 +10,6 @@
 
 #import "TestReposEnvironment.h"
 
-#import "S7InitCommand.h"
-#import "S7AddCommand.h"
 #import "S7CheckoutCommand.h"
 
 @interface checkoutTests : XCTestCase
@@ -40,13 +38,40 @@
     XCTAssertEqual(S7ExitCodeNotS7Repo, [command runWithArguments:@[]]);
 }
 
-- (void)testOnEmptyS7Repo {
-    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
+- (void)testWithoutRequiredArgument {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init();
 
         S7CheckoutCommand *command = [S7CheckoutCommand new];
-        XCTAssertEqual(0, [command runWithArguments:@[]]);
-    });
+        XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
+
+        XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[@"fromRev"]]);
+
+        XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[@"toRev"]]);
+    }];
+}
+
+- (void)testWithTooManyArguments {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init();
+
+        S7CheckoutCommand *command = [S7CheckoutCommand new];
+        const int exitStatus = [command runWithArguments:@[@"rev1", @"rev2", @"rev3!"]];
+        XCTAssertEqual(S7ExitCodeInvalidArgument, exitStatus);
+    }];
+}
+
+- (void)testOnEmptyS7Repo {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init();
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        S7CheckoutCommand *command = [S7CheckoutCommand new];
+        const int exitStatus = [command runWithArguments:@[[GitRepository nullRevision], currentRevision]];
+        XCTAssertEqual(0, exitStatus);
+    }];
 }
 
 - (void)testInitialCheckout {
@@ -55,7 +80,7 @@
         s7init();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
-        expectedReaddleLibRevision = makeSampleCommitToReaddleLib(readdleLibSubrepoGit);
+        expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
@@ -70,8 +95,10 @@
     executeInDirectory(self.env.nikRd2Repo.absolutePath, ^int{
         [self.env.nikRd2Repo pull];
 
-        S7CheckoutCommand *command = [S7CheckoutCommand new];
-        XCTAssertEqual(0, [command runWithArguments:@[]]);
+        NSString *currentRevision = nil;
+        [self.env.nikRd2Repo getCurrentRevision:&currentRevision];
+
+        XCTAssertEqual(0, s7checkout([GitRepository nullRevision], currentRevision));
 
         GitRepository *niksReaddleLibSubrepo = [[GitRepository alloc] initWithRepoPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(niksReaddleLibSubrepo);
@@ -88,7 +115,7 @@
         s7init();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
-        expectedReaddleLibRevision = makeSampleCommitToReaddleLib(readdleLibSubrepoGit);
+        expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
@@ -104,29 +131,32 @@
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(readdleLibSubrepoGit);
 
-        NSString *fileName = @"RDSystemInfo.h";
-        NSCParameterAssert(0 == [readdleLibSubrepoGit createFile:fileName withContents:nil]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit add:@[ fileName ]]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit commitWithMessage:@"add system info"]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit getCurrentRevision:&nikCreatedReaddleLibRevision]);
+        nikCreatedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", nil, @"add system info");
 
-        s7rebind();
-
-        [repo add:@[S7ConfigFileName]];
+        s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
         s7push();
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout(prevRevision, currentRevision);
 
         GitRepository *pasteysReaddleLibSubrepo = [[GitRepository alloc] initWithRepoPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(pasteysReaddleLibSubrepo);
@@ -147,7 +177,7 @@
         s7init();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
-        expectedReaddleLibRevision = makeSampleCommitToReaddleLib(readdleLibSubrepoGit);
+        expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
@@ -163,33 +193,40 @@
 
     __block NSString *nikCreatedReaddleLibRevision = nil;
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout(prevRevision, currentRevision);
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(readdleLibSubrepoGit);
 
-        NSString *fileName = @"RDSystemInfo.h";
         NSCParameterAssert(0 == [readdleLibSubrepoGit checkoutNewLocalBranch:customBranchName]);
         // ^^^^^^^^^
-        NSCParameterAssert(0 == [readdleLibSubrepoGit createFile:fileName withContents:nil]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit add:@[ fileName ]]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit commitWithMessage:@"add system info"]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit getCurrentRevision:&nikCreatedReaddleLibRevision]);
 
-        s7rebind();
+        nikCreatedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", nil, @"add system info");
 
-        [repo add:@[S7ConfigFileName]];
+        s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
         s7push();
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout(prevRevision, currentRevision);
 
         GitRepository *pasteysReaddleLibSubrepo = [[GitRepository alloc] initWithRepoPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(pasteysReaddleLibSubrepo);
@@ -210,7 +247,7 @@
         s7init();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
-        expectedReaddleLibRevision = makeSampleCommitToReaddleLib(readdleLibSubrepoGit);
+        expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
@@ -225,38 +262,42 @@
     __block NSString *readdleLibRevisionThatWeShouldCheckoutInRD2 = nil;
     __block NSString *readdleLibRevisionOnMasterPushedSeparately = nil;
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout(prevRevision, currentRevision);
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(readdleLibSubrepoGit);
 
-        NSString *fileName = @"RDSystemInfo.h";
-        NSCParameterAssert(0 == [readdleLibSubrepoGit createFile:fileName withContents:nil]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit add:@[ fileName ]]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit commitWithMessage:@"add system info"]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit getCurrentRevision:&readdleLibRevisionThatWeShouldCheckoutInRD2]);
+        readdleLibRevisionThatWeShouldCheckoutInRD2 = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", nil, @"add system info");
 
-        s7rebind();
-
-        [repo add:@[S7ConfigFileName]];
+        s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
         s7push();
 
         // make more changes to ReaddleLib, but commit and push them only to ReaddleLib repo
-        NSCParameterAssert(0 == [readdleLibSubrepoGit createFile:fileName withContents:@"some changes"]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit add:@[ fileName ]]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit commitWithMessage:@"more changes"]);
-        NSCParameterAssert(0 == [readdleLibSubrepoGit getCurrentRevision:&readdleLibRevisionOnMasterPushedSeparately]);
+        readdleLibRevisionOnMasterPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
+
         NSCParameterAssert(0 == [readdleLibSubrepoGit pushAll]);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout(prevRevision, currentRevision);
 
         GitRepository *pasteysReaddleLibSubrepo = [[GitRepository alloc] initWithRepoPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(pasteysReaddleLibSubrepo);
@@ -285,7 +326,7 @@
         [typicalGitIgnoreContent writeToFile:@".gitignore" atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
-        makeSampleCommitToReaddleLib(readdleLibSubrepoGit);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
@@ -298,9 +339,15 @@
     });
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout(prevRevision, currentRevision);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -313,9 +360,15 @@
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
         [repo pull];
 
-        s7checkout();
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout(prevRevision, currentRevision);
 
         XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
         S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
@@ -327,8 +380,139 @@
     }];
 }
 
+- (void)testMainRepoBranchSwitch {
+    // small note for future desperado programmers: if you are wondering why I do not use `git switch`.
+    // `git switch` appeared in git version 2.23. At the moment of writing this code Apple Developer Tools
+    // provides us with git 2.21. I don't want to force everyone to install the latest git with `brew`
+    // or in any other way
+    //
+
+    __block NSString *readdleLib_initialRevision = nil;
+    __block NSString *pdfKit_initialRevision = nil;
+
+    __block NSString *pdfKit_pdfexpert_Revision = nil;
+
+    __block NSString *readdleLib_documentsRevision = nil;
+    __block NSString *sftp_documentsRevision = nil;
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        readdleLib_initialRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+
+        GitRepository *pdfKitSubrepoGit = s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        [pdfKitSubrepoGit getCurrentRevision:&pdfKit_initialRevision];
+
+        s7rebind();
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib and RDPDFKit subrepos"];
+
+        s7push();
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *pdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+
+        [repo checkoutNewLocalBranch:@"release/pdfexpert-7.3"];
+
+        pdfKit_pdfexpert_Revision = commit(pdfKitSubrepoGit, @"RDPDFPageContent.h", @"// NDA", @"add text reflow support");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up pdfkit"];
+
+        s7push();
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo checkoutNewLocalBranch:@"release/documents-7.1.4"];
+
+        GitRepository *sftpSubrepoGit = s7add(@"Dependencies/RDSFTPOnlineClient", self.env.githubRDSFTPRepo.absolutePath);
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add RDSFTP subrepo"];
+
+
+        sftp_documentsRevision = commit(sftpSubrepoGit, @"RDSFTPOnlineClient.m", @"bugfix", @"fix DOC-1234 – blah-blah");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up sftp with fix to DOC-1234"];
+
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        readdleLib_documentsRevision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"iPad 11''", @"add support for a new iPad model");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        s7push();
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
+        [repo checkoutRemoteTrackingBranch:@"release/pdfexpert-7.3"];
+
+        NSString *pdfexpertReleaseRevision = nil;
+        [repo getCurrentRevision:&pdfexpertReleaseRevision];
+
+        s7checkout(prevRevision, pdfexpertReleaseRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        GitRepository *pdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+
+        {
+            NSString *actualReaddleLibRevision = nil;
+            [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
+            XCTAssertEqualObjects(readdleLib_initialRevision, actualReaddleLibRevision);
+
+            NSString *actualPDFKitRevision = nil;
+            [pdfKitSubrepoGit getCurrentRevision:&actualPDFKitRevision];
+            XCTAssertEqualObjects(pdfKit_pdfexpert_Revision, actualPDFKitRevision);
+
+            XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/RDSFTPOnlineClient"]);
+        }
+
+
+        [repo checkoutRemoteTrackingBranch:@"release/documents-7.1.4"];
+
+        NSString *docsReleaseRevision = nil;
+        [repo getCurrentRevision:&docsReleaseRevision];
+
+        s7checkout(pdfexpertReleaseRevision, docsReleaseRevision);
+
+        GitRepository *sftpSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDSFTPOnlineClient"];
+
+        {
+            NSString *actualReaddleLibRevision = nil;
+            [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
+            XCTAssertEqualObjects(readdleLib_documentsRevision, actualReaddleLibRevision);
+
+            NSString *actualPDFKitRevision = nil;
+            [pdfKitSubrepoGit getCurrentRevision:&actualPDFKitRevision];
+            XCTAssertEqualObjects(pdfKit_initialRevision, actualPDFKitRevision);
+
+            XCTAssertNotNil(sftpSubrepoGit);
+            NSString *actualSFTPRevision = nil;
+            [sftpSubrepoGit getCurrentRevision:&actualSFTPRevision];
+            XCTAssertEqualObjects(sftp_documentsRevision, actualSFTPRevision);
+        }
+    }];
+}
+
+
 // abort if user has not pushed commits?
-// нужно удалять если репа убрана из .s7substate
 // test recursive
 //
 // надо обсудить clean мод. В гите легко отстрелить себе ногу. В случае если пользователь делает git checkout -- .
@@ -339,5 +523,7 @@
 //    # not just unmark them.
 //    self._gitcommand([b'reset', b'HEAD'])
 //    self._gitcommand([b'reset', b'--hard', b'HEAD'])
+// есть ли вообще какой-то хук на 'git reset'?
+// если хук таки есть, то надо не войти в бесконечный цикл reset-hook-reset
 
 @end

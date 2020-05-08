@@ -9,6 +9,10 @@
 #ifndef TestUtils_h
 #define TestUtils_h
 
+NS_ASSUME_NONNULL_BEGIN
+
+@class GitRepository;
+
 //
 // utils operate on current directory
 //
@@ -19,14 +23,15 @@ GitRepository *s7add(NSString *subrepoPath, NSString *url);
 void s7remove(NSString *subrepoPath);
 
 void s7rebind(void);
+void s7rebind_with_stage(void); // add --stage option. No need to manually call 'git add .s7substate'
 void s7rebind_specific(NSString *subrepoPath);
 
 void s7push(void);
 
-void s7checkout(void);
+int s7checkout(NSString *fromRevision, NSString *toRevision);
 
-NSString * makeSampleCommitToReaddleLib(GitRepository *readdleLibSubrepoGit);
-NSString * makeSampleCommitToRDPDFKit(GitRepository *pdfKitSubrepoGit);
+NSString * commit(GitRepository *repo, NSString *fileName, NSString * _Nullable fileContents, NSString *commitMessage);
 
+NS_ASSUME_NONNULL_END
 
 #endif /* TestUtils_h */

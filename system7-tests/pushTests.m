@@ -55,7 +55,7 @@
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
 
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(subrepoGit);
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         S7PushCommand *pushCommand = [S7PushCommand new];
         XCTAssertEqual(S7ExitCodeNoCommittedS7Config, [pushCommand runWithArguments:@[]]);
@@ -76,7 +76,7 @@
         [self.env.pasteyRd2Repo commitWithMessage:@"add ReaddleLib subrepo"];
         [self.env.pasteyRd2Repo pushAll];
 
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(subrepoGit);
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         S7PushCommand *pushCommand = [S7PushCommand new];
         XCTAssertEqual(0, [pushCommand runWithArguments:@[]]);
@@ -97,7 +97,7 @@
         [self.env.pasteyRd2Repo commitWithMessage:@"add ReaddleLib subrepo"];
         [self.env.pasteyRd2Repo pushAll];
 
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(subrepoGit);
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
@@ -122,7 +122,7 @@
         [self.env.pasteyRd2Repo commitWithMessage:@"add ReaddleLib subrepo"];
         [self.env.pasteyRd2Repo pushAll];
 
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(subrepoGit);
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
@@ -153,11 +153,10 @@
         [self.env.pasteyRd2Repo pushAll];
 
         [subrepoGit checkoutNewLocalBranch:@"release/pdfexpert-7.3.2"];
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(subrepoGit);
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
-        s7rebind();
+        s7rebind_with_stage();
 
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName]];
         [self.env.pasteyRd2Repo commitWithMessage:@"up ReaddleLib"];
         NSString *rd2Revision = nil;
         [self.env.pasteyRd2Repo getCurrentRevision:&rd2Revision];
@@ -204,11 +203,9 @@
         [self.env.pasteyRd2Repo fetch];
 
         GitRepository *readdleLibGit = [[GitRepository alloc] initWithRepoPath:@"Dependencies/ReaddleLib"];
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(readdleLibGit);
+        NSString *readdleLibRevision = commit(readdleLibGit, @"RDGeometry.h", nil, @"add geometry utils");
 
-        s7rebind();
-
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName]];
+        s7rebind_with_stage();
         [self.env.pasteyRd2Repo commitWithMessage:@"up ReaddleLib"];
 
         S7PushCommand *pushCommand = [S7PushCommand new];
@@ -233,8 +230,8 @@
         [self.env.pasteyRd2Repo commitWithMessage:@"add ReaddleLib and RDPDFKit subrepos"];
         [self.env.pasteyRd2Repo pushAll];
 
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(readdleLibSubrepoGit);
-        NSString *pdfKitRevision = makeSampleCommitToRDPDFKit(pdfKitSubrepoGit);
+        NSString *readdleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+        NSString *pdfKitRevision = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", nil, @"add annotations");
 
         s7rebind_specific(pdfKitSubrepoPath);
 
@@ -257,7 +254,7 @@
         s7init();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
-        NSString *readdleLibRevision = makeSampleCommitToReaddleLib(readdleLibSubrepoGit);
+        NSString *readdleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 

@@ -21,6 +21,7 @@ typedef enum {
     S7ExitCodeUnrecognizedOption,
     S7ExitCodeFileOperationFailed,
     S7ExitCodeGitOperationFailed,
+    S7ExitCodeNotGitRepository,
     S7ExitCodeSubrepoIsNotGitRepository,
     S7ExitCodeUncommitedChanges,
     S7ExitCodeNonFastForwardPush,

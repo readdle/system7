@@ -8,8 +8,7 @@
 
 #import "S7PushCommand.h"
 
-#import "S7Parser.h"
-#import "Git.h"
+#import "S7Diff.h"
 
 @implementation S7PushCommand
 
@@ -83,9 +82,9 @@
         S7Config *lastCommittedConfig = [[S7Config alloc] initWithContentsString:lastCommittedConfigContents];
         S7Config *lastPushedConfig = [[S7Config alloc] initWithContentsString:lastRemoteConfigContents];
 
-        NSArray<S7SubrepoDescription *> *subreposToDelete = nil;
-        NSArray<S7SubrepoDescription *> *subreposToAdd = nil;
-        NSArray<S7SubrepoDescription *> *subreposToUpdate = nil;
+        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
+        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
+        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
         const int diffExitStatus = diffConfigs(lastPushedConfig,
                                                lastCommittedConfig,
                                                &subreposToDelete,
@@ -95,7 +94,7 @@
             return diffExitStatus;
         }
 
-        NSArray<S7SubrepoDescription *> *subreposToPush = [subreposToUpdate arrayByAddingObjectsFromArray:subreposToAdd];
+        NSArray<S7SubrepoDescription *> *subreposToPush = [subreposToUpdate.allValues arrayByAddingObjectsFromArray:subreposToAdd.allValues];
 
         NSMutableString *padding = [NSMutableString stringWithString:@""];
         for (NSUInteger i = 0; i < level; ++i) {

@@ -8,8 +8,7 @@
 
 #import "S7CheckoutCommand.h"
 
-#import "S7Parser.h"
-#import "Git.h"
+#import "S7Diff.h"
 
 @interface S7CheckoutCommand ()
 
@@ -20,7 +19,7 @@
 @implementation S7CheckoutCommand
 
 - (void)printCommandHelp {
-    puts("s7 checkout [-C]");
+    puts("s7 checkout [-C] FROM_REV TO_REV");
     puts("");
     puts("updates subrepos to revisions/branches saved in .s7substate");
     puts("");
@@ -39,16 +38,70 @@
         return S7ExitCodeNotS7Repo;
     }
 
+    NSString *fromRevision = nil;
+    NSString *toRevision = nil;
+
     for (NSString *argument in arguments) {
-        if ([argument isEqualToString:@"-C"] || [argument isEqualToString:@"-clean"]) {
-            self.clean = YES;
+        if ([argument hasPrefix:@"-"]) {
+            if ([argument isEqualToString:@"-C"] || [argument isEqualToString:@"-clean"]) {
+                self.clean = YES;
+            }
+            else {
+                fprintf(stderr,
+                        "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                [self printCommandHelp];
+                return S7ExitCodeUnrecognizedOption;
+            }
         }
         else {
-            fprintf(stderr,
-                    "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
-            [self printCommandHelp];
-            return S7ExitCodeUnrecognizedOption;
+            if (nil == fromRevision) {
+                fromRevision = argument;
+            }
+            else if (nil == toRevision) {
+                toRevision = argument;
+            }
+            else {
+                fprintf(stderr,
+                        "redundant argument %s\n",
+                        [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                [self printCommandHelp];
+                return S7ExitCodeInvalidArgument;
+            }
         }
+    }
+
+    if (nil == fromRevision) {
+        fprintf(stderr,
+                "required argument FROM_REV is missing\n");
+        [self printCommandHelp];
+        return S7ExitCodeMissingRequiredArgument;
+    }
+
+    if (nil == toRevision) {
+        fprintf(stderr,
+                "required argument TO_REV is missing\n");
+        [self printCommandHelp];
+        return S7ExitCodeMissingRequiredArgument;
+    }
+
+    GitRepository *repo = [GitRepository repoAtPath:@"."];
+    if (nil == repo) {
+        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        return S7ExitCodeNotGitRepository;
+    }
+
+    if (NO == [repo isRevisionAvailable:fromRevision] && NO == [fromRevision isEqualToString:[GitRepository nullRevision]]) {
+        fprintf(stderr,
+                "FROM_REV %s is not available in this repository\n",
+                [fromRevision cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeInvalidArgument;
+    }
+
+    if (NO == [repo isRevisionAvailable:toRevision]) {
+        fprintf(stderr,
+                "TO_REV %s is not available in this repository\n",
+                [toRevision cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeInvalidArgument;
     }
 
     // по-хорошему, надо сравнить текущий конфиг с предыдущим конфигом, и обновить все согласно дифу.
@@ -85,14 +138,77 @@
     //
     //  go into subrepo subrepos
 
-    return [self checkoutSubreposForRepoAtPath:@"."];
+    return [self checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];
 }
 
-- (int)checkoutSubreposForRepoAtPath:(NSString *)repoPath {
-    // todo: should I rely on the disk state or retrieve the state from git?
-    S7Config *parsedConfig = [[S7Config alloc]
-                              initWithContentsOfFile:[repoPath stringByAppendingPathComponent:S7ConfigFileName]];
-    for (S7SubrepoDescription *subrepoDesc in parsedConfig.subrepoDescriptions) {
+- (int)checkoutSubreposForRepo:(GitRepository *)repo
+                  fromRevision:(NSString *)fromRevision
+                    toRevision:(NSString *)toRevision
+{
+    int showExitStatus = 0;
+    NSString *fromConfigContents = [repo showFile:S7ConfigFileName atRevision:fromRevision exitStatus:&showExitStatus];
+    if (0 != showExitStatus) {
+        if (128 == showExitStatus) {
+            // s7 config has been removed? Or we are back to revision where there was no s7 yet
+            fromConfigContents = @"";
+        }
+        else {
+            fprintf(stderr,
+                    "failed to retrieve .s7substate config at revision %s.\n"
+                    "Git exit status: %d\n",
+                    [fromRevision cStringUsingEncoding:NSUTF8StringEncoding],
+                    showExitStatus);
+            return S7ExitCodeGitOperationFailed;
+        }
+    }
+
+    NSString *toConfigContents = [repo showFile:S7ConfigFileName atRevision:toRevision exitStatus:&showExitStatus];
+    if (0 != showExitStatus) {
+        if (128 == showExitStatus) {
+            // s7 config has been removed? Or we are back to revision where there was no s7 yet
+            toConfigContents = @"";
+        }
+        else {
+            fprintf(stderr,
+                    "failed to retrieve .s7substate config at revision %s.\n"
+                    "Git exit status: %d\n",
+                    [toRevision cStringUsingEncoding:NSUTF8StringEncoding],
+                    showExitStatus);
+            return S7ExitCodeGitOperationFailed;
+        }
+    }
+
+    S7Config *fromConfig = [[S7Config alloc] initWithContentsString:fromConfigContents];
+    S7Config *toConfig = [[S7Config alloc] initWithContentsString:toConfigContents];
+
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
+    diffConfigs(fromConfig,
+                toConfig,
+                &subreposToDelete,
+                &subreposToUpdate,
+                &subreposToAdd);
+
+    for (S7SubrepoDescription *subrepoToDelete in subreposToDelete) {
+        NSString *subrepoPath = subrepoToDelete.path;
+        BOOL isDirectory = NO;
+        if ([NSFileManager.defaultManager fileExistsAtPath:subrepoPath isDirectory:&isDirectory] && isDirectory) {
+            fprintf(stdout, "removing subrepo '%s'", subrepoPath.fileSystemRepresentation);
+
+            NSError *error = nil;
+            if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoPath error:&error]) {
+                fprintf(stderr,
+                        "abort: failed to remove subrepo '%s' directory\n"
+                        "error: %s\n",
+                        [subrepoPath fileSystemRepresentation],
+                        [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+                return S7ExitCodeFileOperationFailed;
+            }
+        }
+    }
+
+    for (S7SubrepoDescription *subrepoDesc in toConfig.subrepoDescriptions) {
         GitRepository *subrepoGit = nil;
 
         BOOL isDirectory = NO;
@@ -183,7 +299,7 @@
         }
 
         if (subrepoDesc.branch) {
-            if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch remoteName:@"origin"]) {
+            if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch]) {
                 // todo: log
                 return S7ExitCodeGitOperationFailed;
             }

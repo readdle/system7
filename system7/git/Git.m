@@ -226,7 +226,7 @@ static NSString *gitExecutablePath = nil;
 
 #pragma mark - branches -
 
-- (int)checkoutRemoteTrackingBranch:(NSString *)branchName remoteName:(NSString *)remoteName {
+- (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
     NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
 
     // check if we are tracking this branch already
@@ -240,6 +240,7 @@ static NSString *gitExecutablePath = nil;
         return [self checkoutExistingLocalBranch:branchName];
     }
 
+    NSString *remoteName = @"origin";
     NSString *fullBranchName = [NSString stringWithFormat:@"%@/%@", remoteName, branchName];
 
     return [self.class runGitInRepoAtPath:self.absolutePath
@@ -407,7 +408,7 @@ static NSString *gitExecutablePath = nil;
 
 - (int)pushAll {
     const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
-                                            withArguments:@[ @"push", @"--all" ]
+                                            withArguments:@[ @"push", @"-u", @"--all" ]
                                              stdOutOutput:NULL
                                              stdErrOutput:NULL];
     return exitStatus;

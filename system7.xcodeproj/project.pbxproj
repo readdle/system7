@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BE172C4924642C3B00B57557 /* mergeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172C4824642C3B00B57557 /* mergeTests.m */; };
+		BE172C4C24642CA800B57557 /* S7MergeCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172C4B24642CA800B57557 /* S7MergeCommand.m */; };
+		BE172C4D24642CA800B57557 /* S7MergeCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172C4B24642CA800B57557 /* S7MergeCommand.m */; };
+		BE172CD224657CA700B57557 /* S7Diff.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172CD124657CA700B57557 /* S7Diff.m */; };
+		BE172CD324657CA700B57557 /* S7Diff.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172CD124657CA700B57557 /* S7Diff.m */; };
 		BE3891042461690500394CA8 /* TestUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3891032461690500394CA8 /* TestUtils.m */; };
 		BE3892112463049400394CA8 /* removeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3892102463049300394CA8 /* removeTests.m */; };
 		BE389214246304F200394CA8 /* S7RemoveCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE389213246304F200394CA8 /* S7RemoveCommand.m */; };
@@ -56,6 +61,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BE172C4824642C3B00B57557 /* mergeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = mergeTests.m; sourceTree = "<group>"; };
+		BE172C4A24642CA800B57557 /* S7MergeCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7MergeCommand.h; sourceTree = "<group>"; };
+		BE172C4B24642CA800B57557 /* S7MergeCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7MergeCommand.m; sourceTree = "<group>"; };
+		BE172C4E24642D1B00B57557 /* system7.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = system7.pch; sourceTree = "<group>"; };
+		BE172CD124657CA700B57557 /* S7Diff.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7Diff.m; sourceTree = "<group>"; };
+		BE172CD424657CE900B57557 /* S7Diff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Diff.h; sourceTree = "<group>"; };
 		BE3891022461690500394CA8 /* TestUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestUtils.h; sourceTree = "<group>"; };
 		BE3891032461690500394CA8 /* TestUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestUtils.m; sourceTree = "<group>"; };
 		BE38910524616A4100394CA8 /* S7Tests.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = S7Tests.pch; sourceTree = "<group>"; };
@@ -150,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				BE8218772452BA7300E878A8 /* main.m */,
+				BE172C4E24642D1B00B57557 /* system7.pch */,
 				BED60FBF245AC27A008EA752 /* Types */,
 				BED60FB1245AB851008EA752 /* Commands */,
 				BED60E1824588122008EA752 /* Utils */,
@@ -183,6 +195,7 @@
 				BE4BB439246159BA00545358 /* checkoutTests.m */,
 				BE4BB43B24615CFD00545358 /* rebindTests.m */,
 				BE4BB43D246166CE00545358 /* pushTests.m */,
+				BE172C4824642C3B00B57557 /* mergeTests.m */,
 			);
 			path = "system7-tests";
 			sourceTree = "<group>";
@@ -192,6 +205,8 @@
 			children = (
 				BED60E192458813F008EA752 /* Utils.h */,
 				BED60E152458811A008EA752 /* Utils.m */,
+				BE172CD424657CE900B57557 /* S7Diff.h */,
+				BE172CD124657CA700B57557 /* S7Diff.m */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -214,6 +229,8 @@
 				BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */,
 				BE389212246304F200394CA8 /* S7RemoveCommand.h */,
 				BE389213246304F200394CA8 /* S7RemoveCommand.m */,
+				BE172C4A24642CA800B57557 /* S7MergeCommand.h */,
+				BE172C4B24642CA800B57557 /* S7MergeCommand.m */,
 			);
 			path = Commands;
 			sourceTree = "<group>";
@@ -330,9 +347,11 @@
 				BE3A29EF2460712F004A2B31 /* S7InitCommand.m in Sources */,
 				BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Parser.m in Sources */,
+				BE172CD224657CA700B57557 /* S7Diff.m in Sources */,
 				BED60FC2245AC932008EA752 /* S7PushCommand.m in Sources */,
 				BE389214246304F200394CA8 /* S7RemoveCommand.m in Sources */,
 				BED60FBD245AC23E008EA752 /* S7Types.m in Sources */,
+				BE172C4C24642CA800B57557 /* S7MergeCommand.m in Sources */,
 				BE8218782452BA7300E878A8 /* main.m in Sources */,
 				BED60E162458811A008EA752 /* Utils.m in Sources */,
 				BED60FB9245ABB43008EA752 /* S7RebindCommand.m in Sources */,
@@ -344,8 +363,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				BE3892112463049400394CA8 /* removeTests.m in Sources */,
+				BE172C4924642C3B00B57557 /* mergeTests.m in Sources */,
 				BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BE3A29F424607419004A2B31 /* addTests.m in Sources */,
+				BE172C4D24642CA800B57557 /* S7MergeCommand.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
 				BED60FC7245AFBEA008EA752 /* S7CheckoutCommand.m in Sources */,
 				BED60FC3245AC932008EA752 /* S7PushCommand.m in Sources */,
@@ -355,6 +376,7 @@
 				BE3A29F224607234004A2B31 /* initTests.m in Sources */,
 				BE3A29E924604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE3891042461690500394CA8 /* TestUtils.m in Sources */,
+				BE172CD324657CA700B57557 /* S7Diff.m in Sources */,
 				BE4BB43C24615CFD00545358 /* rebindTests.m in Sources */,
 				BED60FBE245AC23E008EA752 /* S7Types.m in Sources */,
 				BE82188E2452C1ED00E878A8 /* S7Parser.m in Sources */,
@@ -486,6 +508,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = system7/system7.pch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -494,6 +518,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = system7/system7.pch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -8,11 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import "Git.h"
-#import "Utils.h"
-#import "S7Parser.h"
-
 NS_ASSUME_NONNULL_BEGIN
+
+@class GitRepository;
 
 @interface TestReposEnvironment : NSObject
 

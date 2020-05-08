@@ -35,8 +35,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 
 - (nullable instancetype)initWithContentsString:(NSString *)configContents;
++ (nullable instancetype)configWithString:(NSString *)configContents;
+
 - (nullable instancetype)initWithContentsOfFile:(NSString *)filePath;
 - (instancetype)initWithSubrepoDescriptions:(NSArray<S7SubrepoDescription *> *)subrepoDescriptions;
+
++ (instancetype)emptyConfig;
+
+@property (class) BOOL allowNon40DigitRevisions; // for tests only
 
 @property (nonatomic, readonly) NSArray<S7SubrepoDescription *> *subrepoDescriptions;
 @property (nonatomic, readonly) NSDictionary<NSString *, S7SubrepoDescription *> *pathToDescriptionMap;
@@ -45,11 +51,5 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)saveToFileAtPath:(NSString *)filePath;
 
 @end
-
-int diffConfigs(S7Config *fromConfig,
-                S7Config *toConfig,
-                NSArray<S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToDelete,
-                NSArray<S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToUpdate,
-                NSArray<S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToAdd);
 
 NS_ASSUME_NONNULL_END

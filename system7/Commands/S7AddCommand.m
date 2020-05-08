@@ -140,7 +140,7 @@
     NSCAssert(gitSubrepo, @"");
 
     if (branch) {
-        const int checkoutResult = [gitSubrepo checkoutRemoteTrackingBranch:branch remoteName:@"origin"];
+        const int checkoutResult = [gitSubrepo checkoutRemoteTrackingBranch:branch];
         if (0 != checkoutResult) {
             return checkoutResult;
         }

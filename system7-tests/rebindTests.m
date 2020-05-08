@@ -58,12 +58,7 @@
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
 
-        NSString *fileName = @"RDGeometry.h";
-        XCTAssertEqual(0, [subrepoGit createFile:fileName withContents:nil]);
-        XCTAssertEqual(0, [subrepoGit add:@[ fileName ]]);
-        XCTAssertEqual(0, [subrepoGit commitWithMessage:@"add geometry utils"]);
-        NSString *readdleLibRevision = nil;
-        XCTAssertEqual(0, [subrepoGit getCurrentRevision:&readdleLibRevision]);
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         S7RebindCommand *rebindCommand = [S7RebindCommand new];
         XCTAssertEqual(0, [rebindCommand runWithArguments:@[]]);
@@ -87,22 +82,12 @@
         NSString *readdleLibSubrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *readdleLibSubrepoGit = s7add(readdleLibSubrepoPath, self.env.githubReaddleLibRepo.absolutePath);
 
-        NSString *fileName = @"RDGeometry.h";
-        XCTAssertEqual(0, [readdleLibSubrepoGit createFile:fileName withContents:nil]);
-        XCTAssertEqual(0, [readdleLibSubrepoGit add:@[ fileName ]]);
-        XCTAssertEqual(0, [readdleLibSubrepoGit commitWithMessage:@"add geometry utils"]);
-        NSString *readdleLibRevision = nil;
-        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&readdleLibRevision]);
+        NSString *readdleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         NSString *pdfKitSubrepoPath = @"Dependencies/RDPDFKit";
         GitRepository *pdfKitSubrepoGit = s7add(pdfKitSubrepoPath, self.env.githubRDPDFKitRepo.absolutePath);
 
-        fileName = @"RDPDFAnnotation.h";
-        XCTAssertEqual(0, [pdfKitSubrepoGit createFile:fileName withContents:nil]);
-        XCTAssertEqual(0, [pdfKitSubrepoGit add:@[ fileName ]]);
-        XCTAssertEqual(0, [pdfKitSubrepoGit commitWithMessage:@"add annotations"]);
-        NSString *pdfKitRevision = nil;
-        XCTAssertEqual(0, [pdfKitSubrepoGit getCurrentRevision:&pdfKitRevision]);
+        NSString *pdfKitRevision = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", nil, @"add annotations");
 
 
         S7RebindCommand *rebindCommand = [S7RebindCommand new];
@@ -134,25 +119,14 @@
         NSString *readdleLibSubrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *readdleLibSubrepoGit = s7add(readdleLibSubrepoPath, self.env.githubReaddleLibRepo.absolutePath);
 
-        NSString *fileName = @"RDGeometry.h";
-        XCTAssertEqual(0, [readdleLibSubrepoGit createFile:fileName withContents:nil]);
-        XCTAssertEqual(0, [readdleLibSubrepoGit add:@[ fileName ]]);
-        XCTAssertEqual(0, [readdleLibSubrepoGit commitWithMessage:@"add geometry utils"]);
-        NSString *readdleLibRevision = nil;
-        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&readdleLibRevision]);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         NSString *pdfKitSubrepoPath = @"Dependencies/RDPDFKit";
         GitRepository *pdfKitSubrepoGit = s7add(pdfKitSubrepoPath, self.env.githubRDPDFKitRepo.absolutePath);
 
         S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
-        fileName = @"RDPDFAnnotation.h";
-        XCTAssertEqual(0, [pdfKitSubrepoGit createFile:fileName withContents:nil]);
-        XCTAssertEqual(0, [pdfKitSubrepoGit add:@[ fileName ]]);
-        XCTAssertEqual(0, [pdfKitSubrepoGit commitWithMessage:@"add annotations"]);
-        NSString *pdfKitRevision = nil;
-        XCTAssertEqual(0, [pdfKitSubrepoGit getCurrentRevision:&pdfKitRevision]);
-
+        NSString *pdfKitRevision = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", nil, @"add annotations");
 
         S7RebindCommand *rebindCommand = [S7RebindCommand new];
         XCTAssertEqual(0, [rebindCommand runWithArguments:@[ pdfKitSubrepoPath ]]);
@@ -180,13 +154,8 @@
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
 
-        NSString *fileName = @"RDGeometry.h";
         XCTAssertEqual(0, [subrepoGit checkoutNewLocalBranch:@"feature/geometry"]);
-        XCTAssertEqual(0, [subrepoGit createFile:fileName withContents:nil]);
-        XCTAssertEqual(0, [subrepoGit add:@[ fileName ]]);
-        XCTAssertEqual(0, [subrepoGit commitWithMessage:@"add geometry utils"]);
-        NSString *readdleLibRevision = nil;
-        XCTAssertEqual(0, [subrepoGit getCurrentRevision:&readdleLibRevision]);
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         S7RebindCommand *rebindCommand = [S7RebindCommand new];
         XCTAssertEqual(0, [rebindCommand runWithArguments:@[]]);
@@ -201,6 +170,44 @@
                                                      branch:@"feature/geometry"];
         XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
     });
+}
+
+- (void)testRebindWithStageOption {
+    // without any options `s7 rebind` updates .s7substate and leaves user decide when to make `git add .s7substate`
+    // '--stage' option performs `git add .s7substate`
+    //
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init();
+
+        NSString *subrepoPath = @"Dependencies/ReaddleLib";
+        GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
+
+        [repo add:@[ S7ConfigFileName, @".gitignore" ]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        NSString *readdleLibRevision = commit(subrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+
+        S7RebindCommand *rebindCommand = [S7RebindCommand new];
+        XCTAssertEqual(0, [rebindCommand runWithArguments:@[ @"--stage" ]]);
+
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        NSString *newRevision = nil;
+        [repo getCurrentRevision:&newRevision];
+
+        int dummy = 0;
+        NSString *commitedConfigContents = [repo showFile:S7ConfigFileName atRevision:newRevision exitStatus:&dummy];
+
+        S7Config *newConfig = [[S7Config alloc] initWithContentsString:commitedConfigContents];
+        XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
+
+        S7SubrepoDescription *expectedSubrepoDesc = [[S7SubrepoDescription alloc]
+                                                     initWithPath:subrepoPath
+                                                     url:self.env.githubReaddleLibRepo.absolutePath
+                                                     revision:readdleLibRevision
+                                                     branch:@"master"];
+        XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
+    }];
 }
 
 @end

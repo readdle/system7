@@ -13,7 +13,7 @@
 @implementation S7RebindCommand
 
 - (void)printCommandHelp {
-    puts("s7 rebind [PATH]...");
+    puts("s7 rebind [--stage] [PATH]...");
     puts("");
     puts("TODO");
 }
@@ -36,39 +36,59 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
         return S7ExitCodeNotS7Repo;
     }
 
+    GitRepository *repo = [GitRepository repoAtPath:@"."];
+    if (nil == repo) {
+        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        return S7ExitCodeNotGitRepository;
+    }
+
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+    BOOL stageConfig = NO;
 
     NSMutableSet<NSString *> *subreposToRebindPaths = [NSMutableSet new];
     if (arguments.count > 0) {
-        for (NSString *subrepoPath in arguments) {
-            if (NO == [parsedConfig.subrepoPathsSet containsObject:subrepoPath]) {
+        for (NSString *argument in arguments) {
+            if ([argument isEqualToString:@"--stage"]) {
+                stageConfig = YES;
+                continue;
+            }
+
+            if (NO == [parsedConfig.subrepoPathsSet containsObject:argument]) {
                 fprintf(stderr,
                         "there's no registered subrepo at path '%s'\n"
                         "maybe you wanted to use 'add'?\n",
-                        [subrepoPath fileSystemRepresentation]);
+                        [argument fileSystemRepresentation]);
                 return S7ExitCodeInvalidArgument;
             }
 
-            [subreposToRebindPaths addObject:subrepoPath];
+            [subreposToRebindPaths addObject:argument];
         }
     }
-    else {
+
+    if (0 == subreposToRebindPaths.count) {
         subreposToRebindPaths = [parsedConfig.subrepoPathsSet mutableCopy];
     }
 
-    NSMutableArray<S7SubrepoDescription *> *newConfig = [[NSMutableArray alloc] initWithCapacity:parsedConfig.subrepoDescriptions.count];
+    NSMutableArray<S7SubrepoDescription *> *newConfigSubrepoDescriptions = [[NSMutableArray alloc] initWithCapacity:parsedConfig.subrepoDescriptions.count];
+
+    NSMutableArray<NSString *> *reboundSubrepoPaths = [NSMutableArray arrayWithCapacity:subreposToRebindPaths.count];
 
     for (S7SubrepoDescription *subrepoDescription in parsedConfig.subrepoDescriptions) {
         NSString *const subrepoPath = subrepoDescription.path;
 
         if (NO == [subreposToRebindPaths containsObject:subrepoPath]) {
-            [newConfig addObject:subrepoDescription];
+            [newConfigSubrepoDescriptions addObject:subrepoDescription];
             continue;
         }
 
-        fprintf(stdout, "checking subrepo '%s'\n", [subrepoPath fileSystemRepresentation]);
+        fprintf(stdout, "checking subrepo '%s'... ", [subrepoPath fileSystemRepresentation]);
 
         GitRepository *gitSubrepo = [[GitRepository alloc] initWithRepoPath:subrepoPath];
+        if (nil == gitSubrepo) {
+            NSAssert(gitSubrepo, @"");
+            return S7ExitCodeSubrepoIsNotGitRepository;
+        }
 
         NSString *revision = nil;
         int gitExitStatus = [gitSubrepo getCurrentRevision:&revision];
@@ -91,11 +111,12 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
                                                            branch:branch];
 
         if ([updatedSubrepoDescription isEqual:subrepoDescription]) {
-            [newConfig addObject:subrepoDescription];
+            fprintf(stdout, "up to date.\n");
+            [newConfigSubrepoDescriptions addObject:subrepoDescription];
             continue;
         }
 
-        fprintf(stdout, " detected an update:\n");
+        fprintf(stdout, "detected an update:\n");
         fprintf(stdout, " old state %s\n", [subrepoStateLogRepresentation(subrepoDescription) cStringUsingEncoding:NSUTF8StringEncoding]);
         fprintf(stdout, " new state %s\n", [subrepoStateLogRepresentation(updatedSubrepoDescription) cStringUsingEncoding:NSUTF8StringEncoding]);
 
@@ -106,11 +127,34 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
                     [subrepoPath fileSystemRepresentation]);
         }
 
-        [newConfig addObject:updatedSubrepoDescription];
+        [reboundSubrepoPaths addObject:updatedSubrepoDescription.path];
+        [newConfigSubrepoDescriptions addObject:updatedSubrepoDescription];
     }
 
-    S7Config *updatedConfig = [[S7Config alloc] initWithSubrepoDescriptions:newConfig];
-    return [updatedConfig saveToFileAtPath:S7ConfigFileName];
+    if ([newConfigSubrepoDescriptions isEqual:parsedConfig.subrepoDescriptions]) {
+        fprintf(stdout,
+                "(seems like there's nothing to rebind)\n");
+        return 0;
+    }
+
+    S7Config *updatedConfig = [[S7Config alloc] initWithSubrepoDescriptions:newConfigSubrepoDescriptions];
+    const int configSaveExitStatus = [updatedConfig saveToFileAtPath:S7ConfigFileName];
+    if (0 != configSaveExitStatus) {
+        return configSaveExitStatus;
+    }
+
+    if (stageConfig) {
+        return [repo add:@[ S7ConfigFileName ]];
+    }
+    else {
+        fprintf(stdout, "\nrebound the following subrepos:\n");
+        for (NSString *path in reboundSubrepoPaths) {
+            fprintf(stdout, " %s\n", path.fileSystemRepresentation);
+        }
+        fprintf(stdout, "\nplease, don't forget to commit the %s\n", S7ConfigFileName.fileSystemRepresentation);
+    }
+
+    return 0;
 }
 
 @end

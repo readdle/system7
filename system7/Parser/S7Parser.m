@@ -83,6 +83,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation S7Config
 
+static BOOL _allowNon40DigitRevisions = NO;
+
++ (BOOL)allowNon40DigitRevisions {
+    return _allowNon40DigitRevisions;
+}
+
++ (void)setAllowNon40DigitRevisions:(BOOL)allowNon40DigitRevisions {
+    _allowNon40DigitRevisions = allowNon40DigitRevisions;
+}
+
 - (nullable instancetype)initWithContentsOfFile:(NSString *)configFilePath {
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:configFilePath isDirectory:&isDirectory]) {
@@ -173,7 +183,7 @@ NS_ASSUME_NONNULL_BEGIN
         }
 
         NSString *revision = [[propertiesComponents objectAtIndex:1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-        if (40 != revision.length) {
+        if (NO == self.class.allowNon40DigitRevisions && 40 != revision.length) {
             NSLog(@"ERROR: failed to parse config. Invalid line '%@'. We expect full 40-symbol revisions.", line);
             return nil;
         }
@@ -192,6 +202,14 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     return [self initWithSubrepoDescriptions:subrepoDescriptions];
+}
+
++ (nullable instancetype)configWithString:(NSString *)configContents {
+    return [[self alloc] initWithContentsString:configContents];
+}
+
++ (instancetype)emptyConfig {
+    return [[S7Config alloc] initWithSubrepoDescriptions:@[]];
 }
 
 - (instancetype)initWithSubrepoDescriptions:(NSArray<S7SubrepoDescription *> *)subrepoDescriptions {
@@ -240,60 +258,26 @@ NS_ASSUME_NONNULL_BEGIN
     return 0;
 }
 
+- (BOOL)isEqual:(id)object {
+    if (NO == [object isKindOfClass:[S7Config class]]) {
+        return NO;
+    }
+
+    S7Config *other = (S7Config *)object;
+    return [other.subrepoDescriptions isEqual:self.subrepoDescriptions];
+}
+
+- (NSUInteger)hash {
+    NSUInteger result = 0;
+    for (S7SubrepoDescription *subrepoDesc in self.subrepoDescriptions) {
+        result ^= subrepoDesc.hash;
+    }
+    return result;
+}
+
 @end
 
 
-int diffConfigs(S7Config *fromConfig,
-                S7Config *toConfig,
-                NSArray<S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToDelete,
-                NSArray<S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToUpdate,
-                NSArray<S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToAdd)
-{
-    NSDictionary<NSString *, S7SubrepoDescription *> *fromConfigMap = fromConfig.pathToDescriptionMap;
-    NSMutableSet<NSString *> *fromSubrepoPathsSet = [fromConfig.subrepoPathsSet mutableCopy];
 
-    NSDictionary<NSString *, S7SubrepoDescription *> *toConfigMap = toConfig.pathToDescriptionMap;
-    NSMutableSet<NSString *> *toSubrepoPathsSet = [toConfig.subrepoPathsSet mutableCopy];
-
-    NSMutableArray<S7SubrepoDescription *> *subreposToUpdate = [NSMutableArray new];
-    NSMutableSet<NSString *> *subreposToCompare = [fromSubrepoPathsSet mutableCopy];
-    [subreposToCompare intersectSet:toSubrepoPathsSet];
-    for (NSString *path in subreposToCompare) {
-        S7SubrepoDescription *fromDescription = fromConfigMap[path];
-        NSCAssert(fromDescription, @"");
-        S7SubrepoDescription *toDescription = toConfigMap[path];
-        NSCAssert(toDescription, @"");
-
-        if (NO == [fromDescription isEqual:toDescription]) {
-            [subreposToUpdate addObject:toDescription];
-        }
-    }
-    *ppSubreposToUpdate = subreposToUpdate;
-
-    NSMutableArray<S7SubrepoDescription *> *subreposToDelete = [NSMutableArray new];
-    [fromSubrepoPathsSet minusSet:toSubrepoPathsSet];
-    for (NSString *path in fromSubrepoPathsSet) {
-        NSCAssert(nil == toConfigMap[path], @"");
-        S7SubrepoDescription *fromDescription = fromConfigMap[path];
-        NSCAssert(fromDescription, @"");
-
-        [subreposToDelete addObject:fromDescription];
-    }
-    *ppSubreposToDelete = subreposToDelete;
-
-    NSMutableArray<S7SubrepoDescription *> *subreposToAdd = [NSMutableArray new];
-    [toSubrepoPathsSet minusSet:fromSubrepoPathsSet];
-    [toSubrepoPathsSet minusSet:subreposToCompare];
-    for (NSString *path in toSubrepoPathsSet) {
-        NSCAssert(nil == fromConfigMap[path], @"");
-        S7SubrepoDescription *toDescription = toConfigMap[path];
-        NSCAssert(toDescription, @"");
-
-        [subreposToAdd addObject:toDescription];
-    }
-    *ppSubreposToAdd = subreposToAdd;
-
-    return 0;
-}
 
 NS_ASSUME_NONNULL_END

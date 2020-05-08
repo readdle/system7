@@ -69,7 +69,14 @@
         S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
 
-        XCTAssertEqualObjects([[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:self.env.githubReaddleLibRepo.absolutePath revision:[GitRepository nullRevision] branch:nil],
+        NSString *expectedInitialRevision = nil;
+        [self.env.githubReaddleLibRepo getCurrentRevision:&expectedInitialRevision];
+        S7SubrepoDescription *expectedDescription = [[S7SubrepoDescription alloc]
+                                                     initWithPath:@"Dependencies/ReaddleLib"
+                                                     url:self.env.githubReaddleLibRepo.absolutePath
+                                                     revision:expectedInitialRevision
+                                                     branch:nil];
+        XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 
     });
@@ -87,7 +94,14 @@
         S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
 
-        XCTAssertEqualObjects([[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:self.env.githubReaddleLibRepo.absolutePath revision:[GitRepository nullRevision] branch:nil],
+        NSString *expectedInitialRevision = nil;
+        [self.env.githubReaddleLibRepo getCurrentRevision:&expectedInitialRevision];
+        S7SubrepoDescription *expectedDescription = [[S7SubrepoDescription alloc]
+                                                     initWithPath:@"Dependencies/ReaddleLib"
+                                                     url:self.env.githubReaddleLibRepo.absolutePath
+                                                     revision:expectedInitialRevision
+                                                     branch:nil];
+        XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 
         NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];

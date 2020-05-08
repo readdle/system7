@@ -15,6 +15,8 @@
 #import "S7PushCommand.h"
 #import "S7CheckoutCommand.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 void s7init(void) {
     S7InitCommand *initCommand = [S7InitCommand new];
     const int result = [initCommand runWithArguments:@[]];
@@ -43,6 +45,12 @@ void s7rebind(void) {
     NSCAssert(0 == result, @"");
 }
 
+void s7rebind_with_stage(void) {
+    S7RebindCommand *rebindCommand = [S7RebindCommand new];
+    const int result = [rebindCommand runWithArguments:@[ @"--stage" ]];
+    NSCAssert(0 == result, @"");
+}
+
 void s7rebind_specific(NSString *subrepoPath) {
     S7RebindCommand *rebindCommand = [S7RebindCommand new];
     const int result = [rebindCommand runWithArguments:@[ subrepoPath ]];
@@ -55,29 +63,19 @@ void s7push(void) {
     NSCAssert(0 == result, @"");
 }
 
-void s7checkout(void) {
+int s7checkout(NSString *fromRevision, NSString *toRevision) {
     S7CheckoutCommand *checkoutCommand = [S7CheckoutCommand new];
-    const int result = [checkoutCommand runWithArguments:@[]];
-    NSCAssert(0 == result, @"");
+    return [checkoutCommand runWithArguments:@[fromRevision, toRevision]];
 }
 
 
-NSString * makeSampleCommitToReaddleLib(GitRepository *readdleLibSubrepoGit) {
-    NSString *fileName = @"RDGeometry.h";
-    NSCParameterAssert(0 == [readdleLibSubrepoGit createFile:fileName withContents:nil]);
-    NSCParameterAssert(0 == [readdleLibSubrepoGit add:@[ fileName ]]);
-    NSCParameterAssert(0 == [readdleLibSubrepoGit commitWithMessage:@"add geometry utils"]);
-    NSString *readdleLibRevision = nil;
-    NSCParameterAssert(0 == [readdleLibSubrepoGit getCurrentRevision:&readdleLibRevision]);
-    return readdleLibRevision;
+NSString * commit(GitRepository *repo, NSString *fileName, NSString * _Nullable fileContents, NSString *commitMessage) {
+    NSCParameterAssert(0 == [repo createFile:fileName withContents:fileContents]);
+    NSCParameterAssert(0 == [repo add:@[ fileName ]]);
+    NSCParameterAssert(0 == [repo commitWithMessage:commitMessage]);
+    NSString *resultingRevision = nil;
+    NSCParameterAssert(0 == [repo getCurrentRevision:&resultingRevision]);
+    return resultingRevision;
 }
 
-NSString * makeSampleCommitToRDPDFKit(GitRepository *pdfKitSubrepoGit) {
-    NSString *fileName = @"RDPDFAnnotation.h";
-    NSCParameterAssert(0 == [pdfKitSubrepoGit createFile:fileName withContents:nil]);
-    NSCParameterAssert(0 == [pdfKitSubrepoGit add:@[ fileName ]]);
-    NSCParameterAssert(0 == [pdfKitSubrepoGit commitWithMessage:@"add annotations"]);
-    NSString *pdfKitRevision = nil;
-    NSCParameterAssert(0 == [pdfKitSubrepoGit getCurrentRevision:&pdfKitRevision]);
-    return pdfKitRevision;
-}
+NS_ASSUME_NONNULL_END
