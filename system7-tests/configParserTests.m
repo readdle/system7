@@ -8,23 +8,13 @@
 
 #import <XCTest/XCTest.h>
 
-#import "S7Parser.h"
+#import "S7Config.h"
 
 @interface system7_tests : XCTestCase
 
 @end
 
 @implementation system7_tests
-
-- (void)setUp {
-    // Put setup code here. This method is called before the invocation of each test method in the class.
-}
-
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
-}
-
-// test trailing comments
 
 - (void)testValidConfig {
     NSString *config =

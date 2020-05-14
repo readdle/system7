@@ -25,6 +25,7 @@
 @synthesize githubRDSFTPRepo = _githubRDSFTPRepo;
 @synthesize githubRDPDFKitRepo = _githubRDPDFKitRepo;
 @synthesize githubFormCalcRepo = _githubFormCalcRepo;
+@synthesize githubTestBareRepo = _githubTestBareRepo;
 
 - (instancetype)init {
     self = [super init];
@@ -32,7 +33,7 @@
         return nil;
     }
 
-    _root = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
+    _root = [NSTemporaryDirectory() stringByAppendingPathComponent:@"com.readdle.system7-tests"];
     BOOL isDirectory = NO;
     NSError *error = nil;
 
@@ -153,6 +154,18 @@
         NSAssert(_githubFormCalcRepo, @"");
     }
     return _githubFormCalcRepo;
+}
+
+- (GitRepository *)githubTestBareRepo {
+    if (nil == _githubTestBareRepo) {
+        NSString *absoluteFilePath = [self.root stringByAppendingPathComponent:@"github/bare"];
+        int exitStatus = 0;
+        _githubTestBareRepo = [GitRepository initializeRepositoryAtPath:absoluteFilePath bare:YES exitStatus:&exitStatus];
+        NSAssert(0 == exitStatus, @"");
+        NSAssert(_githubTestBareRepo, @"");
+    }
+
+    return _githubTestBareRepo;
 }
 
 - (GitRepository *)pasteyRd2Repo {

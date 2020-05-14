@@ -10,8 +10,17 @@
 
 @implementation S7RemoveCommand
 
-- (void)printCommandHelp {
++ (NSString *)commandName {
+    return @"remove";
+}
+
++ (NSArray<NSString *> *)aliases {
+    return @[ @"rm" ];
+}
+
++ (void)printCommandHelp {
     puts("s7 remove PATH...");
+    printCommandAliases(self);
     puts("");
     puts("TODO");
 }
@@ -27,7 +36,7 @@
     }
 
     if (arguments.count < 1) {
-        [self printCommandHelp];
+        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
@@ -38,7 +47,9 @@
                                                                           encoding:NSUTF8StringEncoding
                                                                              error:nil];
 
-    for (NSString *path in arguments) {
+    for (NSString *argument in arguments) {
+        NSString *path = [argument stringByStandardizingPath];
+
         S7SubrepoDescription *subrepoDesc = parsedConfig.pathToDescriptionMap[path];
         if (nil == subrepoDesc) {
             return S7ExitCodeInvalidArgument;
@@ -75,7 +86,21 @@
     }
 
     S7Config *newConfig = [[S7Config alloc] initWithSubrepoDescriptions:newDescriptionsArray];
-    return [newConfig saveToFileAtPath:S7ConfigFileName];
+    const int configSaveResult = [newConfig saveToFileAtPath:S7ConfigFileName];
+    if (0 != configSaveResult) {
+        return configSaveResult;
+    }
+
+    if (NO == [newConfig.sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        fprintf(stderr,
+                "failed to save %s to disk. Error: %s\n",
+                S7HashFileName.fileSystemRepresentation,
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    return 0;
 }
 
 @end

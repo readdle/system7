@@ -21,6 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, strong) GitRepository *githubRDSFTPRepo;
 @property (nonatomic, readonly, strong) GitRepository *githubRDPDFKitRepo;
 @property (nonatomic, readonly, strong) GitRepository *githubFormCalcRepo;
+@property (nonatomic, readonly, strong) GitRepository *githubTestBareRepo;
 
 @property (nonatomic, readonly, strong) GitRepository *pasteyRd2Repo;
 @property (nonatomic, readonly, strong) GitRepository *nikRd2Repo;

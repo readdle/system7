@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 //
 
 void s7init(void);
+void s7init_deactivateHooks(void);
 
 GitRepository *s7add(NSString *subrepoPath, NSString *url);
 void s7remove(NSString *subrepoPath);
@@ -26,7 +27,8 @@ void s7rebind(void);
 void s7rebind_with_stage(void); // add --stage option. No need to manually call 'git add .s7substate'
 void s7rebind_specific(NSString *subrepoPath);
 
-void s7push(void);
+int s7push_currentBranch(GitRepository *repo);
+int s7push(GitRepository *repo, NSString *branch, NSString *localSha1ToPush, NSString *remoteSha1LastPushed);
 
 int s7checkout(NSString *fromRevision, NSString *toRevision);
 

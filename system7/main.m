@@ -8,23 +8,31 @@
 
 #import <Foundation/Foundation.h>
 
-#import "S7Parser.h"
+#import "S7Config.h"
 #import "Git.h"
 #import "Utils.h"
 #import "S7Types.h"
+
+#import "S7InitCommand.h"
+#import "S7HashCommand.h"
 #import "S7AddCommand.h"
+#import "S7RemoveCommand.h"
 #import "S7RebindCommand.h"
-#import "S7PushCommand.h"
+#import "S7CheckoutCommand.h"
+#import "S7StatusCommand.h"
+#import "S7MergeCommand.h"
+
+#import "S7PrePushHook.h"
 
 // why separate command? what alternatives I considered?
 // 1. no bash scripts – bash script for such tasks is always a big pain in the ass
 // 2. no python – I could have written in python, but I just know C better
-// 3. I looked for some plugins system in git – didn't find one
+// 3. I looked for some plugin system in git – didn't find one
 // 3. considered forking git itself. First, I had pre-vomit hiccups at the very thought about it.
-//    Second, two many GUIs I know are bunding their own version of git, so my fork will be useless.
+//    Second, too many GUIs I know, are bunding their own version of git, so my fork will be useless.
 // 4. thus I stopped at separate command + few git hooks
 //
-// I was thinking of the way to do all subrepos managing stuff almost automatically as it's done
+// I was thinking of the way to do all subrepos managing stuff almost automatic as it's done
 // in HG.
 // I can automate pull and checkout. I can* automate clone. (*with the use of ugly --template hack or global templates).
 // But I see no way to intrude into commit process. HG updates subrepos automatically if one performs `hg commit` without
@@ -32,23 +40,107 @@
 // and maybe I could detect '-a', but hook documentation is as crappy as the whole git (and its documentation).
 // For now, I think that we will start with manual rebind of subrepos and commit of .s7substate as any other file.
 //
-// We use s7 for de-facto centralized commercial repo that uses single (GitHub) server and branch-based
+// We use s7 for de-facto centralized commercial repos that use single (GitHub) server and branch-based
 // pull requests. We are not using forks, we are not using other kinds of remotes except origin.
 // Thus: s7 always assumes that there's just one remote and it's named 'origin'
 //
 // Second assumption: we do not play the game of naming local branches differently from remote branches,
 // so s7 always assumes that `origin/branch-name` is tracked by local branch `branch-name`
+//
+// Third assumption: there's such thing as octopus merge (one can merge more than two heads at a time).
+// I haven't found a way to detect and prohibit this stuff.
+// Custom merge driver isn't called in case of octopus (did I say I strongly hate git?);
+// All merge hooks can be bypassed with --no-verify, so I don't rely on them;
+// The only option was pre-commit hook, but I think you know the result.
+// One more note on octopus – I tried to merge two branches into master. Two of three brances changed
+// the same file (.s7substate in my experiment, but I think it doesn't really matter) – octopus strategy
+// failed and fell back to the default merge of... I don't know what – the result was like I didn't merge
+// anything, but the file had a conflict :joy:
+// The result looked like this:
+//    * 6667738 (HEAD -> master) merge octopus (`git merge test test2`)
+//    * 7ff4dca me too
+//    * 7221d84 up subrepos
+//    | * 4a9db5b (test2) up file (changed a different file at branch test2)
+//    |/
+//    | * edd53c0 (test) up subrepos
+//    |/
+//    * 4ebe9c8 <doesn't matter>
+//    ~
 
 
-// need a pre-commit hook that will change .s7substate. Or should I? Maybe just `s7 commit [paths]`
 
-// s7 status
-// s7 commit PATH – update subrepo binding
+
+
 // s7 checkout – runs automatically from `post-checkout` git hook
-// s7 push
+
+// `git reset` doesn't call any hooks, so ... well... fuck yourself – call `s7 checkout` manually. With what revisions?
+// How do I know?
 
 // post-checkout
+// в принципе, нас интерисует ситуация, когда
+//#!/bin/sh
+//
+//echo "🔥 post-checkout start"
+//
+//echo " previous revision = $1"
+//echo " new revision = $2"
+//if [ 1 -eq $3 ]; then
+//  echo " branch checkout"
+//else
+//  echo " 'single' file checkout" # see no way to find out which exactly file is checked out
+//fi
+//
+//echo " pwd: `pwd`" # always git repo root
+//
+//git branch # actual branch or a detached HEAD
+//
+//env
+// # GIT_PREFIX=Dependencies/ – actual repo dir where checkout was called. Empty if from root
+//
+//echo "✅ post-checkout done"
+
+
 // pre-merge-commit
+// припизденная хуйня, которую можно обойти
+// надо пробовать подвязаться на .s7substate .gitattributes merge-tool
+
+// in .gitattributes:
+//.s7substate merge=s7
+
+//🔥 start merge of s7substate
+//start args
+//custom
+//argument
+//.merge_file_05ePqP
+//.merge_file_tDaVai
+//.merge_file_LxEapG
+//end args
+// pwd: /var/folders/50/lx2tslds6ds4qwp8nny38k1c0000gn/T/271092D6-4818-4556-A681-51FA817EAE13/pastey/projects/rd2
+//* master
+//  test
+//GIT_REFLOG_ACTION=merge test
+//GIT_PREFIX=
+//PWD=/var/folders/50/lx2tslds6ds4qwp8nny38k1c0000gn/T/271092D6-4818-4556-A681-51FA817EAE13/pastey/projects/rd2
+//GITHEAD_edd53c082b5ad6dfb41f05ae91e6da518c6fdfd7=test
+//_=/usr/bin/env
+//✅ merge done
+
+
+// можно прописать один раз в глобальные атрибуты:
+// "If you wish to affect only a single repository (i.e., to assign attributes to files that are particular to one user’s workflow for that repository), then attributes should be placed in the $GIT_DIR/info/attributes file. Attributes which should be version-controlled and distributed to other repositories (i.e., attributes of interest to all users) should go into .gitattributes files. Attributes that should affect all repositories for a single user should be placed in a file specified by the core.attributesFile configuration option (see git-config[1]). Its default value is $XDG_CONFIG_HOME/git/attributes. If $XDG_CONFIG_HOME is either not set or empty, $HOME/.config/git/attributes is used instead. Attributes for all users on a system should be placed in the $(prefix)/etc/gitattributes file."
+
+// in .git/config (or in global config, which would be better)
+// [merge "s7"]
+//      name = A custom merge driver used to resolve conflicts in .s7substate files
+//      driver = merge_s7.sh custom argument %O %A %B // change to `s7 merge-config`
+
+// получается, что merge-driver – недостаточно, т.к. он вызывается только если файл надо мержить, т.к. он поменялся
+// с двух сторон. Довольно частый случай, что файл поменялся лишь с одной стороны. Тогда нужно привязываться к хуку.
+// Какому?
+
+// prepare-commit-msg – всегда вызывается. Есть флаг "merge"
+
+
 // pre-push
 //
 //
@@ -79,11 +171,11 @@
 
 // hg commit if subrepo has changes – fails telling "uncommited changes in SUBREPO ..."
 // do the same for us
-// do not allow push if there're changes in subrepos
+// do not allow push if there're changes in subrepos – do this in git hook
 
 // 3. кто-то пописал, что-то в ПДФ-ките и поднял ревизию, а я просто обновился на последние кода
 //     git pull (post-checkout hook calls 's7 update')
-//     s7 update
+//     s7 checkout
 //
 // 4. я пописал что-то в ПДФ-ките, поднял ревизию. Оказалось, что кто-то тоже параллельно обновил кит. Надо смержиться
 //     rd2# git pull (pre-merge-commit hook calls 's7 merge')
@@ -100,56 +192,23 @@
 // 10. я что-то поменял в ките, и в rd2 – хочу сделать пуш
 // 11. все это дело должно работать на Jenkins-е без всяких шаманств
 
-// validate config – check that there're no duplicates
-
-// Транзакции
-// Последняя ревизия в файле на случай работы из command line?
-
-// пройти по всем exit кодам, и перейти на S7ExitCode
-
-// verbose/quite modes?
-
-// rebind – remap, record?
-
-// allow short forms "status" - "st", "stat", etc.
-// allow aliases
-
-// always standartize subrepo paths
-
-// color output if istty()
-// checking subrepo 'Dependencies/ReaddleLib'
-//  detected an update:
-//  old state 'a8ce1d5234908ee65f59c831a803c83893920c2f' (master) - red
-//  new state 'f1e7add16515f003ed756324f91c66b699a5a48c' (master) - green
-
-
-// push – возможно заюзать хак с diff-stat, чтобы не мотаться на сервер для каждой сабрепы.
-//        либо сделать на своих файлах, но это стремно. Можно сотворить неконсистентность на ровном месте
-// push – подвязаться на pre-push хук. Без параметров пычкать только текущую ветку.
-
-// думаю, что можно сделать чтобы s7 add сразу стейджил .s7substate и .gitignore
-// как минимум, надо писать в stdout подсказку что делать дальше
-
-// думаю, что можно сделать чтобы s7 rebind сразу стейджил .s7substate
-// как минимум, надо писать в stdout подсказку что делать дальше
-// у git commit есть ключ -a, но не хочу использовать его, т.к. он может проассоциироваться с --all
-// лучше пусть будет --stage
-
-// todo: make all commands recursive: rebind, push, checkout, status, etc.?
-
 // make `s7 init` install hooks?
 
-// add --recursive/-R option to rebind? Would be handy if you want to commit subrepo with subrepos. Seems to be a rare
-// case – not adding now
-// but `s7 commit` sounds like a good stuff – commit both main repo and subrepos. Should think about it.
 
 // add custom merge-tool for .s7config file, so that git would call `s7 merge` if this file needs merging
 
-// use libgit2 if git process run overhead starts to bother us
+
+// git reset – это крайне стремная штука – если ревизии не запычканы, то отыскать их можно будет только ref-log-ом,
+// и то – надо помнить/знать что искать. Надо тут добавить проверок. Если пользователь откатывается на более раннюю
+// ревизию, то надо проверить, чтобы на текущую ревизию указывало хоть что-то (кроме локальной ветки, которую мы откатим),
+// иначе ревизии просрутся. Моге делать фиктивную ветку. Могу предупреждать пользователя, и абортить – пусть
+// сам разбирается.
+
 
 void printHelp() {
     puts("usage: s7 <command> [<arguments>]");
-    puts("\nAvailable commands:");
+    puts("");
+    puts("Available commands:");
     puts("");
     puts("  help      show help for a given command or this a help overview");
     puts("");
@@ -159,24 +218,81 @@ void printHelp() {
     puts("  remove    removes a subrepo(s)");
     puts("");
     puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
-    puts("  push      push changes from the repo and all it's subrepos");
     puts("");
     puts("  checkout  update subrepos to the state saved in a checked out revision");
     puts("  merge     incorporate changes to subrepos from two revisions");
+    puts("");
+    puts("  status    show changed subrepos");
+    puts("  hash      show the hash of the s7 config last saved by any s7 command");
+    puts("");
+    puts("");
+    puts("FAQ.");
+    puts("");
+    puts(" Q: how to push changes to subrepos together with the main repo?");
+    puts(" A: just `git push [OPTIONS]` on the main repo. S7 hooks will push\n");
+    puts("    necessary subrepos automatically.");
 }
 
-NSObject<S7Command> *commandByName(NSString *commandName) {
-    static NSMutableDictionary<NSString *, NSObject<S7Command> *> *commandNameToCommandMap = nil;
+Class commandClassByName(NSString *commandName) {
+    static NSMutableDictionary<NSString *, Class> *commandNameToCommandClass = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        commandNameToCommandMap = [NSMutableDictionary new];
+        commandNameToCommandClass = [NSMutableDictionary new];
 
-        commandNameToCommandMap[@"add"] = [S7AddCommand new];
-        commandNameToCommandMap[@"rebind"] = [S7RebindCommand new];
-        commandNameToCommandMap[@"push"] = [S7PushCommand new];
+        NSSet<Class<S7Command>> *commandClasses = [NSSet setWithArray:@[
+            [S7InitCommand class],
+            [S7AddCommand class],
+            [S7RemoveCommand class],
+            [S7RebindCommand class],
+            [S7CheckoutCommand class],
+            [S7MergeCommand class],
+            [S7StatusCommand class],
+            [S7HashCommand class],
+        ]];
+
+        for (Class<S7Command> commandClass in commandClasses) {
+            NSString *commandName = [commandClass commandName];
+            NSCAssert(nil == commandNameToCommandClass[commandName], @"duplicate name?");
+
+            commandNameToCommandClass[commandName] = commandClass;
+
+            for (NSString *alias in [commandClass aliases]) {
+                NSCAssert(nil == commandNameToCommandClass[alias], @"duplicate name?");
+
+                commandNameToCommandClass[alias] = commandClass;
+            }
+        }
     });
 
-    return commandNameToCommandMap[commandName];
+    Class exactMatchClass = commandNameToCommandClass[commandName];
+    if (exactMatchClass) {
+        return exactMatchClass;
+    }
+
+    NSMutableSet<NSString *> *possibleCommandNames = [NSMutableSet new];
+    NSMutableSet<Class<S7Command>> *possibleCommandClasses = [NSMutableSet new];
+    for (NSString *knownCommandName in commandNameToCommandClass.allKeys) {
+        if ([knownCommandName hasPrefix:commandName]) {
+            Class<S7Command> knownCommandClass = commandNameToCommandClass[knownCommandName];
+            [possibleCommandClasses addObject:knownCommandClass];
+            [possibleCommandNames addObject:[knownCommandClass commandName]];
+        }
+    }
+
+    if (0 == possibleCommandClasses.count) {
+        fprintf(stderr, "unknown command '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+        return nil;
+    }
+    else if (1 == possibleCommandClasses.count) {
+        return possibleCommandClasses.anyObject;
+    }
+    else {
+        NSString *possibleCommands = [[possibleCommandNames allObjects] componentsJoinedByString:@", "];
+
+        fprintf(stderr, "s7: command '%s' is ambiguous:\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+        fprintf(stderr, "    %s\n", possibleCommands.fileSystemRepresentation);
+        return nil;
+    }
 }
 
 int helpCommand(int argc, const char *argv[]) {
@@ -186,16 +302,15 @@ int helpCommand(int argc, const char *argv[]) {
     }
 
     NSString *commandName = [NSString stringWithCString:argv[0] encoding:NSUTF8StringEncoding];
-    NSObject<S7Command> *command = commandByName(commandName);
-    if (command) {
-        [command printCommandHelp];
+    Class<S7Command> commandClass = commandClassByName(commandName);
+    if (commandClass) {
+        [commandClass printCommandHelp];
+        return 0;
     }
     else {
-        fprintf(stderr, "unknown command '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
         printHelp();
+        return 1;
     }
-
-    return 0;
 }
 
 int main(int argc, const char * argv[]) {
@@ -212,22 +327,28 @@ int main(int argc, const char * argv[]) {
     }
 
     NSString *commandName = [NSString stringWithCString:argv[1] encoding:NSUTF8StringEncoding];
-    NSObject<S7Command> *command = commandByName(commandName);
-    if (command) {
-        NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] initWithCapacity:argc - 2];
-        for (int i=2; i<argc; ++i) {
-            NSString *argument = [NSString stringWithCString:argv[i] encoding:NSUTF8StringEncoding];
-            [arguments addObject:argument];
-        }
 
-        return [command runWithArguments:arguments];
+    NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] initWithCapacity:argc - 2];
+    for (int i=2; i<argc; ++i) {
+        NSString *argument = [NSString stringWithCString:argv[i] encoding:NSUTF8StringEncoding];
+        [arguments addObject:argument];
     }
-    else if ([commandName isEqualToString:@"help"]) {
+
+    if ([commandName isEqualToString:@"help"]) {
         return helpCommand(argc - 2, argv + 2);
     }
+    else if ([commandName isEqualToString:@"pre-push-hook"]) {
+        S7PrePushHook *hook = [S7PrePushHook new];
+        return [hook runWithArguments:arguments];
+    }
     else {
-        fprintf(stderr, "error: unknown command '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
-        printHelp();
-        return 1;
+        Class<S7Command> commandClass = commandClassByName(commandName);
+        if (commandClass) {
+            NSObject<S7Command> *command = [[[commandClass class] alloc] init];
+            return [command runWithArguments:arguments];
+        }
+        else {
+            return 1;
+        }
     }
 }

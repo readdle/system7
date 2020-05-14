@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 
 #import "S7InitCommand.h"
+#import "S7PrePushHook.h"
 
 #import "TestReposEnvironment.h"
 
@@ -37,6 +38,40 @@
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
         S7InitCommand *command = [S7InitCommand new];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@".gitignore" isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertTrue(gitignoreContents.length > 0);
+        XCTAssertNotEqual([gitignoreContents rangeOfString:S7HashFileName].location, NSNotFound);
+        XCTAssertEqual([gitignoreContents rangeOfString:S7HashFileName options:NSBackwardsSearch].location,
+                       [gitignoreContents rangeOfString:S7HashFileName].location,
+                       @"must be added to .gitignore just once");
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        S7Config *config = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertNotNil(config);
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(config.sha1, hashFileContents);
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7GitPrePushHookFilePath isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *actualPrePushContents = [[NSString alloc]
+                                           initWithData:[NSFileManager.defaultManager contentsAtPath:S7GitPrePushHookFilePath]
+                                           encoding:NSUTF8StringEncoding];
+        XCTAssertEqualObjects(actualPrePushContents, S7GitPrePushHookFileContents);
     });
 }
 
@@ -47,6 +82,15 @@
         S7InitCommand *command = [S7InitCommand new];
         XCTAssertNotEqual(0, [command runWithArguments:@[]]);
     });
+}
+
+- (void)testToInitOnRepoThatHasCustomGitHooks {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [@"дулі-дулі, дулі вам!" writeToFile:S7GitPrePushHookFilePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+
+        S7InitCommand *command = [S7InitCommand new];
+        XCTAssertEqual(S7ExitCodeFileOperationFailed, [command runWithArguments:@[]]);
+    }];
 }
 
 @end

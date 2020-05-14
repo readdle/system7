@@ -27,13 +27,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (int)fetch;
 - (int)pull;
+- (int)merge;
+- (int)mergeWithCommit:(NSString *)commit;
 
 - (int)pushAll;
 - (int)pushCurrentBranch;
+- (int)pushBranch:(NSString *)branchName;
 
 - (int)checkoutNewLocalBranch:(NSString *)branchName;
 - (int)checkoutExistingLocalBranch:(NSString *)branchName;
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName;
+- (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName;
 
 + (NSString *)nullRevision;
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision;

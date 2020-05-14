@@ -1,6 +1,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "S7Parser.h"
+#import "S7Config.h"
 #import "Git.h"
 #import "S7Types.h"
+#import "S7SubrepoDescription.h"

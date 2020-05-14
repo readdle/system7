@@ -12,6 +12,7 @@
 #import <Foundation/Foundation.h>
 
 extern NSString * const S7ConfigFileName;
+extern NSString * const S7HashFileName;
 
 typedef enum {
     S7ExitCodeDirty = -1,
@@ -27,7 +28,8 @@ typedef enum {
     S7ExitCodeNonFastForwardPush,
     S7ExitCodeNotS7Repo,
     S7ExitCodeNoCommittedS7Config,
-    S7ExitCodeInvalidSubrepoRevision
+    S7ExitCodeInvalidSubrepoRevision,
+    S7ExitCodeInternalError
 } S7ExitCode;
 
 #endif /* S7ExitCodes_h */

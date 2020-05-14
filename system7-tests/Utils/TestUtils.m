@@ -12,13 +12,27 @@
 #import "S7AddCommand.h"
 #import "S7RemoveCommand.h"
 #import "S7RebindCommand.h"
-#import "S7PushCommand.h"
 #import "S7CheckoutCommand.h"
+
+#import "S7PrePushHook.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 void s7init(void) {
     S7InitCommand *initCommand = [S7InitCommand new];
+    const int result = [initCommand runWithArguments:@[]];
+    NSCAssert(0 == result, @"");
+}
+
+void s7init_deactivateHooks(void) {
+    S7InitCommand *initCommand = [S7InitCommand new];
+
+    // disable real hooks installed by `s7 init` to work in clear environment
+    // and be able to test our implementation of hooks.
+    // Otherwise, the real implementation of s7 installed on machine would be
+    // called. It's out of test process and we won't be able to test it.
+
+    initCommand.installFakeHooks = YES;
     const int result = [initCommand runWithArguments:@[]];
     NSCAssert(0 == result, @"");
 }
@@ -57,10 +71,47 @@ void s7rebind_specific(NSString *subrepoPath) {
     NSCAssert(0 == result, @"");
 }
 
-void s7push(void) {
-    S7PushCommand *pushCommand = [S7PushCommand new];
-    const int result = [pushCommand runWithArguments:@[]];
-    NSCAssert(0 == result, @"");
+int s7push_currentBranch(GitRepository *repo) {
+    NSString *currentBranchName = nil;
+    if (0 != [repo getCurrentBranch:&currentBranchName]) {
+        return 1;
+    }
+
+    NSCAssert(currentBranchName.length > 0, @"");
+
+    NSString *currentRevision = nil;
+    if (0 != [repo getCurrentRevision:&currentRevision]) {
+        return 2;
+    }
+
+    NSString *lastPushedRevisionAtThisBranch = nil;
+    if (0 != [repo getLatestRemoteRevision:&lastPushedRevisionAtThisBranch atBranch:currentBranchName]) {
+        if ([repo isBranchTrackingRemoteBranch:currentBranchName]) {
+            return 3;
+        }
+        else {
+            lastPushedRevisionAtThisBranch = [GitRepository nullRevision];
+        }
+    }
+
+    return s7push(repo, currentBranchName, currentRevision, lastPushedRevisionAtThisBranch);
+}
+
+int s7push(GitRepository *repo, NSString *branch, NSString *localSha1ToPush, NSString *remoteSha1LastPushed) {
+    S7PrePushHook *prePushHook = [S7PrePushHook new];
+
+    prePushHook.testStdinContents = [NSString stringWithFormat:@"refs/heads/%@ %@ refs/heads/%@ %@",
+                                     branch,
+                                     localSha1ToPush,
+                                     branch,
+                                     remoteSha1LastPushed];
+
+    const int prePushHookExitStatus = [prePushHook runWithArguments:@[]];
+    if (0 != prePushHookExitStatus) {
+        return prePushHookExitStatus;
+    }
+
+    return [repo pushBranch:branch];
 }
 
 int s7checkout(NSString *fromRevision, NSString *toRevision) {

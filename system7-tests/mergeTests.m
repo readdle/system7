@@ -13,7 +13,7 @@
 #import "TestReposEnvironment.h"
 
 #import "S7MergeCommand.h"
-#import "S7PushCommand.h"
+#import "S7SubrepoDescriptionConflict.h"
 
 @interface mergeTests : XCTestCase
 @property (nonatomic, strong) TestReposEnvironment *env;
@@ -44,7 +44,7 @@
 
 - (void)testWithoutRequiredArgument {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7MergeCommand *command = [S7MergeCommand new];
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
@@ -60,7 +60,7 @@
 
 - (void)testWithTooManyArguments {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7MergeCommand *command = [S7MergeCommand new];
         const int exitStatus = [command runWithArguments:@[@"rev1", @"rev2", @"rev3"]];
@@ -365,7 +365,7 @@
     __block NSString *readdleLib_initialRevision = nil;
     __block NSString *pdfKit_initialRevision = nil;
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         GitRepository *pdfKitSubrepoGit = s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
@@ -377,7 +377,7 @@
 
         [repo getCurrentRevision:&rd2_initialRevision];
 
-        s7push();
+        s7push_currentBranch(repo);
     }];
 
     __block NSString *rd2_niksRevision = nil;
@@ -399,7 +399,7 @@
 
         [repo getCurrentRevision:&rd2_niksRevision];
 
-        s7push();
+        s7push_currentBranch(repo);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -409,14 +409,15 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        S7PushCommand *pushCommand = [S7PushCommand new];
-        const int pushExitStatus = [pushCommand runWithArguments:@[]];
+        NSString *rd2_pasteysRevision = nil;
+        [repo getCurrentRevision:&rd2_pasteysRevision];
+
+        const int pushExitStatus = s7push(repo, @"master", rd2_pasteysRevision, rd2_niksRevision);
         XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
 
         [repo fetch];
 
-        NSString *rd2_pasteysRevision = nil;
-        [repo getCurrentRevision:&rd2_pasteysRevision];
+        [repo merge];
 
         S7MergeCommand *mergeCommand = [S7MergeCommand new];
         const int mergeExitStatus = [mergeCommand runWithArguments:@[ rd2_initialRevision, rd2_pasteysRevision, rd2_niksRevision ]];
@@ -430,16 +431,527 @@
         NSString *readdleLibActualRevision = nil;
         [readdleLibSubrepoGit getCurrentRevision:&readdleLibActualRevision];
         XCTAssertEqualObjects(readdleLib_pasteys_Revision, readdleLibActualRevision);
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(actualConfig.sha1, hashFileContents);
     }];
 }
 
-// one side add a new subrepo
-// one side delete an old subrepo
+- (void)testBothSideUpdateSubrepoToDifferentRevisionConflictResolution_Merge {
+    __block NSString *rd2_initialRevision = nil;
+    __block NSString *readdleLib_initialRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        [repo getCurrentRevision:&rd2_initialRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    NSString *expectedRDGeometryContents = @"xyz";
+    __block NSString *rd2_niksRevision = nil;
+    __block NSString *readdleLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [repo getCurrentRevision:&rd2_niksRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        NSString *expectedSystemInfoContents = @"iPad 11''";
+        NSString *readdleLib_pasteys_Revision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", expectedSystemInfoContents, @"add support for a new iPad model");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        const int pushExitStatus = s7push_currentBranch(repo);
+        XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
+
+        [repo fetch];
+
+        NSString *rd2_pasteysRevision = nil;
+        [repo getCurrentRevision:&rd2_pasteysRevision];
+
+        S7MergeCommand *mergeCommand = [S7MergeCommand new];
+        __block int callNumber = 0;
+        [mergeCommand setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                                          S7SubrepoDescription * _Nonnull theirVersion,
+                                                                          S7ConflictResolutionOption possibleOptions)
+         {
+            XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
+            S7ConflictResolutionOption expectedResolutionOptions =
+                S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote | S7ConflictResolutionTypeMerge;
+            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+
+            ++callNumber;
+
+            if (1 == callNumber) {
+                // play a fool and return an option not in 'possibleOptions'
+                return S7ConflictResolutionTypeKeepChanged;
+            }
+            else if (2 == callNumber) {
+                // play a fool and return an option not in 'possibleOptions' one more time
+                return S7ConflictResolutionTypeDelete;
+            }
+            else if (3 == callNumber) {
+                // шоб да, так нет
+                return S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote;
+            }
+            else if (callNumber > 4) {
+                // it keeps asking us?
+                XCTFail(@"");
+            }
+
+            return S7ConflictResolutionTypeMerge;
+         }];
+
+        const int mergeExitStatus = [mergeCommand runWithArguments:@[ rd2_initialRevision, rd2_pasteysRevision, rd2_niksRevision ]];
+        XCTAssertEqual(0, mergeExitStatus);
+
+        XCTAssertEqual(4, callNumber, @"we played a fool several times, but then responded with a valid value – `merge`");
+
+        NSString *readdleLibActualRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLibActualRevision];
+        int gitExitStatus = 0;
+        NSString *actualGeometryContents = [readdleLibSubrepoGit showFile:@"RDGeometry.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
+        XCTAssertEqual(0, gitExitStatus);
+        XCTAssertEqualObjects(actualGeometryContents, expectedRDGeometryContents);
+
+        NSString *actualSystemInfoContents = [readdleLibSubrepoGit showFile:@"RDSystemInfo.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
+        XCTAssertEqual(0, gitExitStatus);
+        XCTAssertEqualObjects(actualSystemInfoContents, expectedSystemInfoContents);
+
+        XCTAssertTrue([readdleLibSubrepoGit isRevisionAnAncestor:readdleLib_niks_Revision toRevision:readdleLibActualRevision]);
+        XCTAssertTrue([readdleLibSubrepoGit isRevisionAnAncestor:readdleLib_pasteys_Revision toRevision:readdleLibActualRevision]);
+
+        // not checking 'sha1' here as we didn't perform actual git merge and S7ConfigFile is not updated at the moment
+    }];
+}
+
+- (void)testBothSideUpdateSubrepoToDifferentRevisionConflictResolution_KeepLocal {
+    __block NSString *rd2_initialRevision = nil;
+    __block NSString *readdleLib_initialRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        [repo getCurrentRevision:&rd2_initialRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    NSString *expectedRDGeometryContents = @"xyz";
+    __block NSString *rd2_niksRevision = nil;
+    __block NSString *readdleLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [repo getCurrentRevision:&rd2_niksRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        NSString *expectedSystemInfoContents = @"iPad 11''";
+        NSString *readdleLib_pasteys_Revision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", expectedSystemInfoContents, @"add support for a new iPad model");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        const int pushExitStatus = s7push_currentBranch(repo);
+        XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
+
+        [repo fetch];
+
+        NSString *rd2_pasteysRevision = nil;
+        [repo getCurrentRevision:&rd2_pasteysRevision];
+
+        S7MergeCommand *mergeCommand = [S7MergeCommand new];
+        [mergeCommand setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                                          S7SubrepoDescription * _Nonnull theirVersion,
+                                                                          S7ConflictResolutionOption possibleOptions)
+         {
+            XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
+            S7ConflictResolutionOption expectedResolutionOptions =
+                S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote | S7ConflictResolutionTypeMerge;
+            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+
+            return S7ConflictResolutionTypeKeepLocal;
+         }];
+
+        const int mergeExitStatus = [mergeCommand runWithArguments:@[ rd2_initialRevision, rd2_pasteysRevision, rd2_niksRevision ]];
+        XCTAssertEqual(0, mergeExitStatus);
+
+        NSString *readdleLibActualRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLibActualRevision];
+
+        XCTAssertEqualObjects(readdleLib_pasteys_Revision, readdleLibActualRevision);
+
+        NSString *readdleLibActualBranch = nil;
+        [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch];
+        XCTAssertEqualObjects(@"master", readdleLibActualBranch);
+
+        int gitExitStatus = 0;
+        NSString *actualGeometryContents = [readdleLibSubrepoGit showFile:@"RDGeometry.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
+        XCTAssertEqual(128, gitExitStatus);
+        XCTAssert(0 == actualGeometryContents.length);
+
+        NSString *actualSystemInfoContents = [readdleLibSubrepoGit showFile:@"RDSystemInfo.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
+        XCTAssertEqual(0, gitExitStatus);
+        XCTAssertEqualObjects(actualSystemInfoContents, expectedSystemInfoContents);
+
+        // not checking 'sha1' here as we didn't perform actual git merge and S7ConfigFile is not updated at the moment
+    }];
+}
+
+- (void)testBothSideUpdateSubrepoToDifferentRevisionConflictResolution_KeepRemote {
+    __block NSString *rd2_initialRevision = nil;
+    __block NSString *readdleLib_initialRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        [repo getCurrentRevision:&rd2_initialRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    NSString *expectedRDGeometryContents = @"xyz";
+    __block NSString *rd2_niksRevision = nil;
+    __block NSString *readdleLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [repo getCurrentRevision:&rd2_niksRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        NSString *expectedSystemInfoContents = @"iPad 11''";
+        commit(readdleLibSubrepoGit, @"RDSystemInfo.h", expectedSystemInfoContents, @"add support for a new iPad model");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        const int pushExitStatus = s7push_currentBranch(repo);
+        XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
+
+        [repo fetch];
+
+        NSString *rd2_pasteysRevision = nil;
+        [repo getCurrentRevision:&rd2_pasteysRevision];
+
+        S7MergeCommand *mergeCommand = [S7MergeCommand new];
+        [mergeCommand setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                                          S7SubrepoDescription * _Nonnull theirVersion,
+                                                                          S7ConflictResolutionOption possibleOptions)
+         {
+            XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
+            S7ConflictResolutionOption expectedResolutionOptions =
+                S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote | S7ConflictResolutionTypeMerge;
+            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+
+            return S7ConflictResolutionTypeKeepRemote;
+         }];
+
+        const int mergeExitStatus = [mergeCommand runWithArguments:@[ rd2_initialRevision, rd2_pasteysRevision, rd2_niksRevision ]];
+        XCTAssertEqual(0, mergeExitStatus);
+
+        NSString *readdleLibActualRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLibActualRevision];
+
+        XCTAssertEqualObjects(readdleLib_niks_Revision, readdleLibActualRevision);
+
+        NSString *readdleLibActualBranch = nil;
+        [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch];
+        XCTAssertEqualObjects(@"master", readdleLibActualBranch);
+
+        int gitExitStatus = 0;
+        NSString *actualGeometryContents = [readdleLibSubrepoGit showFile:@"RDGeometry.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
+        XCTAssertEqual(0, gitExitStatus);
+        XCTAssertEqualObjects(actualGeometryContents, expectedRDGeometryContents);
+
+        NSString *actualSystemInfoContents = [readdleLibSubrepoGit showFile:@"RDSystemInfo.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
+        XCTAssertEqual(128, gitExitStatus);
+        XCTAssert(0 == actualSystemInfoContents.length);
+
+        // not checking 'sha1' here as we didn't perform actual git merge and S7ConfigFile is not updated at the moment
+    }];
+}
+
+- (void)testOneSideUpdateOtherSideDeleteConflictResolution_Delete {
+    __block NSString *rd2_initialRevision = nil;
+    __block NSString *readdleLib_initialRevision = nil;
+    __block NSString *pdfKit_initialRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        GitRepository *pdfKitSubrepoGit = s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
+        [pdfKitSubrepoGit getCurrentRevision:&pdfKit_initialRevision];
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib and RDPDFKit subrepos"];
+
+        [repo getCurrentRevision:&rd2_initialRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    NSString *expectedRDGeometryContents = @"xyz";
+    __block NSString *rd2_niksRevision = nil;
+    __block NSString *readdleLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [repo getCurrentRevision:&rd2_niksRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7remove(@"Dependencies/ReaddleLib");
+
+        [repo add:@[ S7ConfigFileName, @".gitignore" ]];
+        [repo commitWithMessage:@"drop ReaddleLib subrepo"];
+
+        const int pushExitStatus = s7push_currentBranch(repo);
+        XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
+
+        [repo fetch];
+
+        NSString *rd2_pasteysRevision = nil;
+        [repo getCurrentRevision:&rd2_pasteysRevision];
+
+        S7MergeCommand *mergeCommand = [S7MergeCommand new];
+        [mergeCommand setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                                          S7SubrepoDescription * _Nonnull theirVersion,
+                                                                          S7ConflictResolutionOption possibleOptions)
+         {
+            XCTAssertNil(ourVersion);
+            XCTAssertEqualObjects(theirVersion.path, @"Dependencies/ReaddleLib");
+
+            S7ConflictResolutionOption expectedResolutionOptions =
+                S7ConflictResolutionTypeKeepChanged | S7ConflictResolutionTypeDelete;
+            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+
+            return S7ConflictResolutionTypeDelete;
+         }];
+
+        const int mergeExitStatus = [mergeCommand runWithArguments:@[ rd2_initialRevision, rd2_pasteysRevision, rd2_niksRevision ]];
+        XCTAssertEqual(0, mergeExitStatus);
+
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
+
+        S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertNotNil(parsedConfig);
+        XCTAssertEqual(1, parsedConfig.subrepoDescriptions.count);
+
+        XCTAssertEqualObjects(parsedConfig.subrepoDescriptions[0].path, @"Dependencies/RDPDFKit");
+
+        GitRepository *pdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        NSString *pdfKitActualRevision = nil;
+        [pdfKitSubrepoGit getCurrentRevision:&pdfKitActualRevision];
+        XCTAssertEqualObjects(pdfKitActualRevision, pdfKit_initialRevision);
+
+        // not checking 'sha1' here as we didn't perform actual git merge and S7ConfigFile is not updated at the moment
+    }];
+}
+
+- (void)testOneSideUpdateOtherSideDeleteConflictResolution_KeepChanged {
+    __block NSString *rd2_initialRevision = nil;
+    __block NSString *readdleLib_initialRevision = nil;
+    __block NSString *pdfKit_initialRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        GitRepository *pdfKitSubrepoGit = s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
+        [pdfKitSubrepoGit getCurrentRevision:&pdfKit_initialRevision];
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib and RDPDFKit subrepos"];
+
+        [repo getCurrentRevision:&rd2_initialRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    NSString *expectedRDGeometryContents = @"xyz";
+    __block NSString *rd2_niksRevision = nil;
+    __block NSString *readdleLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [repo getCurrentRevision:&rd2_niksRevision];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7remove(@"Dependencies/ReaddleLib");
+
+        [repo add:@[ S7ConfigFileName, @".gitignore" ]];
+        [repo commitWithMessage:@"drop ReaddleLib subrepo"];
+
+        const int pushExitStatus = s7push_currentBranch(repo);
+        XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
+
+        [repo fetch];
+
+        NSString *rd2_pasteysRevision = nil;
+        [repo getCurrentRevision:&rd2_pasteysRevision];
+
+        S7MergeCommand *mergeCommand = [S7MergeCommand new];
+        [mergeCommand setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                                          S7SubrepoDescription * _Nonnull theirVersion,
+                                                                          S7ConflictResolutionOption possibleOptions)
+         {
+            XCTAssertNil(ourVersion);
+            XCTAssertEqualObjects(theirVersion.path, @"Dependencies/ReaddleLib");
+
+            S7ConflictResolutionOption expectedResolutionOptions =
+                S7ConflictResolutionTypeKeepChanged | S7ConflictResolutionTypeDelete;
+            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+
+            return S7ConflictResolutionTypeKeepChanged;
+         }];
+
+        const int mergeExitStatus = [mergeCommand runWithArguments:@[ rd2_initialRevision, rd2_pasteysRevision, rd2_niksRevision ]];
+        XCTAssertEqual(0, mergeExitStatus);
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertNotNil(parsedConfig);
+
+        S7Config *expectedConfig = [[S7Config alloc] initWithSubrepoDescriptions:@[
+            [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:self.env.githubReaddleLibRepo.absolutePath revision:readdleLib_niks_Revision branch:@"master"],
+            [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/RDPDFKit" url:self.env.githubRDPDFKitRepo.absolutePath revision:pdfKit_initialRevision branch:@"master"],
+        ]];
+
+        XCTAssertEqualObjects(expectedConfig, parsedConfig);
+
+        GitRepository *pdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        NSString *pdfKitActualRevision = nil;
+        [pdfKitSubrepoGit getCurrentRevision:&pdfKitActualRevision];
+        XCTAssertEqualObjects(pdfKitActualRevision, pdfKit_initialRevision);
+
+        NSString *readdleLibActualRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLibActualRevision];
+        XCTAssertTrue([readdleLibSubrepoGit isRevisionAnAncestor:readdleLib_niks_Revision toRevision:readdleLibActualRevision]);
+
+        int gitExitStatus = 0;
+        NSString *actualGeometryContents = [readdleLibSubrepoGit showFile:@"RDGeometry.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
+        XCTAssertEqual(0, gitExitStatus);
+        XCTAssertEqualObjects(actualGeometryContents, expectedRDGeometryContents);
+
+        // not checking 'sha1' here as we didn't perform actual git merge and S7ConfigFile is not updated at the moment
+    }];
+}
+
 // test merge is not allowed if there're uncommited local changes
-// test merge conflicts. Allow user to make interactive decisions. What about GUI? Sound like HUI to me. We'll see.
-// octopus??? can I prohibit this crap?
-// --allow-unrelated-histories? check if I can detect this
-// https://git-scm.com/docs/git-merge
+
+// what happens if subrepo merge ends with merge conflict? – test this – we should save .s7substate with conflict markers
+
+// [LOW] test merge and checkout if subrepo has switched to a different url – we must drop an old one and clone from a new url
+// [LOW] test how we react if merged subrepo is not a git repo (user has done something bad to it)
+
+// recursive?
 
 // renormalize – seems like the thing for clang-format
 // .gitattributes 'ident' – interesting stuff for hgrevision.h/swift substitution

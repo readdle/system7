@@ -109,6 +109,14 @@
                                                     revision:pdfKitRevision
                                                     branch:@"master"];
         XCTAssertEqualObjects(expectedPDFKitDesc, newConfig.pathToDescriptionMap[pdfKitSubrepoPath]);
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
     });
 }
 
@@ -129,7 +137,8 @@
         NSString *pdfKitRevision = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", nil, @"add annotations");
 
         S7RebindCommand *rebindCommand = [S7RebindCommand new];
-        XCTAssertEqual(0, [rebindCommand runWithArguments:@[ pdfKitSubrepoPath ]]);
+        // also test path standartization
+        XCTAssertEqual(0, [rebindCommand runWithArguments:@[ @"./Dependencies/RDPDFKit/" ]]);
 
         S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(2, newConfig.subrepoDescriptions.count);
@@ -144,6 +153,14 @@
                                                     revision:pdfKitRevision
                                                     branch:@"master"];
         XCTAssertEqualObjects(expectedPDFKitDesc, newConfig.pathToDescriptionMap[pdfKitSubrepoPath]);
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
     });
 }
 
@@ -176,6 +193,9 @@
     // without any options `s7 rebind` updates .s7substate and leaves user decide when to make `git add .s7substate`
     // '--stage' option performs `git add .s7substate`
     //
+    // 'git commit' has '-a' option that states for '(a)dd to stage', but I don't want to use -a here as
+    // it can be confused with '--all'. Like, `rebind all`. `rebind --stage` cannot be misread.
+    //
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init();
 
@@ -207,6 +227,14 @@
                                                      revision:readdleLibRevision
                                                      branch:@"master"];
         XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
     }];
 }
 

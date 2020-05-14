@@ -7,23 +7,24 @@
 //
 
 #import "S7RebindCommand.h"
-#import "S7Parser.h"
+#import "S7Config.h"
 #import "Git.h"
 
 @implementation S7RebindCommand
 
-- (void)printCommandHelp {
-    puts("s7 rebind [--stage] [PATH]...");
-    puts("");
-    puts("TODO");
++ (NSString *)commandName {
+    return @"rebind";
 }
 
-NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription) {
-    NSString *branchDescription = @"";
-    if (subrepoDescription.branch) {
-        branchDescription = [NSString stringWithFormat:@" (%@)", subrepoDescription.branch];
-    }
-    return [NSString stringWithFormat:@"'%@'%@", subrepoDescription.revision, branchDescription];
++ (NSArray<NSString *> *)aliases {
+    return @[ @"remap", @"record" ];
+}
+
++ (void)printCommandHelp {
+    puts("s7 rebind [--stage] [PATH]...");
+    printCommandAliases(self);
+    puts("");
+    puts("TODO");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
@@ -54,7 +55,9 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
                 continue;
             }
 
-            if (NO == [parsedConfig.subrepoPathsSet containsObject:argument]) {
+            NSString *path = [argument stringByStandardizingPath];
+
+            if (NO == [parsedConfig.subrepoPathsSet containsObject:path]) {
                 fprintf(stderr,
                         "there's no registered subrepo at path '%s'\n"
                         "maybe you wanted to use 'add'?\n",
@@ -62,7 +65,7 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
                 return S7ExitCodeInvalidArgument;
             }
 
-            [subreposToRebindPaths addObject:argument];
+            [subreposToRebindPaths addObject:path];
         }
     }
 
@@ -117,8 +120,8 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
         }
 
         fprintf(stdout, "detected an update:\n");
-        fprintf(stdout, " old state %s\n", [subrepoStateLogRepresentation(subrepoDescription) cStringUsingEncoding:NSUTF8StringEncoding]);
-        fprintf(stdout, " new state %s\n", [subrepoStateLogRepresentation(updatedSubrepoDescription) cStringUsingEncoding:NSUTF8StringEncoding]);
+        fprintf(stdout, " old state %s\n", [subrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
+        fprintf(stdout, " new state %s\n", [updatedSubrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
         if (nil == branch) {
             fprintf(stdout,
@@ -138,9 +141,19 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
     }
 
     S7Config *updatedConfig = [[S7Config alloc] initWithSubrepoDescriptions:newConfigSubrepoDescriptions];
-    const int configSaveExitStatus = [updatedConfig saveToFileAtPath:S7ConfigFileName];
-    if (0 != configSaveExitStatus) {
-        return configSaveExitStatus;
+    const int configSaveResult = [updatedConfig saveToFileAtPath:S7ConfigFileName];
+    if (0 != configSaveResult) {
+        return configSaveResult;
+    }
+
+    NSError *error = nil;
+    if (NO == [updatedConfig.sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        fprintf(stderr,
+                "failed to save %s to disk. Error: %s\n",
+                S7HashFileName.fileSystemRepresentation,
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+
+        return S7ExitCodeFileOperationFailed;
     }
 
     if (stageConfig) {
@@ -151,7 +164,9 @@ NSString *subrepoStateLogRepresentation(S7SubrepoDescription *subrepoDescription
         for (NSString *path in reboundSubrepoPaths) {
             fprintf(stdout, " %s\n", path.fileSystemRepresentation);
         }
-        fprintf(stdout, "\nplease, don't forget to commit the %s\n", S7ConfigFileName.fileSystemRepresentation);
+        fprintf(stdout,
+                "\nplease, don't forget to commit the %s\n",
+                S7ConfigFileName.fileSystemRepresentation);
     }
 
     return 0;

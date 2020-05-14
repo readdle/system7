@@ -18,8 +18,17 @@
 
 @implementation S7CheckoutCommand
 
-- (void)printCommandHelp {
++ (NSString *)commandName {
+    return @"checkout";
+}
+
++ (NSArray<NSString *> *)aliases {
+    return @[ @"co", @"update" ];
+}
+
++ (void)printCommandHelp {
     puts("s7 checkout [-C] FROM_REV TO_REV");
+    printCommandAliases(self);
     puts("");
     puts("updates subrepos to revisions/branches saved in .s7substate");
     puts("");
@@ -49,7 +58,7 @@
             else {
                 fprintf(stderr,
                         "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
-                [self printCommandHelp];
+                [[self class] printCommandHelp];
                 return S7ExitCodeUnrecognizedOption;
             }
         }
@@ -64,7 +73,7 @@
                 fprintf(stderr,
                         "redundant argument %s\n",
                         [argument cStringUsingEncoding:NSUTF8StringEncoding]);
-                [self printCommandHelp];
+                [[self class] printCommandHelp];
                 return S7ExitCodeInvalidArgument;
             }
         }
@@ -73,14 +82,14 @@
     if (nil == fromRevision) {
         fprintf(stderr,
                 "required argument FROM_REV is missing\n");
-        [self printCommandHelp];
+        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
     if (nil == toRevision) {
         fprintf(stderr,
                 "required argument TO_REV is missing\n");
-        [self printCommandHelp];
+        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
@@ -122,21 +131,14 @@
 
 
     // for every subrepo:
-    //  abort if it has uncommitted changes (unless -C/--clean) is passed
-    //  compare current revision/branch to the one from .s7substate
-    //    if nothing to do – continue
-    //  check if revision is available
-    //    if not – git fetch
-    //    check if revision is available
-    //    if not – fail
-    //  checkout revision/branch
+    //  ...
     //    если человек проебался, и вызвал эту команду, когда у него есть более новые коммиты
     //    на этой ветке в сабрепе, надо думать. Я не могу скинуть его ветку с текущей ревизии,
     //    т.к. тогда его коммиты "проебутся" (уйдут в detached head).
     //    Могу вытянуть чисто ревизию, и предупредить, что твоя ветка осталась там, но она
     //    разошлась с origin-ом
     //
-    //  go into subrepo subrepos
+    //   go into subrepo subrepos
 
     return [self checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];
 }
@@ -181,6 +183,28 @@
     S7Config *fromConfig = [[S7Config alloc] initWithContentsString:fromConfigContents];
     S7Config *toConfig = [[S7Config alloc] initWithContentsString:toConfigContents];
 
+    const int checkoutExitStatus = [self checkoutSubreposForRepo:repo fromConfig:fromConfig toConfig:toConfig];
+    if (0 != checkoutExitStatus) {
+        return checkoutExitStatus;
+    }
+
+    NSError *error = nil;
+    if (NO == [toConfig.sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        fprintf(stderr,
+                "failed to save %s to disk. Error: %s\n",
+                S7HashFileName.fileSystemRepresentation,
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    return 0;
+}
+
+- (int)checkoutSubreposForRepo:(GitRepository *)repo
+                    fromConfig:(S7Config *)fromConfig
+                      toConfig:(S7Config *)toConfig
+{
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
@@ -190,7 +214,7 @@
                 &subreposToUpdate,
                 &subreposToAdd);
 
-    for (S7SubrepoDescription *subrepoToDelete in subreposToDelete) {
+    for (S7SubrepoDescription *subrepoToDelete in subreposToDelete.allValues) {
         NSString *subrepoPath = subrepoToDelete.path;
         BOOL isDirectory = NO;
         if ([NSFileManager.defaultManager fileExistsAtPath:subrepoPath isDirectory:&isDirectory] && isDirectory) {
@@ -325,7 +349,7 @@
             // at the right branch.
             // I'm a bit confused, cause, for example, HG does `merge --ff` if we are going up, but their logic
             // is a bit different, so nevermind.
-            // Life will show if I was right.
+            // Life will show if I am right.
             [subrepoGit resetToRevision:subrepoDesc.revision];
         }
     }

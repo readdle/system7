@@ -196,6 +196,20 @@ static NSString *gitExecutablePath = nil;
 
 #pragma mark - repo info -
 
+- (BOOL)isBareRepo {
+    NSString *stdOutOutput = nil;
+    const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
+                                                    withArguments:@[ @"config", @"--bool", @"core.bare" ]
+                                                     stdOutOutput:&stdOutOutput
+                                                     stdErrOutput:NULL];
+    if (0 != exitStatus) {
+        return exitStatus;
+    }
+
+    NSString *configValue = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    return [configValue isEqualToString:@"true"];
+}
+
 - (BOOL)isEmptyRepo {
     NSError *error = nil;
     NSArray *headsDirectoryContents =
@@ -226,9 +240,7 @@ static NSString *gitExecutablePath = nil;
 
 #pragma mark - branches -
 
-- (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
-    NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
-
+- (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName {
     // check if we are tracking this branch already
     NSString *configSpell = [NSString stringWithFormat:@"branch.%@.merge", branchName];
     NSString *devNullOutput = nil;
@@ -237,6 +249,17 @@ static NSString *gitExecutablePath = nil;
                                stdOutOutput:&devNullOutput
                                stdErrOutput:&devNullOutput])
     {
+        return YES;
+    }
+
+    return NO;
+}
+
+- (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
+    NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
+
+    // check if we are tracking this branch already
+    if ([self isBranchTrackingRemoteBranch:branchName]) {
         return [self checkoutExistingLocalBranch:branchName];
     }
 
@@ -304,6 +327,36 @@ static NSString *gitExecutablePath = nil;
     return result;
 }
 
+- (BOOL)isRevisionAvailable:(NSString *)revision {
+    const int exitStatus = [self.class
+                            runGitInRepoAtPath:self.absolutePath
+                            withArguments:@[ @"cat-file", @"-e", revision ]
+                            stdOutOutput:NULL
+                            stdErrOutput:NULL];
+    return 0 == exitStatus;
+}
+
+- (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant {
+    NSParameterAssert(40 == possibleAncestor.length);
+    NSParameterAssert(40 == possibleDescendant.length);
+
+    NSString *stdOutOutput = nil;
+    const int exitStatus = [self.class
+                            runGitInRepoAtPath:self.absolutePath
+                            withArguments:@[ @"merge-base", possibleAncestor, possibleDescendant ]
+                            stdOutOutput:&stdOutOutput
+                            stdErrOutput:NULL];
+    if (0 != exitStatus) {
+        NSAssert(NO, @"");
+        return NO;
+    }
+
+    NSString *mergeBaseRevision = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSAssert(40 == mergeBaseRevision.length, @"");
+
+    return [possibleAncestor isEqualToString:mergeBaseRevision];
+}
+
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision {
     NSString *stdOutOutput = nil;
     NSString *stdErrOutput = nil;
@@ -323,6 +376,14 @@ static NSString *gitExecutablePath = nil;
     }
 
     NSString *revision = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (revision.length < 40) {
+        if ([self isBareRepo] && [revision isEqualToString:@"HEAD"]) {
+            // an empty and bare revision. Most likely a newborn repo
+            *ppRevision = [self.class nullRevision];
+            return 0;
+        }
+    }
+
     NSAssert(40 == revision.length, @"");
     *ppRevision = revision;
 
@@ -351,6 +412,8 @@ static NSString *gitExecutablePath = nil;
 
     return 0;
 }
+
+#pragma mark - remote -
 
 - (int)getRemote:(NSString * _Nullable __autoreleasing * _Nonnull)ppRemote {
     NSString *stdOutOutput = nil;
@@ -386,6 +449,8 @@ static NSString *gitExecutablePath = nil;
     return 0;
 }
 
+#pragma mark - exchange -
+
 - (int)fetch {
     NSString *stdOutOutput = nil;
     NSString *stdErrOutput = nil;
@@ -406,6 +471,20 @@ static NSString *gitExecutablePath = nil;
     return exitStatus;
 }
 
+- (int)mergeWithCommit:(NSString *)commit {
+    return [self.class runGitInRepoAtPath:self.absolutePath
+                            withArguments:@[ @"merge", @"--no-edit", commit ]
+                             stdOutOutput:NULL
+                             stdErrOutput:NULL];
+}
+
+- (int)merge {
+    return [self.class runGitInRepoAtPath:self.absolutePath
+                            withArguments:@[ @"merge", @"--no-edit" ]
+                             stdOutOutput:NULL
+                             stdErrOutput:NULL];
+}
+
 - (int)pushAll {
     const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
                                             withArguments:@[ @"push", @"-u", @"--all" ]
@@ -421,12 +500,18 @@ static NSString *gitExecutablePath = nil;
         return getBranchExitStatus;
     }
 
+    return [self pushBranch:currentBranchName];
+}
+
+- (int)pushBranch:(NSString *)branchName {
     const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
-                                            withArguments:@[ @"push", @"-u", @"origin", currentBranchName ]
+                                            withArguments:@[ @"push", @"-u", @"origin", branchName ]
                                              stdOutOutput:NULL
                                              stdErrOutput:NULL];
     return exitStatus;
 }
+
+#pragma mark -
 
 - (int)resetLocalChanges {
     const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
@@ -442,36 +527,6 @@ static NSString *gitExecutablePath = nil;
                                              stdOutOutput:NULL
                                              stdErrOutput:NULL];
     return exitStatus;
-}
-
-- (BOOL)isRevisionAvailable:(NSString *)revision {
-    const int exitStatus = [self.class
-                            runGitInRepoAtPath:self.absolutePath
-                            withArguments:@[ @"cat-file", @"-e", revision ]
-                            stdOutOutput:NULL
-                            stdErrOutput:NULL];
-    return 0 == exitStatus;
-}
-
-- (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant {
-    NSParameterAssert(40 == possibleAncestor.length);
-    NSParameterAssert(40 == possibleDescendant.length);
-
-    NSString *stdOutOutput = nil;
-    const int exitStatus = [self.class
-                            runGitInRepoAtPath:self.absolutePath
-                            withArguments:@[ @"merge-base", possibleAncestor, possibleDescendant ]
-                            stdOutOutput:&stdOutOutput
-                            stdErrOutput:NULL];
-    if (0 != exitStatus) {
-        NSAssert(NO, @"");
-        return NO;
-    }
-
-    NSString *mergeBaseRevision = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSAssert(40 == mergeBaseRevision.length, @"");
-
-    return [possibleAncestor isEqualToString:mergeBaseRevision];
 }
 
 

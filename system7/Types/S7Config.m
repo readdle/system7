@@ -1,97 +1,19 @@
 //
-//  S7Parser.m
+//  S7Config.m
 //  system7
 //
 //  Created by Pavlo Shkrabliuk on 24.04.2020.
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import "S7Parser.h"
+#import <CommonCrypto/CommonCrypto.h>
+
+#import "S7Config.h"
 #import "S7Types.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@implementation S7SubrepoDescription
-
-- (instancetype)initWithPath:(NSString *)path
-                         url:(NSString *)url
-                    revision:(NSString *)revision
-                      branch:(nullable NSString *)branch
-{
-    self = [super init];
-    if (nil == self) {
-        return nil;
-    }
-
-    NSParameterAssert(path);
-    NSParameterAssert(url);
-    NSParameterAssert(revision);
-    NSParameterAssert(nil == branch || branch.length > 0);
-
-    _path = path;
-    _url = url;
-    _revision = revision;
-    _branch = branch;
-
-    return self;
-}
-
-#pragma mark -
-
-- (BOOL)isEqual:(id)object {
-    if (NO == [object isKindOfClass:[S7SubrepoDescription class]]) {
-        return NO;
-    }
-
-    S7SubrepoDescription *other = (S7SubrepoDescription *)object;
-
-    if (self.branch && other.branch) {
-        if (NO == [self.branch isEqualToString:other.branch]) {
-            return NO;
-        }
-    }
-    else if (NO == (nil == self.branch && nil == other.branch)) {
-        return NO;
-    }
-
-    return [self.path isEqualToString:other.path] &&
-           [self.url isEqualToString:other.url] &&
-           [self.revision isEqualToString:other.revision];
-}
-
-- (NSUInteger)hash {
-    return self.path.hash ^ self.url.hash ^ self.revision.hash ^ self.branch.hash;
-}
-
-#pragma mark -
-
-- (NSString *)stringRepresentation {
-    NSString *branchComponent = @"";
-    if (self.branch) {
-        branchComponent = [NSString stringWithFormat:@", %@", self.branch];
-    }
-    return [NSString stringWithFormat:@"%@ = { %@, %@%@ }", self.path, self.url, self.revision, branchComponent ];
-}
-
-#pragma mark -
-
-- (NSString *)description {
-    return self.stringRepresentation;
-}
-
-@end
-
 @implementation S7Config
-
-static BOOL _allowNon40DigitRevisions = NO;
-
-+ (BOOL)allowNon40DigitRevisions {
-    return _allowNon40DigitRevisions;
-}
-
-+ (void)setAllowNon40DigitRevisions:(BOOL)allowNon40DigitRevisions {
-    _allowNon40DigitRevisions = allowNon40DigitRevisions;
-}
 
 - (nullable instancetype)initWithContentsOfFile:(NSString *)configFilePath {
     BOOL isDirectory = NO;
@@ -245,6 +167,12 @@ static BOOL _allowNon40DigitRevisions = NO;
         [configContents appendString:@"\n"];
     }
 
+    // for future desperado programmers:
+    // `atomically:YES` is crucial here. I want to write all or nothing, not to leave half-written file
+    // to a user.
+    // If you decide to bring more OOP here in the future (like, make each S7SubrepoDescription
+    // write its own part), remember about atomicity – write to temp file/string and replace the whole content
+    //
     NSError *error = nil;
     if (NO == [configContents writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error]
         || error)
@@ -252,7 +180,7 @@ static BOOL _allowNon40DigitRevisions = NO;
         fprintf(stderr, "failed to save %s to disk. Error: %s\n",
                 [S7ConfigFileName cStringUsingEncoding:NSUTF8StringEncoding],
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 1;
+        return S7ExitCodeFileOperationFailed;
     }
 
     return 0;
@@ -275,9 +203,45 @@ static BOOL _allowNon40DigitRevisions = NO;
     return result;
 }
 
+- (NSString *)description {
+    return [NSString stringWithFormat:@"<S7Config: %p. Subrepos = \n%@\n>", self, self.subrepoDescriptions];
+}
+
+- (NSString *)sha1 {
+    CC_SHA1_CTX SHA1Context;
+    CC_SHA1_Init(&SHA1Context);
+
+    for (S7SubrepoDescription *subrepoDesc in self.subrepoDescriptions) {
+        NSData *subrepoDescData = [subrepoDesc.stringRepresentation dataUsingEncoding:NSUTF8StringEncoding];
+        NSAssert(subrepoDescData.length > 0, @"");
+        CC_SHA1_Update(&SHA1Context, subrepoDescData.bytes, (CC_LONG)subrepoDescData.length);
+    }
+
+    unsigned char digest[CC_SHA1_DIGEST_LENGTH];
+    CC_SHA1_Final(digest, &SHA1Context);
+
+    NSMutableString *output = [NSMutableString stringWithCapacity:CC_SHA1_DIGEST_LENGTH * 2];
+
+    for (int i = 0; i < CC_SHA1_DIGEST_LENGTH; ++i) {
+        [output appendFormat:@"%02x", digest[i]];
+    }
+
+    return output;
+}
+
+#pragma mark -
+
+static BOOL _allowNon40DigitRevisions = NO;
+
++ (BOOL)allowNon40DigitRevisions {
+    return _allowNon40DigitRevisions;
+}
+
++ (void)setAllowNon40DigitRevisions:(BOOL)allowNon40DigitRevisions {
+    _allowNon40DigitRevisions = allowNon40DigitRevisions;
+}
+
 @end
-
-
 
 
 NS_ASSUME_NONNULL_END

@@ -12,6 +12,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface S7CheckoutCommand : NSObject <S7Command>
 
+- (int)checkoutSubreposForRepo:(GitRepository *)repo
+                    fromConfig:(S7Config *)fromConfig
+                      toConfig:(S7Config *)toConfig;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -1,8 +1,8 @@
 //
-//  S7PushCommand.h
+//  S7HashCommand.h
 //  system7
 //
-//  Created by Pavlo Shkrabliuk on 30.04.2020.
+//  Created by Pavlo Shkrabliuk on 12.05.2020.
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
@@ -10,7 +10,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface S7PushCommand : NSObject <S7Command>
+@interface S7HashCommand : NSObject <S7Command>
+
+- (NSString *)calculateHash;
 
 @end
 

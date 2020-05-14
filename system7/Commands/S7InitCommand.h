@@ -12,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface S7InitCommand : NSObject <S7Command>
 
+@property (nonatomic, assign) BOOL installFakeHooks;
+
 @end
 
 NS_ASSUME_NONNULL_END

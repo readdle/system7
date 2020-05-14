@@ -1,5 +1,5 @@
 //
-//  S7Parser.h
+//  S7Config.h
 //  system7
 //
 //  Created by Pavlo Shkrabliuk on 24.04.2020.
@@ -10,24 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface S7SubrepoDescription : NSObject
-
-- (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)new NS_UNAVAILABLE;
-
-@property (nonatomic, readonly) NSString *path;
-@property (nonatomic, readonly) NSString *url;
-@property (nonatomic, readonly) NSString *revision;
-@property (nonatomic, readonly, nullable) NSString *branch;
-
-- (instancetype)initWithPath:(NSString *)path
-                         url:(NSString *)url
-                    revision:(NSString *)revision
-                      branch:(nullable NSString *)branch;
-
-- (NSString *)stringRepresentation;
-
-@end
+@class S7SubrepoDescription;
 
 @interface S7Config : NSObject
 
@@ -49,6 +32,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSSet<NSString *> *subrepoPathsSet;
 
 - (int)saveToFileAtPath:(NSString *)filePath;
+
+@property (nonatomic, readonly) NSString *sha1;
 
 @end
 

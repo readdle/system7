@@ -8,74 +8,120 @@
 
 #import "S7MergeCommand.h"
 
+#include <unistd.h>
+
 #import "S7Diff.h"
+#import "S7CheckoutCommand.h"
+#import "S7SubrepoDescriptionConflict.h"
+#import "Utils.h"
 
-// «сам у себя ворую, имею право» (c) Высоцкий
-//  (merge algorithm has been stolen from locparse)
-//
-typedef enum {
-    NO_CHANGES,
-    UPDATED,
-    DELETED,
-    ADDED
-} ChangeType;
+NS_ASSUME_NONNULL_BEGIN
 
-@implementation S7SubrepoDescriptionConflict
+@implementation S7MergeCommand
 
-- (instancetype)initWithOurVersion:(nullable S7SubrepoDescription *)ourVersion theirVersion:(nullable S7SubrepoDescription *)theirVersion {
-    self = [super initWithPath:@"CONFLICT" url:@"CONFLICT" revision:@"CONFLICT" branch:nil];
++ (NSString *)commandName {
+    return @"merge";
+}
+
++ (NSArray<NSString *> *)aliases {
+    return @[];
+}
+
++ (void)printCommandHelp {
+    puts("s7 merge BASE_REV OUR_REV THEIR_REV");
+    printCommandAliases(self);
+    puts("");
+    puts("TODO");
+}
+
+- (instancetype)init {
+    self = [super init];
     if (nil == self) {
         return nil;
     }
 
-    NSAssert(ourVersion || theirVersion, @"at least one must be non-nil");
+    [self setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                              S7SubrepoDescription * _Nonnull theirVersion,
+                                                              S7ConflictResolutionOption possibleOptions)
+     {
+        void *self __attribute((unused)) __attribute((unavailable));
 
-    _ourVersion = ourVersion;
-    _theirVersion = theirVersion;
+//        if (!istty(stdin)) {
+//            @throw error
+//        }
+
+        const int BUF_LEN = 2;
+        char buf[BUF_LEN];
+
+        if (ourVersion && theirVersion) {
+            // should write this to stdout or stderr?
+            fprintf(stdout,
+                    " subrepository '%s' diverged\n"
+                    " local revision: %s\n"
+                    " remote revision: %s\n"
+                    " you can (m)erge, keep (l)ocal or keep (r)emote.\n"
+                    " what do you want to do?",
+                    ourVersion.path.fileSystemRepresentation,
+                    [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                    [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]
+            );
+
+            do {
+                char *userInput = fgets(buf, BUF_LEN, stdin);
+                if (userInput && 1 == strlen(userInput)) {
+                    if (tolower(userInput[0]) == 'm') {
+                        return S7ConflictResolutionTypeMerge;
+                    }
+                    else if (tolower(userInput[0]) == 'l') {
+                        return S7ConflictResolutionTypeKeepLocal;
+                    }
+                    else if (tolower(userInput[0]) == 'r') {
+                        return S7ConflictResolutionTypeKeepRemote;
+                    }
+                }
+
+                fprintf(stdout,
+                        "\n sorry?\n"
+                        " (m)erge, keep (l)ocal or keep (r)emote.\n"
+                        " what do you want to do?");
+            }
+            while (1);
+        }
+        else {
+            NSCAssert(ourVersion || theirVersion, @"");
+            if (ourVersion) {
+                fprintf(stdout,
+                        " local changed subrepository '%s' which remote removed\n"
+                        " use (c)hanged version or (d)elete?",
+                        ourVersion.path.fileSystemRepresentation);
+            }
+            else {
+                fprintf(stdout,
+                        " remote changed subrepository '%s' which local removed\n"
+                        " use (c)hanged version or (d)elete?",
+                        ourVersion.path.fileSystemRepresentation);
+            }
+
+            do {
+                char *userInput = fgets(buf, BUF_LEN, stdin);
+                if (userInput && 1 == strlen(userInput)) {
+                    if (tolower(userInput[0]) == 'c') {
+                        return S7ConflictResolutionTypeKeepChanged;
+                    }
+                    else if (tolower(userInput[0]) == 'd') {
+                        return S7ConflictResolutionTypeDelete;
+                    }
+                }
+
+                fprintf(stdout,
+                        "\n sorry?\n"
+                        " use (c)hanged version or (d)elete?");
+            }
+            while (1);
+        }
+     }];
 
     return self;
-}
-
-- (BOOL)isEqual:(id)object {
-    if (NO == [object isKindOfClass:[S7SubrepoDescriptionConflict class]]) {
-        return NO;
-    }
-
-    S7SubrepoDescriptionConflict *other = (S7SubrepoDescriptionConflict *)object;
-
-    if (self.ourVersion) {
-        if (NO == [self.ourVersion isEqual:other.ourVersion]) {
-            return NO;
-        }
-    }
-    else if (other.ourVersion) {
-        return NO;
-    }
-
-    if (self.theirVersion) {
-        if (NO == [self.theirVersion isEqual:other.theirVersion]) {
-            return NO;
-        }
-    }
-    else if (other.theirVersion) {
-        return NO;
-    }
-
-    return YES;
-}
-
-- (NSUInteger)hash {
-    return self.ourVersion.hash ^ self.theirVersion.hash;
-}
-
-@end
-
-@implementation S7MergeCommand
-
-- (void)printCommandHelp {
-    puts("s7 merge BASE_REV OUR_REV THEIR_REV");
-    puts("");
-    puts("TODO");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
@@ -96,15 +142,10 @@ typedef enum {
 
     for (NSString *argument in arguments) {
         if ([argument hasPrefix:@"-"]) {
-//            if ([argument isEqualToString:@"-C"] || [argument isEqualToString:@"-clean"]) {
-//                self.clean = YES;
-//            }
-//            else {
-                fprintf(stderr,
-                        "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
-                [self printCommandHelp];
-                return S7ExitCodeUnrecognizedOption;
-//            }
+            fprintf(stderr,
+                    "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+            [[self class] printCommandHelp];
+            return S7ExitCodeUnrecognizedOption;
         }
         else {
             if (nil == baseRevision) {
@@ -120,7 +161,7 @@ typedef enum {
                 fprintf(stderr,
                         "redundant argument %s\n",
                         [argument cStringUsingEncoding:NSUTF8StringEncoding]);
-                [self printCommandHelp];
+                [[self class] printCommandHelp];
                 return S7ExitCodeInvalidArgument;
             }
         }
@@ -129,21 +170,21 @@ typedef enum {
     if (nil == baseRevision) {
         fprintf(stderr,
                 "required argument BASE_REV is missing\n");
-        [self printCommandHelp];
+        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
     if (nil == ourRevision) {
         fprintf(stderr,
                 "required argument OUR_REV is missing\n");
-        [self printCommandHelp];
+        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
     if (nil == theirRevision) {
         fprintf(stderr,
                 "required argument THEIR_REV is missing\n");
-        [self printCommandHelp];
+        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
@@ -177,6 +218,12 @@ typedef enum {
     return [self mergeRepo:repo baseRevision:baseRevision ourRevision:ourRevision theirRevision:theirRevision];
 }
 
+typedef enum {
+    NO_CHANGES,
+    UPDATED,
+    DELETED,
+    ADDED
+} ChangeType;
 
 + (ChangeType)changesToSubrepoAtPath:(NSString *)path
                       inDeletedLines:(NSDictionary<NSString *, S7SubrepoDescription *> *)deleted
@@ -194,6 +241,19 @@ typedef enum {
 }
 
 + (S7Config *)mergeOurConfig:(S7Config *)ourConfig theirConfig:(S7Config *)theirConfig baseConfig:(S7Config *)baseConfig {
+    BOOL dummy = NO;
+    return [self mergeOurConfig:ourConfig theirConfig:theirConfig baseConfig:baseConfig detectedConflict:&dummy];
+}
+
++ (S7Config *)mergeOurConfig:(S7Config *)ourConfig
+                 theirConfig:(S7Config *)theirConfig
+                  baseConfig:(S7Config *)baseConfig
+            detectedConflict:(BOOL *)ppDetectedConflict
+{
+    // «сам у себя ворую, имею право» (c) Высоцкий
+    //  (merge algorithm has been stolen from locparse)
+    //
+
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *ourDelete = nil;
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *ourAdd = nil;
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *ourUpdate = nil;
@@ -206,7 +266,7 @@ typedef enum {
 
     NSMutableArray<S7SubrepoDescription *> * result = [NSMutableArray arrayWithCapacity:ourConfig.subrepoDescriptions.count];
 
-    BOOL foundConflict = NO;
+    BOOL detectedConflict = NO;
 
     for (S7SubrepoDescription *baseSubrepoDesc in baseConfig.subrepoDescriptions) {
         NSString * const subrepoPath = baseSubrepoDesc.path;
@@ -265,7 +325,7 @@ typedef enum {
                                                   theirVersion:theirVersion];
         [result addObject:conflict];
 
-        foundConflict = YES;
+        detectedConflict = YES;
     }
 
     NSMutableDictionary * sortHint = [NSMutableDictionary dictionaryWithCapacity:ourConfig.subrepoDescriptions.count];
@@ -300,26 +360,12 @@ typedef enum {
             [result addObject:any];
             continue;
         }
-//        else {
-//            // both sides add the same source line. If one side adds it not translated
-//            // then we can pick the other side (assuming it has translated the line)
-//            // and avoid conflict
-//            //
-//            if ([ourVersion.translation isEqualToString:ourVersion.source]) {
-//                [result addObject:theirVersion];
-//                continue;
-//            }
-//            else if ([theirVersion.translation isEqualToString:theirVersion.source]) {
-//                [result addObject:ourVersion];
-//                continue;
-//            }
-//        }
 
         S7SubrepoDescriptionConflict * conflict = [[S7SubrepoDescriptionConflict alloc] initWithOurVersion:ourVersion
                                                                                               theirVersion:theirVersion];
         [result addObject:conflict];
 
-        foundConflict = YES;
+        detectedConflict = YES;
     }
 
     // sort as it is in our
@@ -348,12 +394,58 @@ typedef enum {
         S7SubrepoDescription *theirVersion = [theirAdd objectForKey:addedLineSource];
         [result addObject:theirVersion];
     }
-//
-////    if (foundConflict && error) {
-////        *error = [NSError errorWithDomain:LocMergeErrorDomain code:LocMergeErrorConflict userInfo:nil];
-////    }
+
+    *ppDetectedConflict = detectedConflict;
 
     return [[S7Config alloc] initWithSubrepoDescriptions:result];
+}
+
+- (S7SubrepoDescription *)mergeSubrepoConflict:(S7SubrepoDescriptionConflict *)conflictToMerge exitStatus:(int *)exitStatus {
+    GitRepository *subrepoGit = [GitRepository repoAtPath:conflictToMerge.path];
+    if (nil == subrepoGit) {
+        *exitStatus = S7ExitCodeSubrepoIsNotGitRepository;
+        return conflictToMerge;
+    }
+
+    NSString *subrepoPath = conflictToMerge.path;
+    NSString *theirRevision = conflictToMerge.theirVersion.revision;
+
+    if (NO == [subrepoGit isRevisionAvailable:theirRevision]) {
+        fprintf(stdout,
+                "fetching '%s'\n",
+                [subrepoPath fileSystemRepresentation]);
+
+        if (0 != [subrepoGit fetch]) {
+            *exitStatus = S7ExitCodeGitOperationFailed;
+            return conflictToMerge;
+        }
+
+        if (NO == [subrepoGit isRevisionAvailable:theirRevision]) {
+            fprintf(stderr,
+                    "revision '%s' does not exist in '%s'\n",
+                    [theirRevision cStringUsingEncoding:NSUTF8StringEncoding],
+                    subrepoPath.fileSystemRepresentation);
+
+            *exitStatus = S7ExitCodeInvalidSubrepoRevision;
+            return conflictToMerge;
+        }
+    }
+
+    if (0 != [subrepoGit mergeWithCommit:theirRevision]) {
+        *exitStatus = S7ExitCodeGitOperationFailed;
+        return conflictToMerge;
+    }
+
+    NSString *mergeRevision = nil;
+    if (0 != [subrepoGit getCurrentRevision:&mergeRevision]) {
+        *exitStatus = S7ExitCodeGitOperationFailed;
+        return conflictToMerge;
+    }
+
+    return [[S7SubrepoDescription alloc] initWithPath:subrepoPath
+                                                  url:conflictToMerge.ourVersion.url
+                                             revision:mergeRevision
+                                               branch:conflictToMerge.ourVersion.branch];
 }
 
 - (int)mergeRepo:(GitRepository *)repo
@@ -381,12 +473,116 @@ typedef enum {
         return getConfigExitStatus;
     }
 
-    S7Config *mergeResult = [self.class mergeOurConfig:ourConfig theirConfig:theirConfig baseConfig:baseConfig];
-    mergeResult = mergeResult;
+    BOOL detectedConflict = NO;
+    S7Config *mergeResult = [self.class mergeOurConfig:ourConfig theirConfig:theirConfig baseConfig:baseConfig detectedConflict:&detectedConflict];
+    NSParameterAssert(mergeResult);
 
-    return 0;
+    if (detectedConflict && NULL == self.resolveConflictBlock) {
+        // todo: log
+        NSAssert(NO, @"WTF?!");
+        return S7ExitCodeInternalError;
+    }
+
+    if (detectedConflict) {
+        NSMutableArray<S7SubrepoDescription *> *resolvedMergeResultSubrepos =
+            [NSMutableArray arrayWithCapacity:mergeResult.subrepoDescriptions.count];
+
+        for (S7SubrepoDescription *subrepoDesc in mergeResult.subrepoDescriptions) {
+            if (NO == [subrepoDesc isKindOfClass:[S7SubrepoDescriptionConflict class]]) {
+                [resolvedMergeResultSubrepos addObject:subrepoDesc];
+                continue;
+            }
+
+            S7SubrepoDescriptionConflict *conflict = (S7SubrepoDescriptionConflict *)subrepoDesc;
+
+            S7ConflictResolutionOption possibleConflictResolutionOptions = 0;
+            if (conflict.ourVersion && conflict.theirVersion) {
+                possibleConflictResolutionOptions =
+                    S7ConflictResolutionTypeKeepLocal |
+                    S7ConflictResolutionTypeKeepRemote |
+                    S7ConflictResolutionTypeMerge;
+            }
+            else {
+                NSAssert(conflict.ourVersion || conflict.theirVersion, @"");
+                possibleConflictResolutionOptions =
+                    S7ConflictResolutionTypeKeepChanged |
+                    S7ConflictResolutionTypeDelete;
+            }
+
+            S7ConflictResolutionOption userDecision = 0;
+            do {
+                userDecision = self.resolveConflictBlock(conflict.ourVersion,
+                                                         conflict.theirVersion,
+                                                         possibleConflictResolutionOptions);
+
+                if (NO == isExactlyOneBitSetInNumber(userDecision)) {
+                    continue;
+                }
+
+                if (0 == (possibleConflictResolutionOptions & userDecision)) {
+                    continue;
+                }
+
+                break;
+
+            } while (1);
+
+            switch (userDecision) {
+                case S7ConflictResolutionTypeKeepLocal:
+                    [resolvedMergeResultSubrepos addObject:conflict.ourVersion];
+                    break;
+
+                case S7ConflictResolutionTypeKeepRemote:
+                    [resolvedMergeResultSubrepos addObject:conflict.theirVersion];
+                    break;
+
+                case S7ConflictResolutionTypeMerge: {
+                    int dummy = 0; // not sure I should do anything about this...
+                    S7SubrepoDescription *subrepoMergeResult = [self mergeSubrepoConflict:conflict exitStatus:&dummy];
+                    NSAssert(subrepoMergeResult, @"");
+                    [resolvedMergeResultSubrepos addObject:subrepoMergeResult];
+
+                    break;
+                }
+
+                case S7ConflictResolutionTypeKeepChanged:
+                    if (conflict.ourVersion) {
+                        [resolvedMergeResultSubrepos addObject:conflict.ourVersion];
+                    }
+                    else {
+                        NSAssert(conflict.theirVersion, @"");
+                        [resolvedMergeResultSubrepos addObject:conflict.theirVersion];
+                    }
+                    break;
+
+                case S7ConflictResolutionTypeDelete:
+                    // do nothing – this subrepo's life has just finished
+                    break;
+            }
+        }
+
+        mergeResult = [[S7Config alloc] initWithSubrepoDescriptions:resolvedMergeResultSubrepos];
+    }
+
+    const int configSaveResult = [mergeResult saveToFileAtPath:S7ConfigFileName];
+    if (0 != configSaveResult) {
+        return configSaveResult;
+    }
+
+    NSError *error = nil;
+    if (NO == [mergeResult.sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        fprintf(stderr,
+                "failed to save %s to disk. Error: %s\n",
+                S7HashFileName.fileSystemRepresentation,
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    S7CheckoutCommand *checkoutCommand = [S7CheckoutCommand new];
+    return [checkoutCommand checkoutSubreposForRepo:repo fromConfig:ourConfig toConfig:mergeResult];
 }
 
 @end
 
-
+NS_ASSUME_NONNULL_END

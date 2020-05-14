@@ -69,7 +69,8 @@
         XCTAssertEqual(1, initialConfig.subrepoDescriptions.count);
 
         S7RemoveCommand *removeCommand = [S7RemoveCommand new];
-        const int removeResult = [removeCommand runWithArguments:@[ @"Dependencies/ReaddleLib" ]];
+        // also test input paths' standartization
+        const int removeResult = [removeCommand runWithArguments:@[ @"Dependencies/ReaddleLib/" ]];
         XCTAssertEqual(0, removeResult);
 
         S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
@@ -80,6 +81,14 @@
         NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
         XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location, NSNotFound);
         XCTAssertNotEqual(NSNotFound, [gitignoreContents rangeOfString:typicalGitIgnoreContent].location);
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
     }];
 }
 

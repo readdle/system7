@@ -7,40 +7,88 @@
 //
 
 #import "S7AddCommand.h"
-#import "S7Parser.h"
+#import "S7Config.h"
 #import "Git.h"
+#import "Utils.h"
 
 @implementation S7AddCommand
 
-- (void)printCommandHelp {
-    puts("s7 add PATH [URL [branch]]");
++ (NSString *)commandName {
+    return @"add";
+}
+
++ (NSArray<NSString *> *)aliases {
+    return @[];
+}
+
++ (void)printCommandHelp {
+    puts("s7 add [--stage] PATH [URL [branch]]");
+    printCommandAliases(self);
     puts("");
     puts("TODO");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     if (arguments.count < 1) {
-        [self printCommandHelp];
+        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
-    NSString *path = arguments[0];
-    NSCAssert(path.length > 0, @"");
+    BOOL stageConfig = NO;
 
+    NSString *path = nil;
     NSString *url = nil;
-    if (arguments.count > 1) {
-        url = arguments[1];
-    }
-
     NSString *branch = nil;
-    if (arguments.count > 2) {
-        branch = arguments[2];
+
+    for (NSString *argument in arguments) {
+        if ([argument hasPrefix:@"-"]) {
+            if ([argument isEqualToString:@"--stage"]) {
+                stageConfig = YES;
+            }
+            else {
+                fprintf(stderr,
+                        "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                [[self class] printCommandHelp];
+                return S7ExitCodeUnrecognizedOption;
+            }
+        }
+        else {
+            if (nil == path) {
+                path = argument;
+            }
+            else if (nil == url) {
+                url = argument;
+            }
+            else if (nil == branch) {
+                branch = argument;
+            }
+            else {
+                fprintf(stderr,
+                        "redundant argument %s\n",
+                        [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                [[self class] printCommandHelp];
+                return S7ExitCodeInvalidArgument;
+            }
+        }
     }
 
-    return [self doAddSubrepo:path url:url branch:branch];
+    return [self doAddSubrepo:path url:url branch:branch stageConfig:stageConfig];
 }
 
-- (int)doAddSubrepo:(NSString *)path url:(NSString * _Nullable)url branch:(NSString * _Nullable)branch {
+- (int)doAddSubrepo:(NSString *)path url:(NSString * _Nullable)url branch:(NSString * _Nullable)branch stageConfig:(BOOL)stageConfig {
+    GitRepository *repo = [GitRepository repoAtPath:@"."];
+    if (nil == repo) {
+        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        return S7ExitCodeNotGitRepository;
+    }
+
+    if ([path hasPrefix:@"/"]) {
+        fprintf(stderr, "only relative paths are expected\n");
+        return S7ExitCodeInvalidArgument;
+    }
+
+    path = [path stringByStandardizingPath];
+
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
     for (S7SubrepoDescription *subrepoDesc in parsedConfig.subrepoDescriptions) {
         if ([subrepoDesc.path isEqualToString:path]) {
@@ -145,6 +193,13 @@
             return checkoutResult;
         }
     }
+    else {
+        const int gitExitStatus = [gitSubrepo getCurrentBranch:&branch];
+        if (0 != gitExitStatus) {
+            // todo: log
+            return S7ExitCodeGitOperationFailed;
+        }
+    }
 
     NSString *revision = nil;
     const int getRevisionResult = [gitSubrepo getCurrentRevision:&revision];
@@ -160,7 +215,7 @@
 
     // do this in transaction? all or nothing?
 
-    const int gitignoreAddResult = addSubrepoToGitIgnore(path);
+    const int gitignoreAddResult = addLineToGitIgnore(path);
     if (0 != gitignoreAddResult) {
         return gitignoreAddResult;
     }
@@ -171,49 +226,23 @@
         return configSaveResult;
     }
 
-    return 0;
-}
-
-static int addSubrepoToGitIgnore(NSString *subrepoPath) {
-    static NSString *gitIgnoreFileName = @".gitignore";
-
-    NSString *lineToAppend = [subrepoPath stringByAppendingString:@"\n"];
-
-    BOOL isDirectory = NO;
-    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:gitIgnoreFileName isDirectory:&isDirectory]) {
-        if (NO == [[NSFileManager defaultManager]
-                   createFileAtPath:gitIgnoreFileName
-                   contents:nil
-                   attributes:nil])
-        {
-            fprintf(stderr, "failed to create .gitignore file\n");
-            return 1;
-        }
-    }
-
-    if (isDirectory) {
-        fprintf(stderr, ".gitignore is a directory!?\n");
-        return 2;
-    }
-
     NSError *error = nil;
-    NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:gitIgnoreFileName encoding:NSUTF8StringEncoding error:&error];
-    if (nil != error) {
-        fprintf(stderr, "failed to read contents of .gitignore file. Error: %s\n",
+    if (NO == [updatedConfig.sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        fprintf(stderr,
+                "failed to save %s to disk. Error: %s\n",
+                S7HashFileName.fileSystemRepresentation,
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 3;
+        
+        return S7ExitCodeFileOperationFailed;
     }
 
-    if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
-        [newContent appendString:@"\n"];
+    if (stageConfig) {
+        return [repo add:@[ S7ConfigFileName, @".gitignore" ]];
     }
-
-    [newContent appendString:lineToAppend];
-
-    if (NO == [newContent writeToFile:gitIgnoreFileName atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
-        fprintf(stderr, "failed to write contents of .gitignore file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 4;
+    else {
+        fprintf(stdout,
+                "\nplease, don't forget to commit the %s and .gitignore\n",
+                S7ConfigFileName.fileSystemRepresentation);
     }
 
     return 0;

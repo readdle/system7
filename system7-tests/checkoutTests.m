@@ -40,7 +40,7 @@
 
 - (void)testWithoutRequiredArgument {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7CheckoutCommand *command = [S7CheckoutCommand new];
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
@@ -53,7 +53,7 @@
 
 - (void)testWithTooManyArguments {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7CheckoutCommand *command = [S7CheckoutCommand new];
         const int exitStatus = [command runWithArguments:@[@"rev1", @"rev2", @"rev3!"]];
@@ -63,7 +63,7 @@
 
 - (void)testOnEmptyS7Repo {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *currentRevision = nil;
         [repo getCurrentRevision:&currentRevision];
@@ -76,27 +76,25 @@
 
 - (void)testInitialCheckout {
     __block NSString *expectedReaddleLibRevision = nil;
-    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName, @".gitignore"]];
-        [self.env.pasteyRd2Repo commitWithMessage:@"up ReaddleLib"];
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
+        s7push_currentBranch(repo);
+    }];
 
-        return 0;
-    });
-
-    executeInDirectory(self.env.nikRd2Repo.absolutePath, ^int{
-        [self.env.nikRd2Repo pull];
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
 
         NSString *currentRevision = nil;
-        [self.env.nikRd2Repo getCurrentRevision:&currentRevision];
+        [repo getCurrentRevision:&currentRevision];
 
         XCTAssertEqual(0, s7checkout([GitRepository nullRevision], currentRevision));
 
@@ -106,26 +104,24 @@
         NSString *actualReaddleLibRevision = nil;
         [niksReaddleLibSubrepo getCurrentRevision:&actualReaddleLibRevision];
         XCTAssertEqualObjects(expectedReaddleLibRevision, actualReaddleLibRevision);
-    });
+    }];
 }
 
 - (void)testFurtherChangesCheckout {
     __block NSString *expectedReaddleLibRevision = nil;
-    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName, @".gitignore"]];
-        [self.env.pasteyRd2Repo commitWithMessage:@"up ReaddleLib"];
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
-
-        return 0;
-    });
+        s7push_currentBranch(repo);
+    }];
 
     __block NSString *nikCreatedReaddleLibRevision = nil;
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -144,7 +140,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
+        s7push_currentBranch(repo);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -173,21 +169,19 @@
 
 - (void)testCustomBranchCheckout {
     __block NSString *expectedReaddleLibRevision = nil;
-    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName, @".gitignore"]];
-        [self.env.pasteyRd2Repo commitWithMessage:@"up ReaddleLib"];
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
-
-        return 0;
-    });
+        s7push_currentBranch(repo);
+    }];
 
     NSString *customBranchName = @"feature/mac";
 
@@ -214,7 +208,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
+        s7push_currentBranch(repo);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -243,21 +237,19 @@
 
 - (void)testCheckoutSubrepoAtNotLatestRevisionOfBranch {
     __block NSString *expectedReaddleLibRevision = nil;
-    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
         s7rebind();
 
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName, @".gitignore"]];
-        [self.env.pasteyRd2Repo commitWithMessage:@"up ReaddleLib"];
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
-
-        return 0;
-    });
+        s7push_currentBranch(repo);
+    }];
 
     __block NSString *readdleLibRevisionThatWeShouldCheckoutInRD2 = nil;
     __block NSString *readdleLibRevisionOnMasterPushedSeparately = nil;
@@ -280,7 +272,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
+        s7push_currentBranch(repo);
 
         // make more changes to ReaddleLib, but commit and push them only to ReaddleLib repo
         readdleLibRevisionOnMasterPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
@@ -311,6 +303,16 @@
         XCTAssertEqualObjects(branchName, @"master");
 
         XCTAssertTrue([pasteysReaddleLibSubrepo isRevisionAvailable:readdleLibRevisionOnMasterPushedSeparately]);
+
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(actualConfig.sha1, hashFileContents);
     }];
 }
 
@@ -320,8 +322,8 @@
      "*.pbxuser\n"
      "*.orig\n";
 
-    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
 
         [typicalGitIgnoreContent writeToFile:@".gitignore" atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
@@ -330,13 +332,11 @@
 
         s7rebind();
 
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName, @".gitignore"]];
-        [self.env.pasteyRd2Repo commitWithMessage:@"up ReaddleLib"];
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
-
-        return 0;
-    });
+        s7push_currentBranch(repo);
+    }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
         NSString *prevRevision = nil;
@@ -353,10 +353,10 @@
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7remove(@"Dependencies/ReaddleLib");
 
-        [self.env.pasteyRd2Repo add:@[S7ConfigFileName, @".gitignore"]];
-        [self.env.pasteyRd2Repo commitWithMessage:@"drop ReaddleLib"];
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"drop ReaddleLib"];
 
-        s7push();
+        s7push_currentBranch(repo);
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -396,7 +396,7 @@
     __block NSString *sftp_documentsRevision = nil;
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         readdleLib_initialRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
@@ -409,7 +409,7 @@
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add ReaddleLib and RDPDFKit subrepos"];
 
-        s7push();
+        XCTAssertEqual(0, s7push_currentBranch(repo));
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -429,7 +429,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up pdfkit"];
 
-        s7push();
+        XCTAssertEqual(0, s7push_currentBranch(repo));
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -453,7 +453,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        s7push();
+        XCTAssertEqual(0, s7push_currentBranch(repo));
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -484,6 +484,16 @@
             XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/RDSFTPOnlineClient"]);
         }
 
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(actualConfig.sha1, hashFileContents);
+
 
         [repo checkoutRemoteTrackingBranch:@"release/documents-7.1.4"];
 
@@ -508,6 +518,15 @@
             [sftpSubrepoGit getCurrentRevision:&actualSFTPRevision];
             XCTAssertEqualObjects(sftp_documentsRevision, actualSFTPRevision);
         }
+
+        actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(actualConfig.sha1, hashFileContents);
     }];
 }
 

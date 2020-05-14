@@ -50,3 +50,57 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
 
     return 0;
 }
+
+BOOL isExactlyOneBitSetInNumber(uint32_t bits)
+{
+    // I was too lazy to do this myself
+    // taken here https://stackoverflow.com/questions/51094594/how-to-check-if-exactly-one-bit-is-set-in-an-int/51094793
+    return bits && !(bits & (bits-1));
+}
+
+int addLineToGitIgnore(NSString *lineToAppend) {
+    static NSString *gitIgnoreFileName = @".gitignore";
+
+    if (NO == [lineToAppend hasSuffix:@"\n"]) {
+        lineToAppend = [lineToAppend stringByAppendingString:@"\n"];
+    }
+
+    BOOL isDirectory = NO;
+    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:gitIgnoreFileName isDirectory:&isDirectory]) {
+        if (NO == [[NSFileManager defaultManager]
+                   createFileAtPath:gitIgnoreFileName
+                   contents:nil
+                   attributes:nil])
+        {
+            fprintf(stderr, "failed to create .gitignore file\n");
+            return 1;
+        }
+    }
+
+    if (isDirectory) {
+        fprintf(stderr, ".gitignore is a directory!?\n");
+        return 2;
+    }
+
+    NSError *error = nil;
+    NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:gitIgnoreFileName encoding:NSUTF8StringEncoding error:&error];
+    if (nil != error) {
+        fprintf(stderr, "failed to read contents of .gitignore file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return 3;
+    }
+
+    if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
+        [newContent appendString:@"\n"];
+    }
+
+    [newContent appendString:lineToAppend];
+
+    if (NO == [newContent writeToFile:gitIgnoreFileName atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
+        fprintf(stderr, "failed to write contents of .gitignore file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return 4;
+    }
+
+    return 0;
+}

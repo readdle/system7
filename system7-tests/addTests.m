@@ -9,7 +9,7 @@
 #import <XCTest/XCTest.h>
 
 #import "S7AddCommand.h"
-#import "S7Parser.h"
+#import "S7Config.h"
 
 #import "TestReposEnvironment.h"
 
@@ -52,6 +52,8 @@
 
 - (void)testAddAlreadyClonedRepoWithJustDirectoryPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init();
+
         S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
 
@@ -75,10 +77,17 @@
                                                      initWithPath:@"Dependencies/ReaddleLib"
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:expectedInitialRevision
-                                                     branch:nil];
+                                                     branch:@"master"];
         XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
     });
 }
 
@@ -100,7 +109,7 @@
                                                      initWithPath:@"Dependencies/ReaddleLib"
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:expectedInitialRevision
-                                                     branch:nil];
+                                                     branch:@"master"];
         XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 
@@ -109,6 +118,79 @@
         XCTAssertNotEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location, NSNotFound);
         XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib" options:NSBackwardsSearch].location,
                        [gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location,
+                       @"must be added to .gitignore just once");
+    });
+}
+
+- (void)testAddRepoWithUrlAndNotStandartizedPath {
+    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init();
+
+        s7add(@"Dependencies/ReaddleLib/", self.env.githubReaddleLibRepo.absolutePath);
+
+        S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
+
+        NSString *expectedInitialRevision = nil;
+        [self.env.githubReaddleLibRepo getCurrentRevision:&expectedInitialRevision];
+        S7SubrepoDescription *expectedDescription = [[S7SubrepoDescription alloc]
+                                                     initWithPath:@"Dependencies/ReaddleLib"
+                                                     url:self.env.githubReaddleLibRepo.absolutePath
+                                                     revision:expectedInitialRevision
+                                                     branch:@"master"];
+        XCTAssertEqualObjects(expectedDescription,
+                              newConfig.subrepoDescriptions.firstObject);
+
+        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertTrue(gitignoreContents.length > 0);
+        // path has been standartized, and actual saved path has no trailing slash
+        XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib/"].location, NSNotFound);
+        XCTAssertNotEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location, NSNotFound);
+        XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib" options:NSBackwardsSearch].location,
+                       [gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location,
+                       @"must be added to .gitignore just once");
+    });
+}
+
+
+- (void)testAddRepoWithUrlAndInvalidPath {
+    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
+
+        S7AddCommand *command = [S7AddCommand new];
+        const int addResult = [command runWithArguments:@[ @"/Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];
+        XCTAssertEqual(S7ExitCodeInvalidArgument, addResult);
+    });
+}
+
+- (void)testAddBareRepoWithUrlAndPath {
+    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
+
+        S7AddCommand *command = [S7AddCommand new];
+        const int addResult = [command runWithArguments:@[ @"Dependencies/Bare", self.env.githubTestBareRepo.absolutePath ]];
+        XCTAssertEqual(0, addResult);
+
+        S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
+
+        NSString *expectedInitialRevision = nil;
+        [self.env.githubTestBareRepo getCurrentRevision:&expectedInitialRevision];
+        S7SubrepoDescription *expectedDescription = [[S7SubrepoDescription alloc]
+                                                     initWithPath:@"Dependencies/Bare"
+                                                     url:self.env.githubTestBareRepo.absolutePath
+                                                     revision:expectedInitialRevision
+                                                     branch:nil];
+        XCTAssertEqualObjects(expectedDescription,
+                              newConfig.subrepoDescriptions.firstObject);
+
+        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertTrue(gitignoreContents.length > 0);
+        XCTAssertNotEqual([gitignoreContents rangeOfString:@"Dependencies/Bare"].location, NSNotFound);
+        XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/Bare" options:NSBackwardsSearch].location,
+                       [gitignoreContents rangeOfString:@"Dependencies/Bare"].location,
                        @"must be added to .gitignore just once");
     });
 }
@@ -181,6 +263,55 @@
 
         XCTAssert([gitignoreContents rangeOfString:typicalGitIgnoreContent].location != NSNotFound);
     });
+}
+
+- (void)testAddWithStageOption {
+    // without any options `s7 add` updates .s7substate and .gitignore and leaves user decide when to make `git add`
+    // '--stage' option performs `git add .s7substate .gitignore`
+    //
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init();
+
+        S7AddCommand *command = [S7AddCommand new];
+        const int addResult = [command runWithArguments:@[ @"--stage", @"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];
+        XCTAssertEqual(0, addResult);
+
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        NSString *newRevision = nil;
+        [repo getCurrentRevision:&newRevision];
+
+        int dummy = 0;
+        NSString *commitedConfigContents = [repo showFile:S7ConfigFileName atRevision:newRevision exitStatus:&dummy];
+
+        S7Config *newConfig = [[S7Config alloc] initWithContentsString:commitedConfigContents];
+        XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
+
+        NSString *expectedReaddleLibRevision = nil;
+        [self.env.githubReaddleLibRepo getCurrentRevision:&expectedReaddleLibRevision];
+
+        S7SubrepoDescription *expectedSubrepoDesc = [[S7SubrepoDescription alloc]
+                                                     initWithPath:@"Dependencies/ReaddleLib"
+                                                     url:self.env.githubReaddleLibRepo.absolutePath
+                                                     revision:expectedReaddleLibRevision
+                                                     branch:@"master"];
+        XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
+
+        BOOL isDirectory = NO;
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertFalse(isDirectory);
+
+        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
+        XCTAssert(hashFileContents.length > 0);
+        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
+
+        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertTrue(gitignoreContents.length > 0);
+        XCTAssertNotEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location, NSNotFound);
+        XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib" options:NSBackwardsSearch].location,
+                       [gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location,
+                       @"must be added to .gitignore just once");
+    }];
 }
 
 @end

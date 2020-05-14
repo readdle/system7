@@ -10,23 +10,25 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NS_OPTIONS(uint32_t, S7ConflictResolutionOption) {
+    S7ConflictResolutionTypeKeepLocal = (1 << 0),
+    S7ConflictResolutionTypeKeepRemote = (1 << 1),
+    S7ConflictResolutionTypeMerge = (1 << 2),
+    S7ConflictResolutionTypeKeepChanged = (1 << 3),
+    S7ConflictResolutionTypeDelete = (1 << 4),
+};
+
+@class S7SubrepoDescription;
+
 @interface S7MergeCommand : NSObject <S7Command>
+
+@property (nonatomic) S7ConflictResolutionOption (^resolveConflictBlock)(S7SubrepoDescription *ourVersion,
+                                                                         S7SubrepoDescription *theirVersion,
+                                                                         S7ConflictResolutionOption possibleOptions);
 
 + (S7Config *)mergeOurConfig:(S7Config *)ourLines
                  theirConfig:(S7Config *)theirConfig
                   baseConfig:(S7Config *)baseConfig;
-
-@end
-
-@interface S7SubrepoDescriptionConflict : S7SubrepoDescription
-
-- (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)new NS_UNAVAILABLE;
-
-- (instancetype)initWithOurVersion:(nullable S7SubrepoDescription *)ourVersion theirVersion:(nullable S7SubrepoDescription *)theirVersion;
-
-@property (nonatomic, readonly, nullable) S7SubrepoDescription *ourVersion;
-@property (nonatomic, readonly, nullable) S7SubrepoDescription *theirVersion;
 
 @end
 
