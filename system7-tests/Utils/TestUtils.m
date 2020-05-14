@@ -12,9 +12,9 @@
 #import "S7AddCommand.h"
 #import "S7RemoveCommand.h"
 #import "S7RebindCommand.h"
-#import "S7CheckoutCommand.h"
 
 #import "S7PrePushHook.h"
+#import "S7PostCheckoutHook.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -115,8 +115,8 @@ int s7push(GitRepository *repo, NSString *branch, NSString *localSha1ToPush, NSS
 }
 
 int s7checkout(NSString *fromRevision, NSString *toRevision) {
-    S7CheckoutCommand *checkoutCommand = [S7CheckoutCommand new];
-    return [checkoutCommand runWithArguments:@[fromRevision, toRevision]];
+    S7PostCheckoutHook *checkoutCommand = [S7PostCheckoutHook new];
+    return [checkoutCommand runWithArguments:@[fromRevision, toRevision, @"1"]];
 }
 
 

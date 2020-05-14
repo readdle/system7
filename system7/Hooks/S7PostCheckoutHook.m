@@ -1,41 +1,21 @@
 //
-//  S7CheckoutCommand.m
+//  S7PostCheckoutHook.m
 //  system7
 //
-//  Created by Pavlo Shkrabliuk on 30.04.2020.
+//  Created by Pavlo Shkrabliuk on 14.05.2020.
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import "S7CheckoutCommand.h"
+#import "S7PostCheckoutHook.h"
 
 #import "S7Diff.h"
 
-@interface S7CheckoutCommand ()
+NSString *const S7GitPostCheckoutHookFilePath = @".git/hooks/post-checkout";
+NSString *const S7GitPostCheckoutHookFileContents =
+ @"#!/bin/sh\n"
+  "s7 post-checkout-hook \"$@\"";
 
-@property (nonatomic, assign) BOOL clean;
-
-@end
-
-@implementation S7CheckoutCommand
-
-+ (NSString *)commandName {
-    return @"checkout";
-}
-
-+ (NSArray<NSString *> *)aliases {
-    return @[ @"co", @"update" ];
-}
-
-+ (void)printCommandHelp {
-    puts("s7 checkout [-C] FROM_REV TO_REV");
-    printCommandAliases(self);
-    puts("");
-    puts("updates subrepos to revisions/branches saved in .s7substate");
-    puts("");
-    puts("options:");
-    puts("");
-    puts(" -C --clean    discard uncommited changes (no backup)");
-}
+@implementation S7PostCheckoutHook
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     BOOL isDirectory = NO;
@@ -47,49 +27,7 @@
         return S7ExitCodeNotS7Repo;
     }
 
-    NSString *fromRevision = nil;
-    NSString *toRevision = nil;
-
-    for (NSString *argument in arguments) {
-        if ([argument hasPrefix:@"-"]) {
-            if ([argument isEqualToString:@"-C"] || [argument isEqualToString:@"-clean"]) {
-                self.clean = YES;
-            }
-            else {
-                fprintf(stderr,
-                        "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
-                [[self class] printCommandHelp];
-                return S7ExitCodeUnrecognizedOption;
-            }
-        }
-        else {
-            if (nil == fromRevision) {
-                fromRevision = argument;
-            }
-            else if (nil == toRevision) {
-                toRevision = argument;
-            }
-            else {
-                fprintf(stderr,
-                        "redundant argument %s\n",
-                        [argument cStringUsingEncoding:NSUTF8StringEncoding]);
-                [[self class] printCommandHelp];
-                return S7ExitCodeInvalidArgument;
-            }
-        }
-    }
-
-    if (nil == fromRevision) {
-        fprintf(stderr,
-                "required argument FROM_REV is missing\n");
-        [[self class] printCommandHelp];
-        return S7ExitCodeMissingRequiredArgument;
-    }
-
-    if (nil == toRevision) {
-        fprintf(stderr,
-                "required argument TO_REV is missing\n");
-        [[self class] printCommandHelp];
+    if (arguments.count < 3) {
         return S7ExitCodeMissingRequiredArgument;
     }
 
@@ -97,6 +35,33 @@
     if (nil == repo) {
         fprintf(stderr, "s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
+    }
+
+    NSString *fromRevision = arguments[0];
+    NSString *toRevision = arguments[1];
+    BOOL branchSwitchFlag = [arguments[2] isEqualToString:@"1"];
+
+    if (NO == branchSwitchFlag) {
+        NSError *error = nil;
+        NSString *lastSavedS7ConfigHash = [[NSString alloc]
+                                           initWithContentsOfFile:S7HashFileName
+                                           encoding:NSUTF8StringEncoding
+                                           error:&error];
+        if (error) {
+            fprintf(stderr, "s7: failed to read %s\n", S7HashFileName.fileSystemRepresentation);
+            return S7ExitCodeFileOperationFailed;
+        }
+
+        // we don't know what file did user actually checkout (thank you, Linus)
+        // if that's an unrelated file, then we don't care,
+        // but if that's our .s7substate config, then we do care.
+        // The only way to find out if config content has been changed,
+        // is to compare actual config sha1 to the one saved in S7HashFileName
+        //
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        if ([actualConfig.sha1 isEqualToString:lastSavedS7ConfigHash]) {
+            return 0;
+        }
     }
 
     if (NO == [repo isRevisionAvailableLocally:fromRevision] && NO == [fromRevision isEqualToString:[GitRepository nullRevision]]) {
@@ -112,33 +77,6 @@
                 [toRevision cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
-
-    // по-хорошему, надо сравнить текущий конфиг с предыдущим конфигом, и обновить все согласно дифу.
-    //
-    // если это вызов из `git checkout`, то у нас есть старая/новая ревизии
-    //
-    // если это просто вызов из CLI, то можно взять старую ревизию только если она хранится в файлике, но тут возможен
-    // такой вариант – я добавил сабрепу, закоммитил, а потом понял, что это была ошибка; я откатил коммит, а файлик
-    // остался лежать, и в нем невалидная ревизия 🤷‍♂️. Можно в этом случае фолбэчиться на режим без старой ревизии.
-    //
-    // Еще вопрос. Если пользователь добавил сабрепу, и вызвал эту команду. Если .s7substate не закоммичен, то хорошо ли
-    // что я читаю из него? Если пользователь сделает `git checkout OLD_REV`, то поведение будет отличаться – мы возьмем
-    // состояние .s7substate из HEAD, а не папочки.
-    //
-    // Из этого следует, что как минимум, эта команда должна фейлиться, если есть изм-я в репе.
-
-    // ==> нужно сначала програнтать статус, и если хоть в какой-то сабрепе есть изм-я, то фейлиться
-
-
-    // for every subrepo:
-    //  ...
-    //    если человек проебался, и вызвал эту команду, когда у него есть более новые коммиты
-    //    на этой ветке в сабрепе, надо думать. Я не могу скинуть его ветку с текущей ревизии,
-    //    т.к. тогда его коммиты "проебутся" (уйдут в detached head).
-    //    Могу вытянуть чисто ревизию, и предупредить, что твоя ветка осталась там, но она
-    //    разошлась с origin-ом
-    //
-    //   go into subrepo subrepos
 
     return [self checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];
 }
@@ -243,22 +181,23 @@
             }
 
             if ([subrepoGit hasUncommitedChanges]) {
-                if (NO == self.clean) {
-                    fprintf(stderr,
-                            "found uncommited changes in subrepo '%s'\n"
-                            "use -C/--clean option if you want to discard any changes automatically\n",
-                            subrepoDesc.path.fileSystemRepresentation);
-                    return S7ExitCodeUncommitedChanges;
-                }
-                else {
-                    const int resetExitStatus = [subrepoGit resetLocalChanges];
-                    if (0 != resetExitStatus) {
-                        fprintf(stderr,
-                                "failed to discard uncommited changes in subrepo '%s'\n",
-                                subrepoDesc.path.fileSystemRepresentation);
-                        return resetExitStatus;
-                    }
-                }
+                NSAssert(NO, @"");
+//                if (NO == self.clean) {
+//                    fprintf(stderr,
+//                            "found uncommited changes in subrepo '%s'\n"
+//                            "use -C/--clean option if you want to discard any changes automatically\n",
+//                            subrepoDesc.path.fileSystemRepresentation);
+//                    return S7ExitCodeUncommitedChanges;
+//                }
+//                else {
+//                    const int resetExitStatus = [subrepoGit resetLocalChanges];
+//                    if (0 != resetExitStatus) {
+//                        fprintf(stderr,
+//                                "failed to discard uncommited changes in subrepo '%s'\n",
+//                                subrepoDesc.path.fileSystemRepresentation);
+//                        return resetExitStatus;
+//                    }
+//                }
             }
         }
         else {
@@ -344,6 +283,11 @@
 //                fprintf(stdout,
 //                        "check out a git branch if you intend to make changes\n");
 //            }
+
+            fprintf(stdout,
+                    "s7: checkout '%s' to %s\n",
+                    subrepoDesc.path.fileSystemRepresentation,
+                    [subrepoDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
             // I really hope that `reset` is always a good way to checkout a revision considering we are already
             // at the right branch.

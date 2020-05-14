@@ -9,7 +9,9 @@
 #import "S7InitCommand.h"
 
 #import "Utils.h"
+
 #import "S7PrePushHook.h"
+#import "S7PostCheckoutHook.h"
 
 @implementation S7InitCommand
 
@@ -30,37 +32,67 @@
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     BOOL isDirectory = NO;
-    const BOOL configFileExists = [[NSFileManager defaultManager] fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory];
-    if (configFileExists) {
-        fprintf(stderr, "abort: s7 already configured\n");
-        return 1;
+    const BOOL configFileExisted = [[NSFileManager defaultManager] fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory];
+    if (NO == configFileExisted) {
+        if (NO == [[NSFileManager defaultManager] createFileAtPath:S7ConfigFileName contents:nil attributes:nil]) {
+            fprintf(stderr, "error: failed to create %s file\n", S7ConfigFileName.fileSystemRepresentation);
+            return S7ExitCodeFileOperationFailed;
+        }
     }
 
-    if (NO == [[NSFileManager defaultManager] createFileAtPath:S7ConfigFileName contents:nil attributes:nil]) {
-        fprintf(stderr, "error: failed to create %s file\n", S7ConfigFileName.fileSystemRepresentation);
-        return S7ExitCodeFileOperationFailed;
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7HashFileName]) {
+        NSError *error = nil;
+        if (NO == [[S7Config emptyConfig].sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+            fprintf(stderr,
+                    "failed to save %s to disk. Error: %s\n",
+                    S7HashFileName.fileSystemRepresentation,
+                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+
+            return S7ExitCodeFileOperationFailed;
+        }
     }
 
-    NSError *error = nil;
-    if (NO == [[S7Config emptyConfig].sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        fprintf(stderr,
-                "failed to save %s to disk. Error: %s\n",
-                S7HashFileName.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+    NSDictionary<NSString *, NSString *> *hooksToInstall =
+        @{
+            S7GitPrePushHookFilePath : S7GitPrePushHookFileContents,
+            S7GitPostCheckoutHookFilePath : S7GitPostCheckoutHookFileContents,
+        };
 
-        return S7ExitCodeFileOperationFailed;
-    }
+    __block int hookInstallationExitCode = 0;
+    [hooksToInstall
+     enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull path, NSString * _Nonnull contents, BOOL * _Nonnull stop) {
+        hookInstallationExitCode = [self installHookFile:path withContents:contents];
+        if (0 != hookInstallationExitCode) {
+            *stop = YES;
+        }
+    }];
 
-    const int hookInstallationExitCode = [self installHookFile:S7GitPrePushHookFilePath withContents:S7GitPrePushHookFileContents];
     if (0 != hookInstallationExitCode) {
         return hookInstallationExitCode;
     }
 
-    return addLineToGitIgnore(S7HashFileName);
+    const int gitIgnoreUpdateExitCode = addLineToGitIgnore(S7HashFileName);
+    if (0 != gitIgnoreUpdateExitCode) {
+        return gitIgnoreUpdateExitCode;
+    }
+
+    if (configFileExisted) {
+        fprintf(stdout, "reinitialized s7 repo\n");
+    }
+    else {
+        fprintf(stdout, "initialized s7 repo\n");
+    }
+
+    return 0;
 }
 
 - (int)installHookFile:(NSString *)filePath withContents:(NSString *)contents {
     if ([NSFileManager.defaultManager fileExistsAtPath:filePath]) {
+        NSString *existingContents = [[NSString alloc] initWithContentsOfFile:filePath encoding:NSUTF8StringEncoding error:nil];
+        if ([contents isEqualToString:existingContents]) {
+            return 0;
+        }
+
         fprintf(stderr,
                 "hook already installed at path %s\n",
                 filePath.fileSystemRepresentation);

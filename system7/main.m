@@ -23,6 +23,7 @@
 #import "S7MergeCommand.h"
 
 #import "S7PrePushHook.h"
+#import "S7PostCheckoutHook.h"
 
 // why separate command? what alternatives I considered?
 // 1. no bash scripts – bash script for such tasks is always a big pain in the ass
@@ -141,8 +142,6 @@
 // prepare-commit-msg – всегда вызывается. Есть флаг "merge"
 
 
-// pre-push
-//
 //
 // как автоматом обновить .gitsubstate ? как намекнуть пользователю, что у него поменяны сабрепы?
 //
@@ -191,8 +190,6 @@
 // 9. я что-то поменял в ките, и в rd2 – хочу сделать коммит. Nice to have
 // 10. я что-то поменял в ките, и в rd2 – хочу сделать пуш
 // 11. все это дело должно работать на Jenkins-е без всяких шаманств
-
-// make `s7 init` install hooks?
 
 
 // add custom merge-tool for .s7config file, so that git would call `s7 merge` if this file needs merging
@@ -339,6 +336,10 @@ int main(int argc, const char * argv[]) {
     }
     else if ([commandName isEqualToString:@"pre-push-hook"]) {
         S7PrePushHook *hook = [S7PrePushHook new];
+        return [hook runWithArguments:arguments];
+    }
+    else if ([commandName isEqualToString:@"post-checkout-hook"]) {
+        S7PostCheckoutHook *hook = [S7PostCheckoutHook new];
         return [hook runWithArguments:arguments];
     }
     else {

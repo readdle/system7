@@ -9,7 +9,9 @@
 #import <XCTest/XCTest.h>
 
 #import "S7InitCommand.h"
+
 #import "S7PrePushHook.h"
+#import "S7PostCheckoutHook.h"
 
 #import "TestReposEnvironment.h"
 
@@ -68,19 +70,36 @@
         XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7GitPrePushHookFilePath isDirectory:&isDirectory]);
         XCTAssertFalse(isDirectory);
 
-        NSString *actualPrePushContents = [[NSString alloc]
-                                           initWithData:[NSFileManager.defaultManager contentsAtPath:S7GitPrePushHookFilePath]
-                                           encoding:NSUTF8StringEncoding];
-        XCTAssertEqualObjects(actualPrePushContents, S7GitPrePushHookFileContents);
+        NSDictionary<NSString *, NSString *> *expectedHooksAndTheirContents =
+            @{
+                S7GitPrePushHookFilePath : S7GitPrePushHookFileContents,
+                S7GitPostCheckoutHookFilePath : S7GitPostCheckoutHookFileContents,
+            };
+
+        [expectedHooksAndTheirContents
+         enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull obj, BOOL * _Nonnull stop) {
+            NSString *actualHookContents = [[NSString alloc]
+                                            initWithData:[NSFileManager.defaultManager contentsAtPath:key]
+                                            encoding:NSUTF8StringEncoding];
+            XCTAssertEqualObjects(actualHookContents, obj);
+         }];
     });
 }
 
 - (void)testOnAlreadyInitializedRepo {
-    [self.env touch:[self.env.pasteyRd2Repo.absolutePath stringByAppendingPathComponent:S7ConfigFileName]];
-
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
         S7InitCommand *command = [S7InitCommand new];
-        XCTAssertNotEqual(0, [command runWithArguments:@[]]);
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+        command = [S7InitCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertTrue(gitignoreContents.length > 0);
+        XCTAssertNotEqual([gitignoreContents rangeOfString:@".s7hash"].location, NSNotFound);
+        XCTAssertEqual([gitignoreContents rangeOfString:@".s7hash" options:NSBackwardsSearch].location,
+                       [gitignoreContents rangeOfString:@".s7hash"].location,
+                       @"must be added to .gitignore just once");
     });
 }
 

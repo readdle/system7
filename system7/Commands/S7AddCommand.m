@@ -257,7 +257,7 @@
     }
     else {
         fprintf(stdout,
-                "\nplease, don't forget to commit the %s and .gitignore\n",
+                "please, don't forget to commit the %s and .gitignore\n",
                 S7ConfigFileName.fileSystemRepresentation);
     }
 

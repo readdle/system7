@@ -38,6 +38,9 @@
 		BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218882452C1DE00E878A8 /* configParserTests.m */; };
 		BE82188E2452C1ED00E878A8 /* S7Config.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218802452C16A00E878A8 /* S7Config.m */; };
 		BEBD16952455824400E81673 /* diffTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBD16942455824400E81673 /* diffTests.m */; };
+		BED36BE0246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BDF246D8A1700D6EB1C /* S7PostCheckoutHook.m */; };
+		BED36BE1246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BDF246D8A1700D6EB1C /* S7PostCheckoutHook.m */; };
+		BED36BE3246D8A4B00D6EB1C /* postCheckoutHookTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BE2246D8A4B00D6EB1C /* postCheckoutHookTests.m */; };
 		BED60E162458811A008EA752 /* Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60E152458811A008EA752 /* Utils.m */; };
 		BED60E172458811A008EA752 /* Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60E152458811A008EA752 /* Utils.m */; };
 		BED60FB5245AB8F9008EA752 /* S7AddCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FB4245AB8F9008EA752 /* S7AddCommand.m */; };
@@ -109,6 +112,9 @@
 		BE8218882452C1DE00E878A8 /* configParserTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = configParserTests.m; sourceTree = "<group>"; };
 		BE82188A2452C1DE00E878A8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BEBD16942455824400E81673 /* diffTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = diffTests.m; sourceTree = "<group>"; };
+		BED36BDE246D8A1700D6EB1C /* S7PostCheckoutHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PostCheckoutHook.h; sourceTree = "<group>"; };
+		BED36BDF246D8A1700D6EB1C /* S7PostCheckoutHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PostCheckoutHook.m; sourceTree = "<group>"; };
+		BED36BE2246D8A4B00D6EB1C /* postCheckoutHookTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = postCheckoutHookTests.m; sourceTree = "<group>"; };
 		BED60E152458811A008EA752 /* Utils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Utils.m; sourceTree = "<group>"; };
 		BED60E192458813F008EA752 /* Utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Utils.h; sourceTree = "<group>"; };
 		BED60F2E2459CE7D008EA752 /* S7Types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Types.h; sourceTree = "<group>"; };
@@ -163,6 +169,8 @@
 				BE50AA02246C2CEA00DBB618 /* S7Hook.h */,
 				BE50A9FF246C2CB800DBB618 /* S7PrePushHook.h */,
 				BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */,
+				BED36BDE246D8A1700D6EB1C /* S7PostCheckoutHook.h */,
+				BED36BDF246D8A1700D6EB1C /* S7PostCheckoutHook.m */,
 			);
 			path = Hooks;
 			sourceTree = "<group>";
@@ -213,6 +221,7 @@
 				BEBD16942455824400E81673 /* diffTests.m */,
 				BE3A29E424604C10004A2B31 /* statusTests.m */,
 				BE4BB439246159BA00545358 /* checkoutTests.m */,
+				BED36BE2246D8A4B00D6EB1C /* postCheckoutHookTests.m */,
 				BE4BB43D246166CE00545358 /* pushHookTests.m */,
 				BE172C4824642C3B00B57557 /* mergeTests.m */,
 				BEE1CD02246A9F6F00E2CC3B /* hashTests.m */,
@@ -369,6 +378,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BED60FB5245AB8F9008EA752 /* S7AddCommand.m in Sources */,
+				BED36BE0246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */,
 				BEE928A12456DA6500BD6B86 /* Git.m in Sources */,
 				BED60FC6245AFBEA008EA752 /* S7CheckoutCommand.m in Sources */,
 				BE3A29EF2460712F004A2B31 /* S7InitCommand.m in Sources */,
@@ -411,8 +421,10 @@
 				BE3A29E924604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE3891042461690500394CA8 /* TestUtils.m in Sources */,
 				BE172CD324657CA700B57557 /* S7Diff.m in Sources */,
+				BED36BE3246D8A4B00D6EB1C /* postCheckoutHookTests.m in Sources */,
 				BE1079BD2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */,
 				BE4BB43C24615CFD00545358 /* rebindTests.m in Sources */,
+				BED36BE1246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */,
 				BED60FBE245AC23E008EA752 /* S7Types.m in Sources */,
 				BE82188E2452C1ED00E878A8 /* S7Config.m in Sources */,
 				BE4BB43E246166CE00545358 /* pushHookTests.m in Sources */,

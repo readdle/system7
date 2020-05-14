@@ -61,10 +61,6 @@ BOOL isExactlyOneBitSetInNumber(uint32_t bits)
 int addLineToGitIgnore(NSString *lineToAppend) {
     static NSString *gitIgnoreFileName = @".gitignore";
 
-    if (NO == [lineToAppend hasSuffix:@"\n"]) {
-        lineToAppend = [lineToAppend stringByAppendingString:@"\n"];
-    }
-
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:gitIgnoreFileName isDirectory:&isDirectory]) {
         if (NO == [[NSFileManager defaultManager]
@@ -90,10 +86,19 @@ int addLineToGitIgnore(NSString *lineToAppend) {
         return 3;
     }
 
+    NSArray<NSString *> *existingGitIgnoreLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+    if (NSNotFound != [existingGitIgnoreLines indexOfObject:lineToAppend]) {
+        // do not add twice
+        return 0;
+    }
+
     if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
         [newContent appendString:@"\n"];
     }
 
+    if (NO == [lineToAppend hasSuffix:@"\n"]) {
+        lineToAppend = [lineToAppend stringByAppendingString:@"\n"];
+    }
     [newContent appendString:lineToAppend];
 
     if (NO == [newContent writeToFile:gitIgnoreFileName atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {

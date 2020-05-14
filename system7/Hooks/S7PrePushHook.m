@@ -66,26 +66,34 @@ NSString *const S7GitPrePushHookFileContents =
         return S7ExitCodeNotGitRepository;
     }
 
-    NSString *stdinStringContent = [self stdinContents];
+
+    NSString *stdinStringContent = [[self stdinContents] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (0 == stdinStringContent.length) {
         // user is playing with `git push` on an up-to-date repo
         return 0;
     }
 
+    fprintf(stdout, "s7 pre-push-hook start\n");
+
     NSArray<NSString *> *stdinLines = [stdinStringContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
     for (NSString *line in stdinLines) {
+        NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (0 == trimmedLine.length) {
+            continue;
+        }
+
         // Information about the commits which are being pushed is supplied as lines to
         // the standard input in the form:
         //
         //   <local ref> <local sha1> <remote ref> <remote sha1>
         //
-        NSArray<NSString *> *lineComponents = [line componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        NSArray<NSString *> *lineComponents = [trimmedLine componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
         if (4 != lineComponents.count) {
-            NSAssert(NO, @"git got mad?");
             fprintf(stderr,
                     "failed to parse git `pre-push` stdin contents. \nLine: '%s'. \nFull stdin contents: '%s'",
-                    line.fileSystemRepresentation,
-                    stdinStringContent.fileSystemRepresentation);
+                    [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding],
+                    [stdinStringContent cStringUsingEncoding:NSUTF8StringEncoding]);
+            NSAssert(NO, @"git got mad?");
 
             return S7ExitCodeGitOperationFailed;
         }
@@ -105,6 +113,8 @@ NSString *const S7GitPrePushHookFileContents =
             return exitStatus;
         }
     }
+
+    fprintf(stdout, "s7 pre-push-hook complete\n\n");
 
     return 0;
 }
