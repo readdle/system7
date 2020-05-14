@@ -14,17 +14,17 @@
 - (instancetype)initWithPath:(NSString *)path
                          url:(NSString *)url
                     revision:(NSString *)revision
-                      branch:(nullable NSString *)branch
+                      branch:(NSString *)branch
 {
     self = [super init];
     if (nil == self) {
         return nil;
     }
 
-    NSParameterAssert(path);
-    NSParameterAssert(url);
-    NSParameterAssert(revision);
-    NSParameterAssert(nil == branch || branch.length > 0);
+    NSParameterAssert(path.length > 0);
+    NSParameterAssert(url.length > 0);
+    NSParameterAssert(revision.length > 0);
+    NSParameterAssert(branch.length > 0);
 
     _path = path;
     _url = url;
@@ -43,18 +43,10 @@
 
     S7SubrepoDescription *other = (S7SubrepoDescription *)object;
 
-    if (self.branch && other.branch) {
-        if (NO == [self.branch isEqualToString:other.branch]) {
-            return NO;
-        }
-    }
-    else if (NO == (nil == self.branch && nil == other.branch)) {
-        return NO;
-    }
-
     return [self.path isEqualToString:other.path] &&
            [self.url isEqualToString:other.url] &&
-           [self.revision isEqualToString:other.revision];
+           [self.revision isEqualToString:other.revision] &&
+           [self.branch isEqualToString:other.branch];
 }
 
 - (NSUInteger)hash {
@@ -64,19 +56,11 @@
 #pragma mark -
 
 - (NSString *)stringRepresentation {
-    NSString *branchComponent = @"";
-    if (self.branch) {
-        branchComponent = [NSString stringWithFormat:@", %@", self.branch];
-    }
-    return [NSString stringWithFormat:@"%@ = { %@, %@%@ }", self.path, self.url, self.revision, branchComponent ];
+    return [NSString stringWithFormat:@"%@ = { %@, %@, %@ }", self.path, self.url, self.revision, self.branch ];
 }
 
 - (NSString *)humanReadableRevisionAndBranchState {
-    NSString *branchDescription = @"";
-    if (self.branch) {
-        branchDescription = [NSString stringWithFormat:@" (%@)", self.branch];
-    }
-    return [NSString stringWithFormat:@"'%@'%@", self.revision, branchDescription];
+    return [NSString stringWithFormat:@"'%@' (%@)", self.revision, self.branch];
 }
 
 

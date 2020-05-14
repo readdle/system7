@@ -18,7 +18,7 @@
         return nil;
     }
 
-    self = [super initWithPath:path url:@"CONFLICT" revision:@"CONFLICT" branch:nil];
+    self = [super initWithPath:path url:@"CONFLICT" revision:@"CONFLICT" branch:@"CONFLICT"];
     if (nil == self) {
         return nil;
     }

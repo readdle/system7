@@ -182,7 +182,7 @@
                                                      initWithPath:@"Dependencies/Bare"
                                                      url:self.env.githubTestBareRepo.absolutePath
                                                      revision:expectedInitialRevision
-                                                     branch:nil];
+                                                     branch:@"master"];
         XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 

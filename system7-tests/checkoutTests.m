@@ -302,7 +302,7 @@
         [pasteysReaddleLibSubrepo getCurrentBranch:&branchName];
         XCTAssertEqualObjects(branchName, @"master");
 
-        XCTAssertTrue([pasteysReaddleLibSubrepo isRevisionAvailable:readdleLibRevisionOnMasterPushedSeparately]);
+        XCTAssertTrue([pasteysReaddleLibSubrepo isRevisionAvailableLocally:readdleLibRevisionOnMasterPushedSeparately]);
 
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 

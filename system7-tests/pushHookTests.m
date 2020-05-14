@@ -105,7 +105,7 @@
 
         XCTAssertEqual(S7ExitCodeNoCommittedS7Config, [command runWithArguments:@[]]);
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevision];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertFalse(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
     }];
 }
@@ -140,7 +140,7 @@
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevisionNotExpectedToPush];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevisionNotExpectedToPush];
         XCTAssertFalse(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
     }];
 }
@@ -180,7 +180,7 @@
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevision];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertFalse(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
     }];
 }
@@ -221,7 +221,7 @@
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevision];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertTrue(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
     }];
 }
@@ -261,7 +261,7 @@
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevision];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertTrue(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
     }];
 }
@@ -331,7 +331,7 @@
                                      pasteysLastPushedRD2Revision];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevision];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertTrue(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
 
         // actual rd2 push fails
@@ -380,10 +380,10 @@
                                      revisionAfterSubreposAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevision];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertFalse(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
 
-        const BOOL isPDFKitPushed = [self.env.githubRDPDFKitRepo isRevisionAvailable:pdfKitRevision];
+        const BOOL isPDFKitPushed = [self.env.githubRDPDFKitRepo isRevisionAvailableLocally:pdfKitRevision];
         XCTAssertTrue(isPDFKitPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
     }];
 }
@@ -409,7 +409,7 @@
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailable:readdleLibRevision];
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertTrue(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
     }];
 }

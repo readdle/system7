@@ -18,12 +18,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSString *path;
 @property (nonatomic, readonly) NSString *url;
 @property (nonatomic, readonly) NSString *revision;
-@property (nonatomic, readonly, nullable) NSString *branch;
+@property (nonatomic, readonly) NSString *branch;
 
 - (instancetype)initWithPath:(NSString *)path
                          url:(NSString *)url
                     revision:(NSString *)revision
-                      branch:(nullable NSString *)branch;
+                      branch:(NSString *)branch;
 
 - (NSString *)stringRepresentation;
 - (NSString *)humanReadableRevisionAndBranchState;

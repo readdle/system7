@@ -99,14 +99,14 @@
         return S7ExitCodeNotGitRepository;
     }
 
-    if (NO == [repo isRevisionAvailable:fromRevision] && NO == [fromRevision isEqualToString:[GitRepository nullRevision]]) {
+    if (NO == [repo isRevisionAvailableLocally:fromRevision] && NO == [fromRevision isEqualToString:[GitRepository nullRevision]]) {
         fprintf(stderr,
                 "FROM_REV %s is not available in this repository\n",
                 [fromRevision cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
 
-    if (NO == [repo isRevisionAvailable:toRevision]) {
+    if (NO == [repo isRevisionAvailableLocally:toRevision]) {
         fprintf(stderr,
                 "TO_REV %s is not available in this repository\n",
                 [toRevision cStringUsingEncoding:NSUTF8StringEncoding]);
@@ -303,7 +303,7 @@
             continue;
         }
 
-        if (NO == [subrepoGit isRevisionAvailable:subrepoDesc.revision]) {
+        if (NO == [subrepoGit isRevisionAvailableLocally:subrepoDesc.revision]) {
             fprintf(stdout,
                     "fetching '%s'\n",
                     [subrepoDesc.path fileSystemRepresentation]);
@@ -313,7 +313,7 @@
             }
         }
 
-        if (NO == [subrepoGit isRevisionAvailable:subrepoDesc.revision]) {
+        if (NO == [subrepoGit isRevisionAvailableLocally:subrepoDesc.revision]) {
             fprintf(stderr,
                     "revision '%s' does not exist in '%s'\n",
                     [subrepoDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
@@ -322,11 +322,9 @@
             return S7ExitCodeInvalidSubrepoRevision;
         }
 
-        if (subrepoDesc.branch) {
-            if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch]) {
-                // todo: log
-                return S7ExitCodeGitOperationFailed;
-            }
+        if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch]) {
+            // todo: log
+            return S7ExitCodeGitOperationFailed;
         }
 
         NSString *currentBranchHeadRevision = nil;
@@ -336,14 +334,16 @@
         }
 
         if (NO == [subrepoDesc.revision isEqualToString:currentBranchHeadRevision]) {
-            if (nil == subrepoDesc.branch) {
-                fprintf(stdout,
-                        "checking out detached HEAD in subrepository '%s'\n",
-                        [subrepoDesc.path fileSystemRepresentation]);
-
-                fprintf(stdout,
-                        "check out a git branch if you intend to make changes\n");
-            }
+            // todo: nil branch is not possible any more, but we are 'loosing' branch HEAD here
+            // add safety here
+//            if (nil == subrepoDesc.branch) {
+//                fprintf(stdout,
+//                        "checking out detached HEAD in subrepository '%s'\n",
+//                        [subrepoDesc.path fileSystemRepresentation]);
+//
+//                fprintf(stdout,
+//                        "check out a git branch if you intend to make changes\n");
+//            }
 
             // I really hope that `reset` is always a good way to checkout a revision considering we are already
             // at the right branch.

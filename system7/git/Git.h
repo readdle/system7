@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, strong) NSString *absolutePath;
 
 - (BOOL)isEmptyRepo;
+- (BOOL)isBareRepo;
 
 - (int)fetch;
 - (int)pull;
@@ -45,7 +46,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch;
 
-- (BOOL)isRevisionAvailable:(NSString *)revision;
+- (BOOL)isRevisionAvailableLocally:(NSString *)revision;
+- (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName;
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant;
 
 - (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;

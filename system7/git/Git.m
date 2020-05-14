@@ -327,13 +327,29 @@ static NSString *gitExecutablePath = nil;
     return result;
 }
 
-- (BOOL)isRevisionAvailable:(NSString *)revision {
+- (BOOL)isRevisionAvailableLocally:(NSString *)revision {
     const int exitStatus = [self.class
                             runGitInRepoAtPath:self.absolutePath
                             withArguments:@[ @"cat-file", @"-e", revision ]
                             stdOutOutput:NULL
                             stdErrOutput:NULL];
     return 0 == exitStatus;
+}
+
+- (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName {
+    NSString *remoteBranchName = branchName;
+    if (NO == [remoteBranchName hasPrefix:@"origin/"]) {
+        remoteBranchName = [NSString stringWithFormat:@"origin/%@", branchName];
+    }
+
+    NSString *stdOutOutput = nil;
+    const int exitStatus = [self.class
+                            runGitInRepoAtPath:self.absolutePath
+                            withArguments:@[ @"branch", @"-r", @"--contains", revision, remoteBranchName ]
+                            stdOutOutput:&stdOutOutput
+                            stdErrOutput:NULL];
+    stdOutOutput = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    return 0 == exitStatus && [stdOutOutput isEqualToString:remoteBranchName];
 }
 
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant {

@@ -187,6 +187,11 @@
 
     NSCAssert(gitSubrepo, @"");
 
+    if ([gitSubrepo isBareRepo]) {
+        fprintf(stderr, "adding bare git repo as a subrepo is not supported. What do you plan to develop in it?\n");
+        return S7ExitCodeInvalidArgument;
+    }
+
     if (branch) {
         const int checkoutResult = [gitSubrepo checkoutRemoteTrackingBranch:branch];
         if (0 != checkoutResult) {
@@ -198,6 +203,17 @@
         if (0 != gitExitStatus) {
             // todo: log
             return S7ExitCodeGitOperationFailed;
+        }
+
+
+        if (nil == branch) {
+            if ([gitSubrepo isEmptyRepo]) {
+                branch = @"master"; // ?
+            }
+            else {
+                // todo: log
+                return S7ExitCodeGitOperationFailed;
+            }
         }
     }
 

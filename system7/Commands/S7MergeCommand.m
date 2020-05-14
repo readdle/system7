@@ -194,21 +194,21 @@ NS_ASSUME_NONNULL_BEGIN
         return S7ExitCodeNotGitRepository;
     }
 
-    if (NO == [repo isRevisionAvailable:baseRevision] && NO == [baseRevision isEqualToString:[GitRepository nullRevision]]) {
+    if (NO == [repo isRevisionAvailableLocally:baseRevision] && NO == [baseRevision isEqualToString:[GitRepository nullRevision]]) {
         fprintf(stderr,
                 "BASE_REV %s is not available in this repository\n",
                 [baseRevision cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
 
-    if (NO == [repo isRevisionAvailable:ourRevision]) {
+    if (NO == [repo isRevisionAvailableLocally:ourRevision]) {
         fprintf(stderr,
                 "OUR_REV %s is not available in this repository\n",
                 [ourRevision cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
 
-    if (NO == [repo isRevisionAvailable:theirRevision]) {
+    if (NO == [repo isRevisionAvailableLocally:theirRevision]) {
         fprintf(stderr,
                 "THEIR_REV %s is not available in this repository\n",
                 [theirRevision cStringUsingEncoding:NSUTF8StringEncoding]);
@@ -410,7 +410,7 @@ typedef enum {
     NSString *subrepoPath = conflictToMerge.path;
     NSString *theirRevision = conflictToMerge.theirVersion.revision;
 
-    if (NO == [subrepoGit isRevisionAvailable:theirRevision]) {
+    if (NO == [subrepoGit isRevisionAvailableLocally:theirRevision]) {
         fprintf(stdout,
                 "fetching '%s'\n",
                 [subrepoPath fileSystemRepresentation]);
@@ -420,7 +420,7 @@ typedef enum {
             return conflictToMerge;
         }
 
-        if (NO == [subrepoGit isRevisionAvailable:theirRevision]) {
+        if (NO == [subrepoGit isRevisionAvailableLocally:theirRevision]) {
             fprintf(stderr,
                     "revision '%s' does not exist in '%s'\n",
                     [theirRevision cStringUsingEncoding:NSUTF8StringEncoding],

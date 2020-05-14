@@ -167,14 +167,21 @@ NSString *const S7GitPrePushHookFileContents =
 
     for (S7SubrepoDescription *subrepoDesc in subreposToPush) {
         fprintf(stdout,
-                " pushing '%s'\n",
-                subrepoDesc.path.fileSystemRepresentation);
+                " checking '%s' %s\n",
+                subrepoDesc.path.fileSystemRepresentation,
+                subrepoDesc.humanReadableRevisionAndBranchState.fileSystemRepresentation);
 
         GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoDesc.path];
         if (nil == subrepoGit) {
             fprintf(stderr, "abort: '%s' is not a git repo\n", subrepoDesc.path.fileSystemRepresentation);
             return S7ExitCodeSubrepoIsNotGitRepository;
         }
+
+        if ([subrepoGit isRevision:subrepoDesc.revision knownAtRemoteBranch:subrepoDesc.branch]) {
+            continue;
+        }
+
+        fprintf(stdout, " pushing...\n");
 
         // if subrepo is a s7 repo itself, pre-push hook in it will do the rest for us
         const int gitExitStatus = [subrepoGit pushAll];
