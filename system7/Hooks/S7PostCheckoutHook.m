@@ -10,12 +10,16 @@
 
 #import "S7Diff.h"
 
-NSString *const S7GitPostCheckoutHookFilePath = @".git/hooks/post-checkout";
-NSString *const S7GitPostCheckoutHookFileContents =
- @"#!/bin/sh\n"
-  "s7 post-checkout-hook \"$@\"";
-
 @implementation S7PostCheckoutHook
+
++ (NSString *)gitHookName {
+    return @"post-checkout";
+}
+
++ (NSString *)hookFileContents {
+    return @"#!/bin/sh\n"
+            "s7 post-checkout-hook \"$@\"";
+}
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     BOOL isDirectory = NO;
@@ -42,24 +46,16 @@ NSString *const S7GitPostCheckoutHookFileContents =
     BOOL branchSwitchFlag = [arguments[2] isEqualToString:@"1"];
 
     if (NO == branchSwitchFlag) {
-        NSError *error = nil;
-        NSString *lastSavedS7ConfigHash = [[NSString alloc]
-                                           initWithContentsOfFile:S7HashFileName
-                                           encoding:NSUTF8StringEncoding
-                                           error:&error];
-        if (error) {
-            fprintf(stderr, "s7: failed to read %s\n", S7HashFileName.fileSystemRepresentation);
-            return S7ExitCodeFileOperationFailed;
-        }
+        S7Config *lastSavedS7Config = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
 
         // we don't know what file did user actually checkout (thank you, Linus)
         // if that's an unrelated file, then we don't care,
         // but if that's our .s7substate config, then we do care.
         // The only way to find out if config content has been changed,
-        // is to compare actual config sha1 to the one saved in S7HashFileName
+        // is to compare actual config sha1 to the one saved in S7ControlFileName
         //
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
-        if ([actualConfig.sha1 isEqualToString:lastSavedS7ConfigHash]) {
+        if ([actualConfig isEqual:lastSavedS7Config]) {
             return 0;
         }
     }
@@ -126,12 +122,10 @@ NSString *const S7GitPostCheckoutHookFileContents =
         return checkoutExitStatus;
     }
 
-    NSError *error = nil;
-    if (NO == [toConfig.sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+    if (0 != [toConfig saveToFileAtPath:S7ControlFileName]) {
         fprintf(stderr,
-                "failed to save %s to disk. Error: %s\n",
-                S7HashFileName.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+                "failed to save %s to disk.\n",
+                S7ControlFileName.fileSystemRepresentation);
 
         return S7ExitCodeFileOperationFailed;
     }

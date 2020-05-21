@@ -188,12 +188,10 @@
         return checkoutExitStatus;
     }
 
-    NSError *error = nil;
-    if (NO == [toConfig.sha1 writeToFile:S7HashFileName atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+    if (0 != [toConfig saveToFileAtPath:S7ControlFileName]) {
         fprintf(stderr,
-                "failed to save %s to disk. Error: %s\n",
-                S7HashFileName.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+                "failed to save %s to disk.\n",
+                S7ControlFileName.fileSystemRepresentation);
 
         return S7ExitCodeFileOperationFailed;
     }

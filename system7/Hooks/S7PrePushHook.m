@@ -10,11 +10,6 @@
 
 #import "S7Diff.h"
 
-NSString *const S7GitPrePushHookFilePath = @".git/hooks/pre-push";
-NSString *const S7GitPrePushHookFileContents =
- @"#!/bin/sh\n"
-  "s7 pre-push-hook \"$@\" <&0";
-
 @implementation S7PrePushHook
 
 // The command called from git `pre-push` hook.
@@ -39,6 +34,15 @@ NSString *const S7GitPrePushHookFileContents =
 //
 
 @synthesize testStdinContents;
+
++ (NSString *)gitHookName {
+    return @"pre-push";
+}
+
++ (NSString *)hookFileContents {
+    return @"#!/bin/sh\n"
+            "s7 pre-push-hook \"$@\" <&0";
+}
 
 - (NSString *)stdinContents {
     if (self.testStdinContents) {

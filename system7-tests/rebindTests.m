@@ -110,13 +110,9 @@
                                                     branch:@"master"];
         XCTAssertEqualObjects(expectedPDFKitDesc, newConfig.pathToDescriptionMap[pdfKitSubrepoPath]);
 
-        BOOL isDirectory = NO;
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
-        XCTAssertFalse(isDirectory);
-
-        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
-        XCTAssert(hashFileContents.length > 0);
-        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(newConfig, controlConfig);
     });
 }
 
@@ -154,13 +150,9 @@
                                                     branch:@"master"];
         XCTAssertEqualObjects(expectedPDFKitDesc, newConfig.pathToDescriptionMap[pdfKitSubrepoPath]);
 
-        BOOL isDirectory = NO;
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
-        XCTAssertFalse(isDirectory);
-
-        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
-        XCTAssert(hashFileContents.length > 0);
-        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(newConfig, controlConfig);
     });
 }
 
@@ -228,13 +220,9 @@
                                                      branch:@"master"];
         XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
 
-        BOOL isDirectory = NO;
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
-        XCTAssertFalse(isDirectory);
-
-        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
-        XCTAssert(hashFileContents.length > 0);
-        XCTAssertEqualObjects(newConfig.sha1, hashFileContents);
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(newConfig, controlConfig);
     }];
 }
 

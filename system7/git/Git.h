@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)fetch;
 - (int)pull;
 - (int)merge;
-- (int)mergeWithCommit:(NSString *)commit;
+- (int)mergeWith:(NSString *)commit;
 
 - (int)pushAll;
 - (int)pushCurrentBranch;
@@ -39,16 +39,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)checkoutExistingLocalBranch:(NSString *)branchName;
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName;
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName;
+- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch;
 
 + (NSString *)nullRevision;
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision;
 - (int)getLatestRemoteRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision atBranch:(NSString *)branchName;
-
-- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch;
-
 - (BOOL)isRevisionAvailableLocally:(NSString *)revision;
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName;
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant;
+- (BOOL)isMergeRevision:(NSString *)revision;
 
 - (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;
 

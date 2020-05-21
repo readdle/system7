@@ -10,11 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString *const S7GitPrePushHookFilePath;
-extern NSString *const S7GitPrePushHookFileContents;
-
 @interface S7PrePushHook : NSObject <S7Hook>
-
 
 @end
 

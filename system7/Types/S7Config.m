@@ -6,8 +6,6 @@
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import <CommonCrypto/CommonCrypto.h>
-
 #import "S7Config.h"
 #import "S7Types.h"
 
@@ -205,28 +203,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSString *)description {
     return [NSString stringWithFormat:@"<S7Config: %p. Subrepos = \n%@\n>", self, self.subrepoDescriptions];
-}
-
-- (NSString *)sha1 {
-    CC_SHA1_CTX SHA1Context;
-    CC_SHA1_Init(&SHA1Context);
-
-    for (S7SubrepoDescription *subrepoDesc in self.subrepoDescriptions) {
-        NSData *subrepoDescData = [subrepoDesc.stringRepresentation dataUsingEncoding:NSUTF8StringEncoding];
-        NSAssert(subrepoDescData.length > 0, @"");
-        CC_SHA1_Update(&SHA1Context, subrepoDescData.bytes, (CC_LONG)subrepoDescData.length);
-    }
-
-    unsigned char digest[CC_SHA1_DIGEST_LENGTH];
-    CC_SHA1_Final(digest, &SHA1Context);
-
-    NSMutableString *output = [NSMutableString stringWithCapacity:CC_SHA1_DIGEST_LENGTH * 2];
-
-    for (int i = 0; i < CC_SHA1_DIGEST_LENGTH; ++i) {
-        [output appendFormat:@"%02x", digest[i]];
-    }
-
-    return output;
 }
 
 #pragma mark -

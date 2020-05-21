@@ -121,6 +121,7 @@ int s7checkout(NSString *fromRevision, NSString *toRevision) {
 
 
 NSString * commit(GitRepository *repo, NSString *fileName, NSString * _Nullable fileContents, NSString *commitMessage) {
+    NSCParameterAssert(repo);
     NSCParameterAssert(0 == [repo createFile:fileName withContents:fileContents]);
     NSCParameterAssert(0 == [repo add:@[ fileName ]]);
     NSCParameterAssert(0 == [repo commitWithMessage:commitMessage]);

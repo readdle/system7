@@ -9,4 +9,4 @@
 #import "S7Types.h"
 
 NSString * const S7ConfigFileName = @".s7substate";
-NSString * const S7HashFileName = @".s7hash";
+NSString * const S7ControlFileName = @".s7control";

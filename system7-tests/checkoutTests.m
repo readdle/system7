@@ -306,13 +306,9 @@
 
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
-        BOOL isDirectory = NO;
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
-        XCTAssertFalse(isDirectory);
-
-        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
-        XCTAssert(hashFileContents.length > 0);
-        XCTAssertEqualObjects(actualConfig.sha1, hashFileContents);
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig);
     }];
 }
 
@@ -486,13 +482,9 @@
 
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
-        BOOL isDirectory = NO;
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
-        XCTAssertFalse(isDirectory);
-
-        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
-        XCTAssert(hashFileContents.length > 0);
-        XCTAssertEqualObjects(actualConfig.sha1, hashFileContents);
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig);
 
 
         [repo checkoutRemoteTrackingBranch:@"release/documents-7.1.4"];
@@ -521,12 +513,9 @@
 
         actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
-        XCTAssertFalse(isDirectory);
-
-        hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
-        XCTAssert(hashFileContents.length > 0);
-        XCTAssertEqualObjects(actualConfig.sha1, hashFileContents);
+        controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig);
     }];
 }
 

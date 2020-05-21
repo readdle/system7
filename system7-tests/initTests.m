@@ -12,6 +12,8 @@
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
+#import "S7PostCommitHook.h"
+#import "S7PostMergeHook.h"
 
 #import "TestReposEnvironment.h"
 
@@ -45,7 +47,7 @@
         XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]);
         XCTAssertFalse(isDirectory);
 
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName isDirectory:&isDirectory]);
         XCTAssertFalse(isDirectory);
 
         XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@".gitignore" isDirectory:&isDirectory]);
@@ -53,59 +55,81 @@
 
         NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
         XCTAssertTrue(gitignoreContents.length > 0);
-        XCTAssertNotEqual([gitignoreContents rangeOfString:S7HashFileName].location, NSNotFound);
-        XCTAssertEqual([gitignoreContents rangeOfString:S7HashFileName options:NSBackwardsSearch].location,
-                       [gitignoreContents rangeOfString:S7HashFileName].location,
+        XCTAssertNotEqual([gitignoreContents rangeOfString:S7ControlFileName].location, NSNotFound);
+        XCTAssertEqual([gitignoreContents rangeOfString:S7ControlFileName options:NSBackwardsSearch].location,
+                       [gitignoreContents rangeOfString:S7ControlFileName].location,
                        @"must be added to .gitignore just once");
 
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7HashFileName isDirectory:&isDirectory]);
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName isDirectory:&isDirectory]);
         XCTAssertFalse(isDirectory);
 
         S7Config *config = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertNotNil(config);
-        NSString *hashFileContents = [NSString stringWithContentsOfFile:S7HashFileName encoding:NSUTF8StringEncoding error:nil];
-        XCTAssert(hashFileContents.length > 0);
-        XCTAssertEqualObjects(config.sha1, hashFileContents);
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(config, controlConfig);
 
-        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:S7GitPrePushHookFilePath isDirectory:&isDirectory]);
-        XCTAssertFalse(isDirectory);
+        NSSet<Class<S7Hook>> *hookClasses = [NSSet setWithArray:@[
+            [S7PrePushHook class],
+            [S7PostCheckoutHook class],
+            [S7PostCommitHook class],
+            [S7PostMergeHook class],
+        ]];
 
-        NSDictionary<NSString *, NSString *> *expectedHooksAndTheirContents =
-            @{
-                S7GitPrePushHookFilePath : S7GitPrePushHookFileContents,
-                S7GitPostCheckoutHookFilePath : S7GitPostCheckoutHookFileContents,
-            };
-
-        [expectedHooksAndTheirContents
-         enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSString * _Nonnull obj, BOOL * _Nonnull stop) {
+        for (Class<S7Hook> hookClass in hookClasses) {
             NSString *actualHookContents = [[NSString alloc]
-                                            initWithData:[NSFileManager.defaultManager contentsAtPath:key]
+                                            initWithData:[NSFileManager.defaultManager contentsAtPath:[@".git/hooks" stringByAppendingPathComponent:[hookClass gitHookName]]]
                                             encoding:NSUTF8StringEncoding];
-            XCTAssertEqualObjects(actualHookContents, obj);
-         }];
+            XCTAssertEqualObjects(actualHookContents, [hookClass hookFileContents]);
+        }
+
+        NSString *configContents = [[NSString alloc]
+                                    initWithData:[NSFileManager.defaultManager contentsAtPath:@".git/config"]
+                                    encoding:NSUTF8StringEncoding];
+        XCTAssertTrue([configContents containsString:@"[merge \"s7\"]"]);
     });
 }
 
 - (void)testOnAlreadyInitializedRepo {
-    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         S7InitCommand *command = [S7InitCommand new];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+        s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertNotNil(actualConfig);
+
 
         command = [S7InitCommand new];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
         NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
         XCTAssertTrue(gitignoreContents.length > 0);
-        XCTAssertNotEqual([gitignoreContents rangeOfString:@".s7hash"].location, NSNotFound);
-        XCTAssertEqual([gitignoreContents rangeOfString:@".s7hash" options:NSBackwardsSearch].location,
-                       [gitignoreContents rangeOfString:@".s7hash"].location,
+        XCTAssertNotEqual([gitignoreContents rangeOfString:@".s7control"].location, NSNotFound);
+        XCTAssertEqual([gitignoreContents rangeOfString:@".s7control" options:NSBackwardsSearch].location,
+                       [gitignoreContents rangeOfString:@".s7control"].location,
                        @"must be added to .gitignore just once");
-    });
+
+        NSString *configContents = [[NSString alloc]
+                                    initWithData:[NSFileManager.defaultManager contentsAtPath:@".git/config"]
+                                    encoding:NSUTF8StringEncoding];
+        XCTAssertTrue([configContents containsString:@"[merge \"s7\"]"]);
+        XCTAssertEqual([configContents rangeOfString:@"[merge \"s7\"]" options:NSBackwardsSearch].location,
+                       [configContents rangeOfString:@"[merge \"s7\"]"].location,
+                       @"must be added to .git/config just once");
+
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig); // re-init must not overwrite existing control file contents
+    }];
 }
 
 - (void)testToInitOnRepoThatHasCustomGitHooks {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        [@"дулі-дулі, дулі вам!" writeToFile:S7GitPrePushHookFilePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+        [@"дулі-дулі, дулі вам!" writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
         S7InitCommand *command = [S7InitCommand new];
         XCTAssertEqual(S7ExitCodeFileOperationFailed, [command runWithArguments:@[]]);

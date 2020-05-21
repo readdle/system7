@@ -373,6 +373,25 @@ static NSString *gitExecutablePath = nil;
     return [possibleAncestor isEqualToString:mergeBaseRevision];
 }
 
+- (BOOL)isMergeRevision:(NSString *)revision {
+    NSParameterAssert(40 == revision.length);
+
+    // does it have two parents?
+    // git show -s --format="%H" REV^2
+    NSString *query = [NSString stringWithFormat:@"%@^2", revision];
+    NSString *devNull = nil;
+    const int exitStatus = [self.class
+                            runGitInRepoAtPath:self.absolutePath
+                            withArguments:@[ @"show", @"-s", @"--format='%H'", query ]
+                            stdOutOutput:&devNull
+                            stdErrOutput:&devNull];
+    if (0 != exitStatus) {
+        return NO;
+    }
+
+    return YES;
+}
+
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision {
     NSString *stdOutOutput = nil;
     NSString *stdErrOutput = nil;
@@ -487,7 +506,7 @@ static NSString *gitExecutablePath = nil;
     return exitStatus;
 }
 
-- (int)mergeWithCommit:(NSString *)commit {
+- (int)mergeWith:(NSString *)commit {
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:@[ @"merge", @"--no-edit", commit ]
                              stdOutOutput:NULL

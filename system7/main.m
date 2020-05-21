@@ -8,13 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import "S7Config.h"
-#import "Git.h"
-#import "Utils.h"
 #import "S7Types.h"
 
 #import "S7InitCommand.h"
-#import "S7HashCommand.h"
 #import "S7AddCommand.h"
 #import "S7RemoveCommand.h"
 #import "S7RebindCommand.h"
@@ -24,14 +20,21 @@
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
+#import "S7PostCommitHook.h"
+#import "S7PostMergeHook.h"
 
-// why separate command? what alternatives I considered?
+#import "S7ConfigMergeDriver.h"
+
+// Why separate command? What alternatives did I consider?
+// 0. — git submodules – also known as sobmodules – sadly well known piece of crap
+//    — git-subtree and git-subrepo – both seemed promissing until I found out
+//      that both save subrepo's history in... parent (!) repo. What do they drink?
 // 1. no bash scripts – bash script for such tasks is always a big pain in the ass
 // 2. no python – I could have written in python, but I just know C better
 // 3. I looked for some plugin system in git – didn't find one
-// 3. considered forking git itself. First, I had pre-vomit hiccups at the very thought about it.
+// 4. considered forking git itself. First, I had pre-vomit hiccups at the very thought about it.
 //    Second, too many GUIs I know, are bunding their own version of git, so my fork will be useless.
-// 4. thus I stopped at separate command + few git hooks
+// 5. thus I stopped at separate command + few git hooks
 //
 // I was thinking of the way to do all subrepos managing stuff almost automatic as it's done
 // in HG.
@@ -67,46 +70,18 @@
 //    |/
 //    * 4ebe9c8 <doesn't matter>
 //    ~
-
-
-
-
-
-// s7 checkout – runs automatically from `post-checkout` git hook
-
-// `git reset` doesn't call any hooks, so ... well... fuck yourself – call `s7 checkout` manually. With what revisions?
-// How do I know?
-
-// post-checkout
-// в принципе, нас интерисует ситуация, когда
-//#!/bin/sh
 //
-//echo "🔥 post-checkout start"
+// A note about `git reset`. This beast doesn't call any hooks, so there's no chance for s7 to update
+// subrepos automatically. The only way to help user I came up with is to save a copy of .s7substate into
+// not tracked file .s7control. If actual config is not equal to the one saved in .s7control, then
+// we can throw a build error from our project (like cocoapods do when pods are not in sync).
+// This trick is also used by the `post-checkout` hook to understand if user updated an unrelated file
+// or our precious .s7substate.
 //
-//echo " previous revision = $1"
-//echo " new revision = $2"
-//if [ 1 -eq $3 ]; then
-//  echo " branch checkout"
-//else
-//  echo " 'single' file checkout" # see no way to find out which exactly file is checked out
-//fi
-//
-//echo " pwd: `pwd`" # always git repo root
-//
-//git branch # actual branch or a detached HEAD
-//
-//env
-// # GIT_PREFIX=Dependencies/ – actual repo dir where checkout was called. Empty if from root
-//
-//echo "✅ post-checkout done"
 
 
-// pre-merge-commit
-// припизденная хуйня, которую можно обойти
-// надо пробовать подвязаться на .s7substate .gitattributes merge-tool
 
-// in .gitattributes:
-//.s7substate merge=s7
+
 
 //🔥 start merge of s7substate
 //start args
@@ -131,9 +106,12 @@
 // "If you wish to affect only a single repository (i.e., to assign attributes to files that are particular to one user’s workflow for that repository), then attributes should be placed in the $GIT_DIR/info/attributes file. Attributes which should be version-controlled and distributed to other repositories (i.e., attributes of interest to all users) should go into .gitattributes files. Attributes that should affect all repositories for a single user should be placed in a file specified by the core.attributesFile configuration option (see git-config[1]). Its default value is $XDG_CONFIG_HOME/git/attributes. If $XDG_CONFIG_HOME is either not set or empty, $HOME/.config/git/attributes is used instead. Attributes for all users on a system should be placed in the $(prefix)/etc/gitattributes file."
 
 // in .git/config (or in global config, which would be better)
-// [merge "s7"]
-//      name = A custom merge driver used to resolve conflicts in .s7substate files
-//      driver = merge_s7.sh custom argument %O %A %B // change to `s7 merge-config`
+//[merge "s7"]
+//  name = A custom merge driver used to resolve conflicts in .s7substate files
+//  driver = merge_s7.sh custom argument %O %A %B // change to `s7 merge-config`
+
+// echo ".s7substate merge=s7" > .gitattributes
+
 
 // получается, что merge-driver – недостаточно, т.к. он вызывается только если файл надо мержить, т.к. он поменялся
 // с двух сторон. Довольно частый случай, что файл поменялся лишь с одной стороны. Тогда нужно привязываться к хуку.
@@ -142,9 +120,7 @@
 // prepare-commit-msg – всегда вызывается. Есть флаг "merge"
 
 
-//
-// как автоматом обновить .gitsubstate ? как намекнуть пользователю, что у него поменяны сабрепы?
-//
+
 //
 // Сценарии:
 //
@@ -192,9 +168,6 @@
 // 11. все это дело должно работать на Jenkins-е без всяких шаманств
 
 
-// add custom merge-tool for .s7config file, so that git would call `s7 merge` if this file needs merging
-
-
 // git reset – это крайне стремная штука – если ревизии не запычканы, то отыскать их можно будет только ref-log-ом,
 // и то – надо помнить/знать что искать. Надо тут добавить проверок. Если пользователь откатывается на более раннюю
 // ревизию, то надо проверить, чтобы на текущую ревизию указывало хоть что-то (кроме локальной ветки, которую мы откатим),
@@ -220,7 +193,6 @@ void printHelp() {
     puts("  merge     incorporate changes to subrepos from two revisions");
     puts("");
     puts("  status    show changed subrepos");
-    puts("  hash      show the hash of the s7 config last saved by any s7 command");
     puts("");
     puts("");
     puts("FAQ.");
@@ -242,9 +214,7 @@ Class commandClassByName(NSString *commandName) {
             [S7RemoveCommand class],
             [S7RebindCommand class],
             [S7CheckoutCommand class],
-            [S7MergeCommand class],
             [S7StatusCommand class],
-            [S7HashCommand class],
         ]];
 
         for (Class<S7Command> commandClass in commandClasses) {
@@ -292,6 +262,30 @@ Class commandClassByName(NSString *commandName) {
     }
 }
 
+Class hookClassByName(NSString *hookName) {
+    static NSMutableDictionary<NSString *, Class> *gitHookNameToClass = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        gitHookNameToClass = [NSMutableDictionary new];
+
+        NSSet<Class<S7Hook>> *hookClasses = [NSSet setWithArray:@[
+            [S7PrePushHook class],
+            [S7PostCheckoutHook class],
+            [S7PostCommitHook class],
+            [S7PostMergeHook class],
+        ]];
+
+        for (Class<S7Hook> hookClass in hookClasses) {
+            NSString *gitHookName = [hookClass gitHookName];
+            NSCAssert(nil == gitHookNameToClass[gitHookName], @"duplicate name?");
+
+            gitHookNameToClass[gitHookName] = hookClass;
+        }
+    });
+
+    return gitHookNameToClass[hookName];
+}
+
 int helpCommand(int argc, const char *argv[]) {
     if (argc < 1) {
         printHelp();
@@ -320,7 +314,7 @@ int main(int argc, const char * argv[]) {
 
     if (argc < 2) {
         printHelp();
-        return 1;
+        return S7ExitCodeUnknownCommand;
     }
 
     NSString *commandName = [NSString stringWithCString:argv[1] encoding:NSUTF8StringEncoding];
@@ -334,13 +328,21 @@ int main(int argc, const char * argv[]) {
     if ([commandName isEqualToString:@"help"]) {
         return helpCommand(argc - 2, argv + 2);
     }
-    else if ([commandName isEqualToString:@"pre-push-hook"]) {
-        S7PrePushHook *hook = [S7PrePushHook new];
+    else if ([commandName hasSuffix:@"-hook"]) {
+        commandName = [commandName stringByReplacingOccurrencesOfString:@"-hook" withString:@""];
+        Class<S7Hook> hookClass = hookClassByName(commandName);
+        if (nil == hookClass) {
+            fprintf(stderr, "unknown hook '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+            NSCAssert(NO, @"unknown hook");
+            return S7ExitCodeUnknownCommand;
+        }
+
+        NSObject<S7Hook> *hook = [[[hookClass class] alloc] init];
         return [hook runWithArguments:arguments];
     }
-    else if ([commandName isEqualToString:@"post-checkout-hook"]) {
-        S7PostCheckoutHook *hook = [S7PostCheckoutHook new];
-        return [hook runWithArguments:arguments];
+    else if ([commandName isEqualToString:@"merge-driver"]) {
+        S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
+        return [configMergeDriver runWithArguments:arguments];
     }
     else {
         Class<S7Command> commandClass = commandClassByName(commandName);
@@ -349,7 +351,7 @@ int main(int argc, const char * argv[]) {
             return [command runWithArguments:arguments];
         }
         else {
-            return 1;
+            return S7ExitCodeUnknownCommand;
         }
     }
 }

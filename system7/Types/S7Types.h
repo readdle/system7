@@ -12,11 +12,12 @@
 #import <Foundation/Foundation.h>
 
 extern NSString * const S7ConfigFileName;
-extern NSString * const S7HashFileName;
+extern NSString * const S7ControlFileName;
 
 typedef enum {
     S7ExitCodeDirty = -1,
     S7ExitCodeSuccess = 0,
+    S7ExitCodeUnknownCommand,
     S7ExitCodeMissingRequiredArgument,
     S7ExitCodeInvalidArgument,
     S7ExitCodeUnrecognizedOption,

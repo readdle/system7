@@ -33,8 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (int)saveToFileAtPath:(NSString *)filePath;
 
-@property (nonatomic, readonly) NSString *sha1;
-
 @end
 
 NS_ASSUME_NONNULL_END
