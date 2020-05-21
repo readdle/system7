@@ -1,0 +1,19 @@
+#!/bin/sh
+
+#for arg in "$@"
+#do
+#    echo $arg
+#done
+
+function assert {
+    sh -c "$*"
+    if [ $? -ne 0 ]
+    then
+        touch "${S7_ROOT}/FAIL"
+        echo "🚨 '""$*""' assertion failed"
+        echo
+        exit 1
+    fi
+}
+
+export -f assert

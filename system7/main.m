@@ -16,7 +16,6 @@
 #import "S7RebindCommand.h"
 #import "S7CheckoutCommand.h"
 #import "S7StatusCommand.h"
-#import "S7MergeCommand.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -190,7 +189,6 @@ void printHelp() {
     puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
     puts("");
     puts("  checkout  update subrepos to the state saved in a checked out revision");
-    puts("  merge     incorporate changes to subrepos from two revisions");
     puts("");
     puts("  status    show changed subrepos");
     puts("");
@@ -305,13 +303,6 @@ int helpCommand(int argc, const char *argv[]) {
 }
 
 int main(int argc, const char * argv[]) {
-    NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
-    BOOL isDirectory = NO;
-    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
-        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
-        return S7ExitCodeNotGitRepository;
-    }
-
     if (argc < 2) {
         printHelp();
         return S7ExitCodeUnknownCommand;
@@ -328,7 +319,15 @@ int main(int argc, const char * argv[]) {
     if ([commandName isEqualToString:@"help"]) {
         return helpCommand(argc - 2, argv + 2);
     }
-    else if ([commandName hasSuffix:@"-hook"]) {
+
+    NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
+    BOOL isDirectory = NO;
+    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
+        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        return S7ExitCodeNotGitRepository;
+    }
+
+    if ([commandName hasSuffix:@"-hook"]) {
         commandName = [commandName stringByReplacingOccurrencesOfString:@"-hook" withString:@""];
         Class<S7Hook> hookClass = hookClassByName(commandName);
         if (nil == hookClass) {

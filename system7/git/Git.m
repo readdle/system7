@@ -567,12 +567,13 @@ static NSString *gitExecutablePath = nil;
 
 - (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus {
     NSString *fileContents = nil;
+    NSString *devNull = nil;
     NSString *spell = [NSString stringWithFormat:@"%@:%@", revision, filePath];
     *exitStatus = [self.class
                    runGitInRepoAtPath:self.absolutePath
                    withArguments:@[ @"show", spell ]
                    stdOutOutput:&fileContents
-                   stdErrOutput:NULL];
+                   stdErrOutput:&devNull];
     return fileContents;
 }
 
