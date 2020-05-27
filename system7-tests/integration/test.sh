@@ -3,6 +3,7 @@
 ORIGINAL_PWD=$PWD
 PATH=$PATH:$PWD
 export S7_ROOT=$PWD/root
+export S7_TESTS_DIR=$ORIGINAL_PWD
 
 #set -x
 

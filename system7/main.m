@@ -14,7 +14,6 @@
 #import "S7AddCommand.h"
 #import "S7RemoveCommand.h"
 #import "S7RebindCommand.h"
-#import "S7CheckoutCommand.h"
 #import "S7StatusCommand.h"
 
 #import "S7PrePushHook.h"
@@ -188,8 +187,6 @@ void printHelp() {
     puts("");
     puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
     puts("");
-    puts("  checkout  update subrepos to the state saved in a checked out revision");
-    puts("");
     puts("  status    show changed subrepos");
     puts("");
     puts("");
@@ -198,6 +195,13 @@ void printHelp() {
     puts(" Q: how to push changes to subrepos together with the main repo?");
     puts(" A: just `git push [OPTIONS]` on the main repo. S7 hooks will push\n");
     puts("    necessary subrepos automatically.");
+    puts("");
+    puts(" Q: how to checkout subrepos after I pull or checkout a different");
+    puts("    branch/revision?");
+    puts(" A: just `git pull`/`git checkout` as you normally do.");
+    puts("    S7 hooks will update subrepos as necessary.");
+    puts("    If you want to reset subrepos to the last committed state,");
+    puts("    do `git checkout -- .s7substate`");
 }
 
 Class commandClassByName(NSString *commandName) {
@@ -211,7 +215,6 @@ Class commandClassByName(NSString *commandName) {
             [S7AddCommand class],
             [S7RemoveCommand class],
             [S7RebindCommand class],
-            [S7CheckoutCommand class],
             [S7StatusCommand class],
         ]];
 

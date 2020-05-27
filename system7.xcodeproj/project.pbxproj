@@ -12,8 +12,6 @@
 		BE1079C02466C557002A2A45 /* S7SubrepoDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BF2466C557002A2A45 /* S7SubrepoDescription.m */; };
 		BE1079C12466C557002A2A45 /* S7SubrepoDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BF2466C557002A2A45 /* S7SubrepoDescription.m */; };
 		BE172C4924642C3B00B57557 /* mergeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172C4824642C3B00B57557 /* mergeTests.m */; };
-		BE172C4C24642CA800B57557 /* S7MergeCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172C4B24642CA800B57557 /* S7MergeCommand.m */; };
-		BE172C4D24642CA800B57557 /* S7MergeCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172C4B24642CA800B57557 /* S7MergeCommand.m */; };
 		BE172CD224657CA700B57557 /* S7Diff.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172CD124657CA700B57557 /* S7Diff.m */; };
 		BE172CD324657CA700B57557 /* S7Diff.m in Sources */ = {isa = PBXBuildFile; fileRef = BE172CD124657CA700B57557 /* S7Diff.m */; };
 		BE28CB322472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */ = {isa = PBXBuildFile; fileRef = BE28CB312472C16200DCA875 /* S7ConfigMergeDriver.m */; };
@@ -83,8 +81,6 @@
 		BE1079BE2466C557002A2A45 /* S7SubrepoDescription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7SubrepoDescription.h; sourceTree = "<group>"; };
 		BE1079BF2466C557002A2A45 /* S7SubrepoDescription.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7SubrepoDescription.m; sourceTree = "<group>"; };
 		BE172C4824642C3B00B57557 /* mergeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = mergeTests.m; sourceTree = "<group>"; };
-		BE172C4A24642CA800B57557 /* S7MergeCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7MergeCommand.h; sourceTree = "<group>"; };
-		BE172C4B24642CA800B57557 /* S7MergeCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7MergeCommand.m; sourceTree = "<group>"; };
 		BE172C4E24642D1B00B57557 /* system7.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = system7.pch; sourceTree = "<group>"; };
 		BE172CD124657CA700B57557 /* S7Diff.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7Diff.m; sourceTree = "<group>"; };
 		BE172CD424657CE900B57557 /* S7Diff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Diff.h; sourceTree = "<group>"; };
@@ -282,8 +278,6 @@
 				BED60FC5245AFBEA008EA752 /* S7CheckoutCommand.m */,
 				BE3A29E624604D1B004A2B31 /* S7StatusCommand.h */,
 				BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */,
-				BE172C4A24642CA800B57557 /* S7MergeCommand.h */,
-				BE172C4B24642CA800B57557 /* S7MergeCommand.m */,
 			);
 			path = Commands;
 			sourceTree = "<group>";
@@ -414,7 +408,6 @@
 				BE1079BC2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */,
 				BE28CB322472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */,
 				BED60FBD245AC23E008EA752 /* S7Types.m in Sources */,
-				BE172C4C24642CA800B57557 /* S7MergeCommand.m in Sources */,
 				BEE1CD09246AEE9E00E2CC3B /* S7Command.m in Sources */,
 				BE8218782452BA7300E878A8 /* main.m in Sources */,
 				BED60E162458811A008EA752 /* Utils.m in Sources */,
@@ -432,7 +425,6 @@
 				BE172C4924642C3B00B57557 /* mergeTests.m in Sources */,
 				BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BE3A29F424607419004A2B31 /* addTests.m in Sources */,
-				BE172C4D24642CA800B57557 /* S7MergeCommand.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
 				BED60FC7245AFBEA008EA752 /* S7CheckoutCommand.m in Sources */,
 				BED36BED246E908300D6EB1C /* mergeAlgorithmTests.m in Sources */,

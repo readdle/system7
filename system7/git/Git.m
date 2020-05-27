@@ -297,7 +297,7 @@ static NSString *gitExecutablePath = nil;
         if (128 == revParseExitStatus) {
             // most likely – an empty repo. Let's make sure
             if ([self isEmptyRepo]) {
-                *ppBranch = nil;
+                *ppBranch = @"master";
                 return 0;
             }
         }
@@ -578,6 +578,10 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (BOOL)hasUncommitedChanges {
+    if ([self isEmptyRepo]) {
+        return NO;
+    }
+    
     // borrowed from by mercurial/subrepo.py
     //
     // """This must be run before git diff-index.
@@ -606,7 +610,29 @@ static NSString *gitExecutablePath = nil;
                             withArguments:@[ @"diff-index", @"--quiet", @"HEAD" ]
                             stdOutOutput:NULL
                             stdErrOutput:NULL];
-    return 0 != diffIndexStatus;
+    if (0 != diffIndexStatus) {
+        return YES;
+    }
+
+    NSString *statusOutput = nil;
+    const int statusExitCode = [self.class
+                                runGitInRepoAtPath:self.absolutePath
+                                withArguments:@[ @"status", @"--porcelain", @"--untracked-files=normal" ]
+                                stdOutOutput:&statusOutput
+                                stdErrOutput:NULL];
+    if (0 != statusExitCode) {
+        return NO;
+    }
+
+    static NSRegularExpression *unknownFileRegex = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        unknownFileRegex = [NSRegularExpression regularExpressionWithPattern:@"^\?\? " options:0 error:nil];
+        NSCAssert(unknownFileRegex, @"");
+    });
+
+    NSTextCheckingResult *match = [unknownFileRegex firstMatchInString:statusOutput options:0 range:NSMakeRange(0, statusOutput.length)];
+    return (match != nil);
 }
 
 - (int)add:(NSArray<NSString *> *)filePaths {

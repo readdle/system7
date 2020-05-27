@@ -8,6 +8,8 @@
 
 #import "S7StatusCommand.h"
 
+#import "S7Diff.h"
+
 @implementation S7StatusCommand
 
 + (NSString *)commandName {
@@ -32,29 +34,191 @@
         return S7ExitCodeNotS7Repo;
     }
 
-    // compare last committed config to the commit from working directory
-    // if different – tell what is about to be committed
+    GitRepository *repo = [GitRepository repoAtPath:@"."];
 
-    // for each subrepo from config:
-    //   compared saved state to the actual state
+    NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+    const int exitStatus = [[self class] repo:repo calculateStatus:&status];
+    if (0 != exitStatus) {
+        return exitStatus;
+    }
 
-//    NSAssert(NO, @"not implemented");
+    BOOL foundAnyChanges = NO;
+
+    NSSet<NSString *> *stagedAddedSubrepos = status[@(S7StatusAdded)];
+    NSSet<NSString *> *stagedDeletedSubrepos = status[@(S7StatusRemoved)];
+    NSSet<NSString *> *stagedUpdatedSubrepos = status[@(S7StatusUpdatedAndRebound)];
+
+    if (stagedAddedSubrepos.count > 0 || stagedDeletedSubrepos.count > 0 || stagedUpdatedSubrepos.count > 0) {
+        foundAnyChanges = YES;
+
+        puts("Changes to be committed:");
+        for (NSString *subrepoPath in stagedAddedSubrepos) {
+            fprintf(stdout, " \033[32madded       %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+        }
+
+        for (NSString *subrepoPath in stagedDeletedSubrepos) {
+            fprintf(stdout, " \033[31mremoved     %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+        }
+
+        for (NSString *subrepoPath in stagedUpdatedSubrepos) {
+            fprintf(stdout, " \033[34mupdated     %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+        }
+    }
+
+    NSSet<NSString *> *notStagedCommittedSubrepos = status[@(S7StatusHasNotReboundCommittedChanges)];
+    NSSet<NSString *> *notStagedUncommittedChangesSubrepos = status[@(S7StatusHasUncommittedChanges)];
+
+    S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+    BOOL foundAnyNotReboundChanges = NO;
+    for (S7SubrepoDescription *subrepoDesc in actualConfig.subrepoDescriptions) {
+        NSString *subrepoPath = subrepoDesc.path;
+
+        const BOOL hasUncommitedChanges = [notStagedCommittedSubrepos containsObject:subrepoPath];
+        const BOOL hasCommittedChangesNotReboundInMainRepo = [notStagedUncommittedChangesSubrepos containsObject:subrepoPath];
+
+        if (NO == hasUncommitedChanges && NO == hasCommittedChangesNotReboundInMainRepo) {
+            continue;
+        }
+
+        if (NO == foundAnyNotReboundChanges) {
+            foundAnyNotReboundChanges = YES;
+
+            if (NO == foundAnyChanges) {
+                foundAnyChanges = YES;
+            }
+            else {
+                puts("");
+            }
+
+            puts("Subrepos not staged for commit:");
+            puts("(use \"s7 rebind\" to stage subrepo for commit)");
+        }
+
+        if (hasUncommitedChanges && hasCommittedChangesNotReboundInMainRepo) {
+            fprintf(stdout, " \033[36mnot rebound commit(s) + uncommitted changes %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+        }
+        else if (hasUncommitedChanges) {
+            fprintf(stdout, " \033[35muncommitted changes       %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+        }
+        else {
+            NSAssert(hasCommittedChangesNotReboundInMainRepo, @"");
+            fprintf(stdout, " \033[33;1mnot rebound commit(s)   %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+        }
+    }
+
+    if (NO == foundAnyChanges) {
+        puts("Everything up-to-date");
+    }
+    else {
+        puts("");
+    }
 
     return 0;
 }
 
++ (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> * _Nullable __autoreleasing * _Nonnull)ppStatus {
+    NSString *lastCommittedRevision = nil;
+    [repo getCurrentRevision:&lastCommittedRevision];
+
+    int gitExitStatus = 0;
+    NSString *lastCommittedConfigContents = [repo showFile:S7ConfigFileName
+                                                atRevision:lastCommittedRevision
+                                                exitStatus:&gitExitStatus];
+    if (0 != gitExitStatus) {
+        if (128 == gitExitStatus) {
+            lastCommittedConfigContents = @"";
+        }
+        else {
+            // todo: log
+            return S7ExitCodeGitOperationFailed;
+        }
+    }
+
+    NSAssert(lastCommittedConfigContents, @"");
+
+    S7Config *lastCommittedConfig = [[S7Config alloc] initWithContentsString:lastCommittedConfigContents];
+    S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+    NSMutableDictionary<NSString *, S7SubrepoDescription *> *stagedAddedSubrepos = nil;
+    NSMutableDictionary<NSString *, S7SubrepoDescription *> *stagedDeletedSubrepos = nil;
+    NSMutableDictionary<NSString *, S7SubrepoDescription *> *stagedUpdatedSubrepos = nil;
+    const int diffExitStatus = diffConfigs(lastCommittedConfig,
+                                           actualConfig,
+                                           &stagedDeletedSubrepos,
+                                           &stagedUpdatedSubrepos,
+                                           &stagedAddedSubrepos);
+    if (0 != diffExitStatus) {
+        return diffExitStatus;
+    }
+
+    NSMutableDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> * status = [NSMutableDictionary new];
+
+    if (stagedAddedSubrepos.count > 0) {
+        status[@(S7StatusAdded)] = [NSSet setWithArray:stagedAddedSubrepos.allKeys];
+    }
+
+    if (stagedDeletedSubrepos.count > 0) {
+        status[@(S7StatusRemoved)] = [NSSet setWithArray:stagedDeletedSubrepos.allKeys];
+    }
+
+    if (stagedUpdatedSubrepos.count > 0) {
+        status[@(S7StatusUpdatedAndRebound)] = [NSSet setWithArray:stagedUpdatedSubrepos.allKeys];
+    }
+
+    NSMutableSet<NSString *> *subreposWithUncommittedChanges = [NSMutableSet new];
+    NSMutableSet<NSString *> *subreposWithCommittedNotReboundChanges = [NSMutableSet new];
+
+    for (S7SubrepoDescription *subrepoDesc in actualConfig.subrepoDescriptions) {
+        GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoDesc.path];
+        if (nil == subrepoGit) {
+            fprintf(stderr, "error: '%s' is not a git repository\n", subrepoDesc.path.fileSystemRepresentation);
+            return S7ExitCodeSubrepoIsNotGitRepository;
+        }
+
+        NSString *currentBranch = nil;
+        int gitExitStatus = [subrepoGit getCurrentBranch:&currentBranch];
+        if (0 != gitExitStatus) {
+            // todo: log
+            return S7ExitCodeGitOperationFailed;
+        }
+
+        NSString *currentRevision = nil;
+        gitExitStatus = [subrepoGit getCurrentRevision:&currentRevision];
+        if (0 != gitExitStatus) {
+            // todo: log
+            return S7ExitCodeGitOperationFailed;
+        }
+
+        S7SubrepoDescription *currentSubrepoDesc = [[S7SubrepoDescription alloc]
+                                                    initWithPath:subrepoDesc.path
+                                                    url:subrepoDesc.url
+                                                    revision:currentRevision
+                                                    branch:currentBranch];
+
+        const BOOL hasCommittedChangesNotReboundInMainRepo = (NO == [currentSubrepoDesc isEqual:subrepoDesc]);
+        const BOOL hasUncommitedChanges = [subrepoGit hasUncommitedChanges];
+
+        if (hasUncommitedChanges) {
+            [subreposWithUncommittedChanges addObject:subrepoDesc.path];
+        }
+
+        if (hasCommittedChangesNotReboundInMainRepo) {
+            [subreposWithCommittedNotReboundChanges addObject:subrepoDesc.path];
+        }
+    }
+
+    if (subreposWithUncommittedChanges.count > 0) {
+        status[@(S7StatusHasUncommittedChanges)] = subreposWithUncommittedChanges;
+    }
+
+    if (subreposWithCommittedNotReboundChanges.count > 0) {
+        status[@(S7StatusHasNotReboundCommittedChanges)] = subreposWithCommittedNotReboundChanges;
+    }
+
+    *ppStatus = status;
+    
+    return 0;
+}
+
 @end
-
-
-//parent: 0:894e9a1d02c7 tip
-// init
-//branch: default
-//commit: 1 added, 1 subrepos
-//update: (current)
-
-
-//parent: 1:fa1d078b91a9 tip
-// add ReaddleLib subrepo
-//branch: expert
-//commit: 1 subrepos (new branch)
-//update: (current)
