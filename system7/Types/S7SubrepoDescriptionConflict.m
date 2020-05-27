@@ -18,7 +18,13 @@
         return nil;
     }
 
-    self = [super initWithPath:path url:@"CONFLICT" revision:@"CONFLICT" branch:@"CONFLICT"];
+    NSString *url = ourVersion ? ourVersion.url : theirVersion.url;
+    if (nil == url) {
+        NSParameterAssert(url);
+        return nil;
+    }
+
+    self = [super initWithPath:path url:url revision:@"CONFLICT" branch:@"CONFLICT"];
     if (nil == self) {
         return nil;
     }

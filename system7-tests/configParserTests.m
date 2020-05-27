@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 
 #import "S7Config.h"
+#import "S7SubrepoDescriptionConflict.h"
 
 @interface system7_tests : XCTestCase
 
@@ -140,5 +141,101 @@
     XCTAssert(0 == parsedConfig.subrepoDescriptions.count);
 }
 
+- (void)testConfigWithConflict {
+    NSString *config =
+    @"<<<<<<< yours\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "=======\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"
+     ">>>>>>> theirs\n"
+    ;
+
+    NSString *configFilePath = @"./config";
+
+    NSError *error = nil;
+    if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        NSAssert(NO, @"");
+    }
+
+    NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
+        [[S7SubrepoDescriptionConflict alloc]
+         initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
+                                                                   url:@"git@github.com:readdle/readdlelib"
+                                                              revision:@"1d55eede9471fc9245de5bd85b55102684c8c300"
+                                                                branch:@"master"]
+         theirVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
+                                                             url:@"git@github.com:readdle/readdlelib"
+                                                        revision:@"c1913e99e9b8fffc5405ccfe2d0f53f8c623da11"
+                                                          branch:@"experiment"]],
+    ];
+
+    S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
+    XCTAssertNotNil(parsedConfig);
+    XCTAssertEqualObjects(parsedConfig.subrepoDescriptions, expectedParsedConfig);
+}
+
+- (void)testConfigWithConflictOneSideRemove {
+    NSString *config =
+    @"<<<<<<< yours\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "=======\n"
+     ">>>>>>> theirs\n"
+    ;
+
+    NSString *configFilePath = @"./config";
+
+    NSError *error = nil;
+    if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        NSAssert(NO, @"");
+    }
+
+    NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
+        [[S7SubrepoDescriptionConflict alloc]
+         initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
+                                                                   url:@"git@github.com:readdle/readdlelib"
+                                                              revision:@"1d55eede9471fc9245de5bd85b55102684c8c300"
+                                                                branch:@"master"]
+         theirVersion:nil],
+    ];
+
+    S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
+    XCTAssertNotNil(parsedConfig);
+    XCTAssertEqualObjects(parsedConfig.subrepoDescriptions, expectedParsedConfig);
+}
+
+- (void)testInvalidConflicts {
+    // unterminated conflict
+    S7Config *parsedConfig = [[S7Config alloc] initWithContentsString:
+    @"<<<<<<< yours\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "=======\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"];
+    XCTAssertNil(parsedConfig);
+
+    // missing our/their separator
+    parsedConfig = [[S7Config alloc] initWithContentsString:
+    @"<<<<<<< yours\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"
+     ">>>>>>> theirs\n"];
+    XCTAssertNil(parsedConfig);
+
+    // missing start conflict marker
+    parsedConfig = [[S7Config alloc] initWithContentsString:
+    @"<<<<<<< yours\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"
+     ">>>>>>> theirs\n"];
+    XCTAssertNil(parsedConfig);
+
+    // nested crap
+    parsedConfig = [[S7Config alloc] initWithContentsString:
+    @"<<<<<<< yours\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "<<<<<<< yours again\n"
+     "=======\n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"];
+    XCTAssertNil(parsedConfig);
+}
 
 @end

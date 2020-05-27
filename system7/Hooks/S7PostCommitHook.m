@@ -22,6 +22,18 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
+    const char *debug = getenv("S7_DEBUG");
+    if (debug) {
+        fprintf(stdout, "🥉 start s7 post-commit hook\n");
+    }
+    const int result = [self doRunWithArguments:arguments];
+    if (debug) {
+        fprintf(stdout, "🥉✅ finished s7 post-commit hook\n");
+    }
+    return result;
+}
+
+- (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
     BOOL isDirectory = NO;
     if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
         || isDirectory)

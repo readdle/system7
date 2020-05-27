@@ -8,6 +8,7 @@
 
 #import "S7Config.h"
 #import "S7Types.h"
+#import "S7SubrepoDescriptionConflict.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -48,6 +49,11 @@ NS_ASSUME_NONNULL_BEGIN
                                   error:&error];
     NSCAssert(regex && nil == error, @"");
 
+    BOOL inConflict = NO;
+    BOOL collectingOurSideConflict = NO;
+    NSMutableDictionary<NSString *, S7SubrepoDescription *> *conflictOurSideSubrepoDescriptions = nil;
+    NSMutableDictionary<NSString *, S7SubrepoDescription *> *conflictTheirSideSubrepoDescriptions = nil;
+
     for (NSString *line in lines) {
         NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
         if (0 == trimmedLine.length) {
@@ -57,6 +63,71 @@ NS_ASSUME_NONNULL_BEGIN
 
         if ([trimmedLine hasPrefix:@"#"]) {
             // skip comments
+            continue;
+        }
+
+        if ([trimmedLine hasPrefix:@"<<<<<<<"]) {
+            if (inConflict) {
+                fprintf(stderr, "error: unexpected conflict marker. Already parsing conflict.\n");
+                return nil;
+            }
+
+            inConflict = YES;
+            collectingOurSideConflict = YES;
+
+            conflictOurSideSubrepoDescriptions = [NSMutableDictionary new];
+            conflictTheirSideSubrepoDescriptions = [NSMutableDictionary new];
+
+            continue;
+        }
+        else if ([trimmedLine hasPrefix:@"======="]) {
+            if (NO == inConflict) {
+                fprintf(stderr, "error: unexpected conflict separator marker. Not parsing conflict.\n");
+                return nil;
+            }
+
+            collectingOurSideConflict = NO;
+
+            continue;
+        }
+        else if ([trimmedLine hasPrefix:@">>>>>>>"]) {
+            if (NO == inConflict) {
+                fprintf(stderr, "error: unexpected conflict end marker. Not parsing conflict.\n");
+                return nil;
+            }
+
+            if (collectingOurSideConflict) {
+                fprintf(stderr, "error: unexpected conflict end marker. Expected conflict separator '=====...' marker\n");
+                return nil;
+            }
+
+            inConflict = NO;
+
+            NSArray<NSString *> *ourSideConflictPaths = [conflictOurSideSubrepoDescriptions.allKeys copy];
+            for (NSString *subrepoPath in ourSideConflictPaths) {
+                S7SubrepoDescription *ourDesc = conflictOurSideSubrepoDescriptions[subrepoPath];
+                conflictOurSideSubrepoDescriptions[subrepoPath] = nil;
+                S7SubrepoDescription *theirDesc = conflictTheirSideSubrepoDescriptions[subrepoPath];
+                conflictTheirSideSubrepoDescriptions[subrepoPath] = nil;
+
+                S7SubrepoDescriptionConflict *conflict = [[S7SubrepoDescriptionConflict alloc]
+                                                          initWithOurVersion:ourDesc
+                                                          theirVersion:theirDesc];
+                [subrepoDescriptions addObject:conflict];
+            }
+
+            for (NSString *subrepoPath in conflictTheirSideSubrepoDescriptions.allKeys) {
+                S7SubrepoDescription *theirDesc = conflictTheirSideSubrepoDescriptions[subrepoPath];
+
+                S7SubrepoDescriptionConflict *conflict = [[S7SubrepoDescriptionConflict alloc]
+                                                          initWithOurVersion:nil
+                                                          theirVersion:theirDesc];
+                [subrepoDescriptions addObject:conflict];
+            }
+
+            conflictOurSideSubrepoDescriptions = nil;
+            conflictTheirSideSubrepoDescriptions = nil;
+
             continue;
         }
 
@@ -108,17 +179,30 @@ NS_ASSUME_NONNULL_BEGIN
             return nil;
         }
 
-        NSString *branch = nil;
-        if (3 == propertiesComponents.count) {
-            branch = [[propertiesComponents objectAtIndex:2] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-            if (0 == branch.length) {
-                branch = nil;
-            }
+        NSString *branch = [[propertiesComponents objectAtIndex:2] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        if (0 == branch.length) {
+            NSLog(@"ERROR: failed to parse config. Invalid line '%@'. Invalid branch", line);
+            return nil;
         }
 
         S7SubrepoDescription *subrepoDesc = [[S7SubrepoDescription alloc] initWithPath:path url:url revision:revision branch:branch];
 
-        [subrepoDescriptions addObject:subrepoDesc];
+        if (inConflict) {
+            if (collectingOurSideConflict) {
+                conflictOurSideSubrepoDescriptions[subrepoDesc.path] = subrepoDesc;
+            }
+            else {
+                conflictTheirSideSubrepoDescriptions[subrepoDesc.path] = subrepoDesc;
+            }
+        }
+        else {
+            [subrepoDescriptions addObject:subrepoDesc];
+        }
+    }
+
+    if (inConflict) {
+        fprintf(stderr, "not terminated conflict\n");
+        return nil;
     }
 
     return [self initWithSubrepoDescriptions:subrepoDescriptions];

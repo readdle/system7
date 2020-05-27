@@ -40,11 +40,11 @@
         if (ourVersion && theirVersion) {
             // should write this to stdout or stderr?
             fprintf(stdout,
-                    " subrepository '%s' diverged\n"
-                    " local revision: %s\n"
-                    " remote revision: %s\n"
-                    " you can (m)erge, keep (l)ocal or keep (r)emote.\n"
-                    " what do you want to do?",
+                    " subrepo '%s' diverged\n"
+                    "  local revision: %s\n"
+                    "  remote revision: %s\n"
+                    "  you can (m)erge, keep (l)ocal or keep (r)emote.\n"
+                    "  what do you want to do? ",
                     ourVersion.path.fileSystemRepresentation,
                     [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
                     [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]
@@ -65,9 +65,9 @@
                 }
 
                 fprintf(stdout,
-                        "\n sorry?\n"
-                        " (m)erge, keep (l)ocal or keep (r)emote.\n"
-                        " what do you want to do?");
+                        "\n  sorry?\n"
+                        "  (m)erge, keep (l)ocal or keep (r)emote.\n"
+                        "  what do you want to do? ");
             }
             while (1);
         }
@@ -75,14 +75,14 @@
             NSCAssert(ourVersion || theirVersion, @"");
             if (ourVersion) {
                 fprintf(stdout,
-                        " local changed subrepository '%s' which remote removed\n"
-                        " use (c)hanged version or (d)elete?",
+                        "  local changed subrepository '%s' which remote removed\n"
+                        "  use (c)hanged version or (d)elete? ",
                         ourVersion.path.fileSystemRepresentation);
             }
             else {
                 fprintf(stdout,
-                        " remote changed subrepository '%s' which local removed\n"
-                        " use (c)hanged version or (d)elete?",
+                        "  remote changed subrepository '%s' which local removed\n"
+                        "  use (c)hanged version or (d)elete? ",
                         ourVersion.path.fileSystemRepresentation);
             }
 
@@ -98,8 +98,8 @@
                 }
 
                 fprintf(stdout,
-                        "\n sorry?\n"
-                        " use (c)hanged version or (d)elete?");
+                        "\n  sorry?\n"
+                        "  use (c)hanged version or (d)elete? ");
             }
             while (1);
         }
@@ -109,6 +109,18 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
+    const char *debug = getenv("S7_DEBUG");
+    if (debug) {
+        fprintf(stdout, "🥈 start s7 config merge driver\n");
+    }
+    const int result = [self doRunWithArguments:arguments];
+    if (debug) {
+        fprintf(stdout, "🥈✅ finished s7 config merge driver\n");
+    }
+    return result;
+}
+
+- (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
     BOOL isDirectory = NO;
     if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
         || isDirectory)
@@ -487,10 +499,14 @@ saveResultToFilePath:(NSString *)resultFilePath
                     break;
 
                 case S7ConflictResolutionTypeMerge: {
-                    int dummy = 0; // not sure I should do anything about this...
-                    S7SubrepoDescription *subrepoMergeResult = [self mergeSubrepoConflict:conflict exitStatus:&dummy];
+                    int subrepoMergeExitStatus = 0;
+                    S7SubrepoDescription *subrepoMergeResult = [self mergeSubrepoConflict:conflict exitStatus:&subrepoMergeExitStatus];
                     NSAssert(subrepoMergeResult, @"");
                     [resolvedMergeResultSubrepos addObject:subrepoMergeResult];
+
+                    if (0 != subrepoMergeExitStatus) {
+                        conflictResolved = NO;
+                    }
 
                     break;
                 }
@@ -518,7 +534,7 @@ saveResultToFilePath:(NSString *)resultFilePath
         mergeResult = [[S7Config alloc] initWithSubrepoDescriptions:resolvedMergeResultSubrepos];
     }
 
-    const int configSaveResult = [mergeResult saveToFileAtPath:S7ConfigFileName];
+    const int configSaveResult = [mergeResult saveToFileAtPath:resultFilePath];
     if (0 != configSaveResult) {
         return configSaveResult;
     }
@@ -532,7 +548,7 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     if (NO == conflictResolved) {
-        return 1;
+        return S7ExitCodeMergeFailed;
     }
 
     S7CheckoutCommand *checkoutCommand = [S7CheckoutCommand new];

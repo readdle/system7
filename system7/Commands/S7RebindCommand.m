@@ -44,6 +44,9 @@
     }
 
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+    if (nil == parsedConfig) {
+        return S7ExitCodeFailedToParseConfig;
+    }
 
     BOOL stageConfig = NO;
 

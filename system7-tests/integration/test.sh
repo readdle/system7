@@ -7,6 +7,16 @@ export S7_TESTS_DIR=$ORIGINAL_PWD
 
 #set -x
 
+LEAVE_TEST_REPOS_AFTER_FAIL=0
+if [ ! -z $1 ]
+then
+    if [ $1 = "--leave-repos-on-fail" ]
+    then
+        shift
+        LEAVE_TEST_REPOS_AFTER_FAIL=1
+    fi
+fi
+
 TESTS_TO_RUN="$@"
 if [ -z "$TESTS_TO_RUN" ]
 then
@@ -33,6 +43,11 @@ function setUp {
 }
 
 function tearDown {
+    if [ $ANY_TEST_FAILED -eq 1  -a  1 -eq $LEAVE_TEST_REPOS_AFTER_FAIL ]
+    then
+        exit 1
+    fi
+
     cd "$ORIGINAL_PWD"
     rm -Rf root 2>/dev/null
 }

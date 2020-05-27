@@ -28,10 +28,12 @@ typedef enum {
     S7ExitCodeUncommitedChanges,
     S7ExitCodeDetachedHEAD,
     S7ExitCodeNonFastForwardPush,
+    S7ExitCodeMergeFailed,
     S7ExitCodeNotS7Repo,
     S7ExitCodeNoCommittedS7Config,
     S7ExitCodeInvalidSubrepoRevision,
-    S7ExitCodeInternalError
+    S7ExitCodeInternalError,
+    S7ExitCodeFailedToParseConfig,
 } S7ExitCode;
 
 #endif /* S7ExitCodes_h */
