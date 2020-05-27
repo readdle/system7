@@ -29,6 +29,7 @@ typedef enum {
     S7ExitCodeDetachedHEAD,
     S7ExitCodeNonFastForwardPush,
     S7ExitCodeMergeFailed,
+    S7ExitCodeSubrepoHasNotReboundChanges,
     S7ExitCodeNotS7Repo,
     S7ExitCodeNoCommittedS7Config,
     S7ExitCodeInvalidSubrepoRevision,

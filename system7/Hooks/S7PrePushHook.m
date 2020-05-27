@@ -9,6 +9,7 @@
 #import "S7PrePushHook.h"
 
 #import "S7Diff.h"
+#import "S7StatusCommand.h"
 
 @implementation S7PrePushHook
 
@@ -54,6 +55,18 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
+    const char *debug = getenv("S7_DEBUG");
+    if (debug) {
+        fprintf(stdout, "🏅 s7 pre-push-hook start\n");
+    }
+    const int result = [self doRunWithArguments:arguments];
+    if (debug) {
+        fprintf(stdout, "🥉✅ s7 pre-push-hook complete\n\n");
+    }
+    return result;
+}
+
+- (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
     BOOL isDirectory = NO;
     if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
         || isDirectory)
@@ -77,7 +90,41 @@
         return 0;
     }
 
-    fprintf(stdout, "s7 pre-push-hook start\n");
+    // pastey:
+    // I had such idea,–
+    // "disallow git push if there're uncommitted changes in subrepos.
+    //  Or committed, but not pushed, and current revision in subrepo
+    //  is not in sync with .s7substate"
+    //
+    // I even implemented it, but decided not to publish.
+    //  1. I thought HG behaives like this, but that's not true
+    //  2. I think such behavior break too many normal flows.
+    //     Eg. I've made some changes in a subrepo, then made an unrelated
+    //     fix in main repo and want to push it. Should we prohibit this?
+    //     I don't think so.
+    //     Say you've made a huge refactoring touching many subrepos, you've
+    //     rebound some of subrepos and want to commit/push them separetly,
+    //     I think this must be allowed.
+    //
+//    NSDictionary<NSNumber *, NSSet<NSString *> *> *status = nil;
+//    const int statusExitCode = [S7StatusCommand repo:repo calculateStatus:&status];
+//    if (0 != statusExitCode) {
+//        return statusExitCode;
+//    }
+//
+//    if (status.count > 0) {
+//        fprintf(stderr, "some subrepos have not rebound/committed changes:\n");
+//        NSSet<NSString *> *dirtySubreposSet = [NSSet new];
+//        for (NSSet<NSString *> *subrepoPaths in status.allValues) {
+//            dirtySubreposSet = [dirtySubreposSet setByAddingObjectsFromSet:subrepoPaths];
+//        }
+//
+//        for (NSString *subrepoPath in dirtySubreposSet) {
+//            fprintf(stderr, " %s\n", subrepoPath.fileSystemRepresentation);
+//        }
+//
+//        return S7ExitCodeSubrepoHasNotReboundChanges;
+//    }
 
     NSArray<NSString *> *stdinLines = [stdinStringContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
     for (NSString *line in stdinLines) {
@@ -117,8 +164,6 @@
             return exitStatus;
         }
     }
-
-    fprintf(stdout, "s7 pre-push-hook complete\n\n");
 
     return 0;
 }
