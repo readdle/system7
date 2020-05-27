@@ -312,6 +312,21 @@ static NSString *gitExecutablePath = nil;
     return 0;
 }
 
+- (BOOL)isInDetachedHEAD {
+    NSString *stdOutOutput = nil;
+    NSString *stdErrOutput = nil;
+    const int revParseExitStatus = [self.class runGitInRepoAtPath:self.absolutePath
+                                                    withArguments:@[ @"rev-parse", @"--abbrev-ref", @"HEAD" ]
+                                                     stdOutOutput:&stdOutOutput
+                                                     stdErrOutput:&stdErrOutput];
+    if (0 != revParseExitStatus) {
+        return NO;
+    }
+
+    NSString *branch = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    return [branch isEqualToString:@"HEAD"];
+}
+
 #pragma mark - revisions -
 
 + (NSString *)nullRevision {
@@ -446,6 +461,14 @@ static NSString *gitExecutablePath = nil;
     *ppRevision = revision;
 
     return 0;
+}
+
+- (int)checkoutRevision:(NSString *)revision {
+    const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
+                                            withArguments:@[ @"checkout", revision ]
+                                             stdOutOutput:NULL
+                                             stdErrOutput:NULL];
+    return exitStatus;
 }
 
 #pragma mark - remote -

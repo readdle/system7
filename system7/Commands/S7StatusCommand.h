@@ -13,6 +13,7 @@ typedef NS_ENUM(NSInteger, S7Status) {
     S7StatusAdded,
     S7StatusRemoved,
     S7StatusUpdatedAndRebound,
+    S7StatusDetachedHead,
     S7StatusHasNotReboundCommittedChanges,
     S7StatusHasUncommittedChanges,
 };

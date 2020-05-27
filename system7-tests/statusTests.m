@@ -264,5 +264,35 @@
     }];
 }
 
+- (void)testSubrepoAtDetachedHead {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        NSString *commit1 = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"one", @"commit 1");
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"two", @"commit 2");
+
+        s7rebind();
+        
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib"];
+
+        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
+        XCTAssertEqual(0, exitCode);
+        XCTAssertNotNil(status);
+        XCTAssertEqualObjects(@{}, status);
+
+        [readdleLibSubrepoGit checkoutRevision:commit1];
+
+        exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
+        XCTAssertEqual(0, exitCode);
+        XCTAssertNotNil(status);
+        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
+            @(S7StatusDetachedHead) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]],
+        };
+        XCTAssertEqualObjects(status, expectedStatus);
+    }];
+}
 
 @end

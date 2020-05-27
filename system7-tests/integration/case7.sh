@@ -61,6 +61,7 @@ pushd Dependencies/ReaddleLib > /dev/null
   echo "sqrt" > RDMath.h
   git add RDMath.h
   git commit -m"add RDMath.h"
+  FIRST_READDLE_LIB_COMMIT=`git rev-parse HEAD`
 popd > /dev/null
 
 s7status commit_in_subrepo
@@ -81,6 +82,13 @@ s7status rebind_another_commit_and_uncommitted_changes
 assert git commit -m '"up ReaddleLib"'
 
 s7status commit_rebound_changes
+
+pushd Dependencies/ReaddleLib > /dev/null
+  git checkout -- .
+  git checkout "$FIRST_READDLE_LIB_COMMIT"
+popd > /dev/null
+
+s7status detached_head
 
 s7 rm Dependencies/ReaddleLib
 

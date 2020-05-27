@@ -67,6 +67,7 @@
 
     NSSet<NSString *> *notStagedCommittedSubrepos = status[@(S7StatusHasNotReboundCommittedChanges)];
     NSSet<NSString *> *notStagedUncommittedChangesSubrepos = status[@(S7StatusHasUncommittedChanges)];
+    NSSet<NSString *> *subreposInDetachedHEAD = status[@(S7StatusDetachedHead)];
 
     S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
@@ -76,8 +77,9 @@
 
         const BOOL hasUncommitedChanges = [notStagedCommittedSubrepos containsObject:subrepoPath];
         const BOOL hasCommittedChangesNotReboundInMainRepo = [notStagedUncommittedChangesSubrepos containsObject:subrepoPath];
+        const BOOL detachedHEAD = [subreposInDetachedHEAD containsObject:subrepoPath];
 
-        if (NO == hasUncommitedChanges && NO == hasCommittedChangesNotReboundInMainRepo) {
+        if (NO == hasUncommitedChanges && NO == hasCommittedChangesNotReboundInMainRepo && NO == detachedHEAD) {
             continue;
         }
 
@@ -92,10 +94,12 @@
             }
 
             puts("Subrepos not staged for commit:");
-            puts("(use \"s7 rebind\" to stage subrepo for commit)");
         }
 
-        if (hasUncommitedChanges && hasCommittedChangesNotReboundInMainRepo) {
+        if (detachedHEAD) {
+            fprintf(stdout, " \033[31;1mdetached HEAD %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+        }
+        else if (hasUncommitedChanges && hasCommittedChangesNotReboundInMainRepo) {
             fprintf(stdout, " \033[36mnot rebound commit(s) + uncommitted changes %s\033[0m\n", subrepoPath.fileSystemRepresentation);
         }
         else if (hasUncommitedChanges) {
@@ -166,13 +170,16 @@
         status[@(S7StatusUpdatedAndRebound)] = [NSSet setWithArray:stagedUpdatedSubrepos.allKeys];
     }
 
+    NSMutableSet<NSString *> *subreposInDetachedHEAD = [NSMutableSet new];
     NSMutableSet<NSString *> *subreposWithUncommittedChanges = [NSMutableSet new];
     NSMutableSet<NSString *> *subreposWithCommittedNotReboundChanges = [NSMutableSet new];
 
     for (S7SubrepoDescription *subrepoDesc in actualConfig.subrepoDescriptions) {
-        GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoDesc.path];
+        NSString *subrepoPath = subrepoDesc.path;
+
+        GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
         if (nil == subrepoGit) {
-            fprintf(stderr, "error: '%s' is not a git repository\n", subrepoDesc.path.fileSystemRepresentation);
+            fprintf(stderr, "error: '%s' is not a git repository\n", subrepoPath.fileSystemRepresentation);
             return S7ExitCodeSubrepoIsNotGitRepository;
         }
 
@@ -183,6 +190,15 @@
             return S7ExitCodeGitOperationFailed;
         }
 
+        if (nil == currentBranch) {
+            // the only case getCurrentBranch will succeed (return 0), but leave branch name nil
+            // is the detached HEAD, but let's make it clear
+            if ([subrepoGit isInDetachedHEAD]) {
+                [subreposInDetachedHEAD addObject:subrepoPath];
+                continue;
+            }
+        }
+
         NSString *currentRevision = nil;
         gitExitStatus = [subrepoGit getCurrentRevision:&currentRevision];
         if (0 != gitExitStatus) {
@@ -191,7 +207,7 @@
         }
 
         S7SubrepoDescription *currentSubrepoDesc = [[S7SubrepoDescription alloc]
-                                                    initWithPath:subrepoDesc.path
+                                                    initWithPath:subrepoPath
                                                     url:subrepoDesc.url
                                                     revision:currentRevision
                                                     branch:currentBranch];
@@ -200,11 +216,11 @@
         const BOOL hasUncommitedChanges = [subrepoGit hasUncommitedChanges];
 
         if (hasUncommitedChanges) {
-            [subreposWithUncommittedChanges addObject:subrepoDesc.path];
+            [subreposWithUncommittedChanges addObject:subrepoPath];
         }
 
         if (hasCommittedChangesNotReboundInMainRepo) {
-            [subreposWithCommittedNotReboundChanges addObject:subrepoDesc.path];
+            [subreposWithCommittedNotReboundChanges addObject:subrepoPath];
         }
     }
 
@@ -214,6 +230,10 @@
 
     if (subreposWithCommittedNotReboundChanges.count > 0) {
         status[@(S7StatusHasNotReboundCommittedChanges)] = subreposWithCommittedNotReboundChanges;
+    }
+
+    if (subreposInDetachedHEAD.count > 0) {
+        status[@(S7StatusDetachedHead)] = subreposInDetachedHEAD;
     }
 
     *ppStatus = status;

@@ -40,6 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName;
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName;
 - (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch;
+- (BOOL)isInDetachedHEAD;
 
 + (NSString *)nullRevision;
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision;
@@ -48,6 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName;
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant;
 - (BOOL)isMergeRevision:(NSString *)revision;
+- (int)checkoutRevision:(NSString *)revision;
 
 - (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;
 
