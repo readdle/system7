@@ -107,6 +107,19 @@
             return gitExitStatus;
         }
 
+        if (nil == branch) {
+            fprintf(stderr,
+                    " ⚠️ '%s' is in 'detached HEAD' state\n"
+                    "     1. you won't be able to push changes in this repo.\n"
+                    "        (at least using s7)\n"
+                    "     2. even if you do push, as the courtesy to fellow developers,\n"
+                    "        s7 won't allow you to rebind subrepo with the detached HEAD\n"
+                    "        as this will cause too much trouble to others\n\n"
+                    "     So, please, checkout a named branch in this subrepo.\n",
+                    [subrepoPath fileSystemRepresentation]);
+            return S7ExitCodeDetachedHEAD;
+        }
+
         S7SubrepoDescription *updatedSubrepoDescription = [[S7SubrepoDescription alloc]
                                                            initWithPath:subrepoPath
                                                            url:subrepoDescription.url
@@ -122,13 +135,6 @@
         fprintf(stdout, "detected an update:\n");
         fprintf(stdout, " old state %s\n", [subrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
         fprintf(stdout, " new state %s\n", [updatedSubrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
-
-        if (nil == branch) {
-            fprintf(stdout,
-                    " ⚠️ '%s' is in 'detached HEAD' state\n"
-                    " (please, as the courtesy to fellow developers, consider checking out a branch in this subrepo.)\n",
-                    [subrepoPath fileSystemRepresentation]);
-        }
 
         [reboundSubrepoPaths addObject:updatedSubrepoDescription.path];
         [newConfigSubrepoDescriptions addObject:updatedSubrepoDescription];

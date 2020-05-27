@@ -26,6 +26,7 @@ typedef enum {
     S7ExitCodeNotGitRepository,
     S7ExitCodeSubrepoIsNotGitRepository,
     S7ExitCodeUncommitedChanges,
+    S7ExitCodeDetachedHEAD,
     S7ExitCodeNonFastForwardPush,
     S7ExitCodeNotS7Repo,
     S7ExitCodeNoCommittedS7Config,
