@@ -149,6 +149,10 @@
 }
 
 - (int)installS7ConfigMergeDriver {
+    if (self.installFakeHooks) {
+        return 0;
+    }
+
     NSString *configFilePath = @".git/config";
 
     BOOL isDirectory = NO;

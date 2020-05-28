@@ -285,7 +285,7 @@
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        [repo pushAll];
+        [repo pushAllBranchesNeedingPush];
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -315,7 +315,7 @@
                                      rd2RevisionAfterPull];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        [repo pushAll];
+        [repo pushAllBranchesNeedingPush];
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -367,7 +367,7 @@
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        [repo pushAll];
+        [repo pushAllBranchesNeedingPush];
 
         NSString *readdleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
         NSString *pdfKitRevision = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", nil, @"add annotations");
@@ -477,6 +477,62 @@
 
         commit(repo, @"file", @"hello", @"add file");
 
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+}
+
+- (void)testPushDoesntTryToPushUnchangedBranchesInSubrepos {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+
+        s7rebind();
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        [repo checkoutNewLocalBranch:@"release/pdfexpert-7.3"];
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"math is hard");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up readdle lib"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo checkoutNewLocalBranch:@"release/documents-7.1.4"];
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        [readdleLibSubrepoGit fetch];
+        [readdleLibSubrepoGit checkoutNewLocalBranch:@"release/documents-7.1.4"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"iPad 11''", @"add support for a new iPad model");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        // эх, до чего же я люблю git...
+        // git push --all [in ReaddleLib]
+        // ...
+        // ! [rejected]    master -> master (non-fast-forward)
+        // только вот незадача – я нихуя не делал на мастере, но кто ж объяснит это авторам гита
+        //
         XCTAssertEqual(0, s7push_currentBranch(repo));
     }];
 }

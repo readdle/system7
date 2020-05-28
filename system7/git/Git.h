@@ -31,7 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)merge;
 - (int)mergeWith:(NSString *)commit;
 
-- (int)pushAll;
+- (BOOL)hasUnpushedCommits;
+- (int)pushAllBranchesNeedingPush;
 - (int)pushCurrentBranch;
 - (int)pushBranch:(NSString *)branchName;
 

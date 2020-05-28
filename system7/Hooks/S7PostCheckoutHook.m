@@ -22,14 +22,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    const char *debug = getenv("S7_DEBUG");
-    if (debug) {
-        fprintf(stdout, "🥇 start s7 post-checkout hook\n");
-    }
+    fprintf(stdout, "s7: start post-checkout hook\n");
     const int result = [self doRunWithArguments:arguments];
-    if (debug) {
-        fprintf(stdout, "🥇✅ finished s7 post-checkout hook\n");
-    }
+    fprintf(stdout, "s7: finished post-checkout hook\n");
     return result;
 }
 
@@ -162,13 +157,39 @@
         NSString *subrepoPath = subrepoToDelete.path;
         BOOL isDirectory = NO;
         if ([NSFileManager.defaultManager fileExistsAtPath:subrepoPath isDirectory:&isDirectory] && isDirectory) {
+            GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
+            if (subrepoGit) {
+                const BOOL hasUnpushedCommits = [subrepoGit hasUnpushedCommits];
+                const BOOL hasUncommitedChanges = [subrepoGit hasUncommitedChanges];
+                if (hasUncommitedChanges || hasUnpushedCommits) {
+                    const char *reason = NULL;
+                    if (hasUncommitedChanges && hasUnpushedCommits) {
+                        reason = "uncommitted and not pushed changes";
+                    }
+                    else if (hasUncommitedChanges) {
+                        reason = "uncommitted changes";
+                    }
+                    else {
+                        reason = "not pushed changes";
+                    }
+
+                    NSAssert(reason, @"");
+
+                    fprintf(stderr,
+                            "⚠️ not removing repo '%s' because it has %s.\n",
+                            subrepoPath.fileSystemRepresentation,
+                            reason);
+                    continue;
+                }
+            }
+
             fprintf(stdout, "removing subrepo '%s'", subrepoPath.fileSystemRepresentation);
 
             NSError *error = nil;
             if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoPath error:&error]) {
                 fprintf(stderr,
-                        "abort: failed to remove subrepo '%s' directory\n"
-                        "error: %s\n",
+                        " abort: failed to remove subrepo '%s' directory\n"
+                        " error: %s\n",
                         [subrepoPath fileSystemRepresentation],
                         [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
                 return S7ExitCodeFileOperationFailed;
@@ -176,24 +197,31 @@
         }
     }
 
+    BOOL anySubrepoContainedUncommittedChanges = NO;
+
     for (S7SubrepoDescription *subrepoDesc in toConfig.subrepoDescriptions) {
         GitRepository *subrepoGit = nil;
 
         BOOL isDirectory = NO;
         if ([NSFileManager.defaultManager fileExistsAtPath:subrepoDesc.path isDirectory:&isDirectory] && isDirectory) {
+            fprintf(stdout,
+                    " checking out subrepo '%s'\n",
+                    [subrepoDesc.path fileSystemRepresentation]);
+
             subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoDesc.path];
             if (nil == subrepoGit) {
                 return S7ExitCodeSubrepoIsNotGitRepository;
             }
 
             if ([subrepoGit hasUncommitedChanges]) {
-                NSAssert(NO, @"");
 //                if (NO == self.clean) {
-//                    fprintf(stderr,
-//                            "found uncommited changes in subrepo '%s'\n"
-//                            "use -C/--clean option if you want to discard any changes automatically\n",
-//                            subrepoDesc.path.fileSystemRepresentation);
-//                    return S7ExitCodeUncommitedChanges;
+                    anySubrepoContainedUncommittedChanges = YES;
+
+                    fprintf(stderr,
+                            " 🚨 uncommited local changes in subrepo '%s'\n",
+                            subrepoDesc.path.fileSystemRepresentation);
+
+                    continue;
 //                }
 //                else {
 //                    const int resetExitStatus = [subrepoGit resetLocalChanges];
@@ -208,7 +236,7 @@
         }
         else {
             fprintf(stdout,
-                    "cloning subrepo '%s' from '%s'\n",
+                    " cloning subrepo '%s' from '%s'\n",
                     [subrepoDesc.path fileSystemRepresentation],
                     [subrepoDesc.url fileSystemRepresentation]);
 
@@ -219,7 +247,7 @@
                           exitStatus:&cloneExitStatus];
             if (nil == subrepoGit || 0 != cloneExitStatus) {
                 fprintf(stderr,
-                        "failed to clone subrepo '%s'\n",
+                        " failed to clone subrepo '%s'\n",
                         [subrepoDesc.path fileSystemRepresentation]);
                 return S7ExitCodeGitOperationFailed;
             }
@@ -250,7 +278,7 @@
 
         if (NO == [subrepoGit isRevisionAvailableLocally:subrepoDesc.revision]) {
             fprintf(stdout,
-                    "fetching '%s'\n",
+                    " fetching '%s'\n",
                     [subrepoDesc.path fileSystemRepresentation]);
 
             if (0 != [subrepoGit fetch]) {
@@ -260,7 +288,7 @@
 
         if (NO == [subrepoGit isRevisionAvailableLocally:subrepoDesc.revision]) {
             fprintf(stderr,
-                    "revision '%s' does not exist in '%s'\n",
+                    " revision '%s' does not exist in '%s'\n",
                     [subrepoDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
                     [subrepoDesc.path fileSystemRepresentation]);
 
@@ -291,7 +319,7 @@
 //            }
 
             fprintf(stdout,
-                    "s7: checkout '%s' to %s\n",
+                    " checkout '%s' to %s\n",
                     subrepoDesc.path.fileSystemRepresentation,
                     [subrepoDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
@@ -305,6 +333,18 @@
             //
             [subrepoGit resetToRevision:subrepoDesc.revision];
         }
+    }
+
+    if (anySubrepoContainedUncommittedChanges) {
+        fprintf(stderr,
+                "\033[31m"
+                "\n"
+                "  subrepos with uncommitted local changes were not updated\n"
+                "  to prevent possible data loss\n"
+                "  (use `s7 reset` to discard subrepo changes.\n"
+                "   see `s7 help reset` for more info)\n"
+                "\033[0m");
+        return S7ExitCodeSubrepoHasLocalChanges;
     }
 
     return 0;

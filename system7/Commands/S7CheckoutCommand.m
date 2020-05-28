@@ -246,7 +246,7 @@
                             "found uncommited changes in subrepo '%s'\n"
                             "use -C/--clean option if you want to discard any changes automatically\n",
                             subrepoDesc.path.fileSystemRepresentation);
-                    return S7ExitCodeUncommitedChanges;
+                    return S7ExitCodeSubrepoHasLocalChanges;
                 }
                 else {
                     const int resetExitStatus = [subrepoGit resetLocalChanges];

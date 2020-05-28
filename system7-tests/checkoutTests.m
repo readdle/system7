@@ -277,7 +277,7 @@
         // make more changes to ReaddleLib, but commit and push them only to ReaddleLib repo
         readdleLibRevisionOnMasterPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
 
-        NSCParameterAssert(0 == [readdleLibSubrepoGit pushAll]);
+        NSCParameterAssert(0 == [readdleLibSubrepoGit pushAllBranchesNeedingPush]);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -518,20 +518,5 @@
         XCTAssertEqualObjects(actualConfig, controlConfig);
     }];
 }
-
-
-// abort if user has not pushed commits?
-// test recursive
-//
-// надо обсудить clean мод. В гите легко отстрелить себе ногу. В случае если пользователь делает git checkout -- .
-// или git reset --hard на главной репе, это значит, что он хочет сделать суть hg up -C. По-идее, тут надо дропнуть и все
-// изм-я в сабрепах. HG это делает в два захода:
-//    # first reset the index to unmark new files for commit, because
-//    # reset --hard will otherwise throw away files added for commit,
-//    # not just unmark them.
-//    self._gitcommand([b'reset', b'HEAD'])
-//    self._gitcommand([b'reset', b'--hard', b'HEAD'])
-// есть ли вообще какой-то хук на 'git reset'?
-// если хук таки есть, то надо не войти в бесконечный цикл reset-hook-reset
 
 @end

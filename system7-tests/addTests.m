@@ -206,7 +206,7 @@
         XCTAssertEqual(0, [tempReaddleLibRepo createFile:@"RDSystemInformation.h" withContents:nil]);
         XCTAssertEqual(0, [tempReaddleLibRepo add:@[ @"RDSystemInformation.h" ]]);
         [tempReaddleLibRepo commitWithMessage:@"add RDSystemInformation.h, lorem ipsum, etc."];
-        XCTAssertEqual(0, [tempReaddleLibRepo pushAll]);
+        XCTAssertEqual(0, [tempReaddleLibRepo pushAllBranchesNeedingPush]);
 
         [tempReaddleLibRepo getCurrentRevision:&expectedRevision];
     });

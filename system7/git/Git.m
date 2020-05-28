@@ -109,6 +109,21 @@ static NSString *gitExecutablePath = nil;
     return system([command cStringUsingEncoding:NSUTF8StringEncoding]);
 }
 
+- (int)runGitCommand:(NSString *)command
+        stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+        stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+{
+    NSArray<NSString *> *arguments = [command componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    arguments = [arguments filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString * _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
+        return evaluatedObject.length > 0;
+    }]];
+
+    return [self.class runGitInRepoAtPath:self.absolutePath
+                            withArguments:arguments
+                             stdOutOutput:ppStdOutOutput
+                             stdErrOutput:ppStdErrOutput];
+}
+
 + (int)runGitInRepoAtPath:(NSString *)repoPath
             withArguments:(NSArray<NSString *> *)arguments
              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
@@ -543,11 +558,45 @@ static NSString *gitExecutablePath = nil;
                              stdErrOutput:NULL];
 }
 
-- (int)pushAll {
-    const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
-                                            withArguments:@[ @"push", @"-u", @"--all" ]
-                                             stdOutOutput:NULL
-                                             stdErrOutput:NULL];
+- (BOOL)hasUnpushedCommits {
+    int dummy = 0;
+    return [self branchesToPushWithExitStatus:&dummy].count > 0;
+}
+
+- (NSArray<NSString *> *)branchesToPushWithExitStatus:(int *)exitStatus {
+    NSString *stdOutOutput = nil;
+    const int logExitStatus = [self runGitCommand:@"log --branches --not --remotes --no-walk --decorate --pretty=format:%S"
+                                     stdOutOutput:&stdOutOutput
+                                     stdErrOutput:NULL];
+    *exitStatus = logExitStatus;
+    if (0 != logExitStatus) {
+        return @[];
+    }
+
+    NSArray<NSString *> *result = [stdOutOutput componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+    result = [result filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString * _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
+        return evaluatedObject.length > 0;
+    }]];
+    return result;
+}
+
+- (int)pushAllBranchesNeedingPush {
+    int logExitStatus = 0;
+    NSArray<NSString *> *branchesToPush = [self branchesToPushWithExitStatus:&logExitStatus];
+    if (0 != logExitStatus) {
+        return logExitStatus;
+    }
+
+    if (0 == branchesToPush.count) {
+        fprintf(stdout, "found nothing to push\n");
+        return 0;
+    }
+
+    NSString *branches = [branchesToPush componentsJoinedByString:@" "];
+
+    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"push -u origin %@", branches]
+                                  stdOutOutput:NULL
+                                  stdErrOutput:NULL];
     return exitStatus;
 }
 
@@ -569,14 +618,20 @@ static NSString *gitExecutablePath = nil;
     return exitStatus;
 }
 
-#pragma mark -
+#pragma mark - reset -
 
 - (int)resetLocalChanges {
-    const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
-                                            withArguments:@[ @"reset", @"--hard", @"HEAD" ]
-                                             stdOutOutput:NULL
-                                             stdErrOutput:NULL];
-    return exitStatus;
+    // from mercurial subrepos.py:
+    //  "first reset the index to unmark new files for commit, because
+    //   reset --hard will otherwise throw away files added for commit,
+    //   not just unmark them"
+
+    const int exitStatus = [self runGitCommand:@"reset HEAD" stdOutOutput:NULL stdErrOutput:NULL];
+    if (0 != exitStatus) {
+        return exitStatus;
+    }
+
+    return [self runGitCommand:@"reset --hard HEAD" stdOutOutput:NULL stdErrOutput:NULL];
 }
 
 - (int)resetToRevision:(NSString *)revision {

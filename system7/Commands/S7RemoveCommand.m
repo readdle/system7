@@ -19,10 +19,13 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 remove PATH...");
+    puts("s7 remove [OPTION] PATH...");
     printCommandAliases(self);
     puts("");
-    puts("TODO");
+    puts("options:");
+    puts("");
+    puts(" -f --force  remove subrepo directory even if it contain uncommited/not pushed");
+    puts("             local changes");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
@@ -47,7 +50,14 @@
                                                                           encoding:NSUTF8StringEncoding
                                                                              error:nil];
 
+    BOOL force = NO;
+    BOOL anySubrepoHadLocalChanges = NO;
     for (NSString *argument in arguments) {
+        if ([argument isEqualToString:@"-f"] || [argument isEqualToString:@"--force"]) {
+            force = YES;
+            continue;
+        }
+
         NSString *path = [argument stringByStandardizingPath];
 
         S7SubrepoDescription *subrepoDesc = parsedConfig.pathToDescriptionMap[path];
@@ -57,20 +67,52 @@
 
         [newDescriptionsArray removeObject:subrepoDesc];
 
-        if ([NSFileManager.defaultManager fileExistsAtPath:subrepoDesc.path]) {
-            NSError *error = nil;
-            if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoDesc.path error:&error]) {
-                fprintf(stderr,
-                        "abort: failed to remove subrepo '%s' directory\n"
-                        "error: %s\n",
-                        [subrepoDesc.path fileSystemRepresentation],
-                        [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
-                return S7ExitCodeFileOperationFailed;
+        if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
+            BOOL canRemoveSubrepoDirectory = YES;
+            GitRepository *subrepoGit = [GitRepository repoAtPath:path];
+            if (subrepoGit && NO == force) {
+                const BOOL hasUnpushedCommits = [subrepoGit hasUnpushedCommits];
+                const BOOL hasUncommitedChanges = [subrepoGit hasUncommitedChanges];
+                if (hasUncommitedChanges || hasUnpushedCommits) {
+                    anySubrepoHadLocalChanges = YES;
+
+                    const char *reason = NULL;
+                    if (hasUncommitedChanges && hasUnpushedCommits) {
+                        reason = "uncommitted and not pushed changes";
+                    }
+                    else if (hasUncommitedChanges) {
+                        reason = "uncommitted changes";
+                    }
+                    else {
+                        reason = "not pushed changes";
+                    }
+
+                    NSAssert(reason, @"");
+
+                    fprintf(stderr,
+                            "⚠️  not removing repo '%s' directory because it has %s.\n",
+                            path.fileSystemRepresentation,
+                            reason);
+
+                    canRemoveSubrepoDirectory = NO;
+                }
+            }
+
+            if (canRemoveSubrepoDirectory) {
+                NSError *error = nil;
+                if (NO == [NSFileManager.defaultManager removeItemAtPath:path error:&error]) {
+                    fprintf(stderr,
+                            "abort: failed to remove subrepo '%s' directory\n"
+                            "error: %s\n",
+                            [path fileSystemRepresentation],
+                            [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+                    return S7ExitCodeFileOperationFailed;
+                }
             }
         }
 
         [newGitIgnoreContents
-         replaceOccurrencesOfString:[subrepoDesc.path stringByAppendingString:@"\n"]
+         replaceOccurrencesOfString:[path stringByAppendingString:@"\n"]
          withString:@""
          options:0
          range:NSMakeRange(0, newGitIgnoreContents.length)];
@@ -97,6 +139,10 @@
                 S7ControlFileName.fileSystemRepresentation);
 
         return S7ExitCodeFileOperationFailed;
+    }
+
+    if (anySubrepoHadLocalChanges) {
+        return S7ExitCodeSubrepoHasLocalChanges;
     }
 
     return 0;

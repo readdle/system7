@@ -105,7 +105,7 @@
         [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
         [tmpRepo add:@[@".gitignore"]];
         [tmpRepo commitWithMessage:@"add .gitignore"];
-        [tmpRepo pushAll];
+        [tmpRepo pushAllBranchesNeedingPush];
 
         NSParameterAssert([NSFileManager.defaultManager removeItemAtPath:@"tmp" error:nil]);
 

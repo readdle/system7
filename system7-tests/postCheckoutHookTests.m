@@ -273,7 +273,7 @@
         // make more changes to ReaddleLib, but commit and push them only to ReaddleLib repo
         readdleLibRevisionOnMasterPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
 
-        NSCParameterAssert(0 == [readdleLibSubrepoGit pushAll]);
+        NSCParameterAssert(0 == [readdleLibSubrepoGit pushAllBranchesNeedingPush]);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -686,6 +686,7 @@
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
 //        NSString *expectedReaddleLibRevision =
         commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+        [readdleLibSubrepoGit pushCurrentBranch];
 
         s7rebind();
 
@@ -742,16 +743,376 @@
     }];
 }
 
-// abort if user has not pushed commits?
-// test recursive – maybe this will make me to use `checkout -B` instead of `checkout + reset --hard`
-//
-// надо обсудить clean мод. В гите легко отстрелить себе ногу. В случае если пользователь делает git checkout -- .
-// или git reset --hard на главной репе, это значит, что он хочет сделать суть hg up -C. По-идее, тут надо дропнуть и все
-// изм-я в сабрепах. HG это делает в два захода:
-//    # first reset the index to unmark new files for commit, because
-//    # reset --hard will otherwise throw away files added for commit,
-//    # not just unmark them.
-//    self._gitcommand([b'reset', b'HEAD'])
-//    self._gitcommand([b'reset', b'--hard', b'HEAD'])
+- (void)testBranchSwitchWithUncommittedChangesInSubrepo {
+    __block NSString *readdleLib_initialRevision = nil;
+    __block NSString *readdleLib_pdfExpertRevision = nil;
+    __block NSString *readdleLib_documentsRevision = nil;
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        readdleLib_initialRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+
+        s7rebind();
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        [repo checkoutNewLocalBranch:@"release/pdfexpert-7.3"];
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        readdleLib_pdfExpertRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"math is hard");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up readdle lib"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo checkoutNewLocalBranch:@"release/documents-7.1.4"];
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        [readdleLibSubrepoGit fetch];
+        [readdleLibSubrepoGit checkoutNewLocalBranch:@"release/documents-7.1.4"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        readdleLib_documentsRevision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"iPad 11''", @"add support for a new iPad model");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
+        S7Config *prevConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        // make local changes in ReaddleLib ...
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        NSString *uncommittedSystemInfoContents = @"iPhoneX";
+        [readdleLibSubrepoGit createFile:@"RDSystemInfo.h" withContents:uncommittedSystemInfoContents];
+
+        // forget about it and try to switch to a different branch in rd2
+        [repo checkoutRemoteTrackingBranch:@"release/pdfexpert-7.3"];
+
+        NSString *pdfexpertReleaseRevision = nil;
+        [repo getCurrentRevision:&pdfexpertReleaseRevision];
+
+        XCTAssertNotEqual(0, s7checkout(prevRevision, pdfexpertReleaseRevision));
+
+        // we cannot prevent rd2 update with post-checkout...
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertNotEqualObjects(actualConfig, controlConfig);
+        XCTAssertEqualObjects(prevConfig, controlConfig);
+
+        // but our hook must prevent subrepo update
+        readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        // ReaddleLib must stay at the same revision...
+        NSString *actualReaddleLibRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
+        XCTAssertEqualObjects(readdleLib_documentsRevision, actualReaddleLibRevision);
+
+        NSString *RDSystemInfoContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/ReaddleLib/RDSystemInfo.h" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqualObjects(RDSystemInfoContents, uncommittedSystemInfoContents);
+    }];
+}
+
+- (void)testBranchSwitchWithUncommittedChangesInSubrepoUpdatesAllOtherSubrepoDespiteFailInOne {
+    __block NSString *readdleLib_initialRevision = nil;
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        readdleLib_initialRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+        s7add(@"Dependencies/RDSFTP", self.env.githubRDSFTPRepo.absolutePath);
+
+        s7rebind();
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    __block NSString *expectedPdfKitRevision = nil;
+    __block NSString *expectedSFTPRevision = nil;
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        [repo checkoutNewLocalBranch:@"release/pdfexpert-7.3"];
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"math is hard");
+
+        GitRepository *pdfKitRepo = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        expectedPdfKitRevision = commit(pdfKitRepo, @"RDPDFAnnotation.h", @"/AP /N", @"first");
+
+        GitRepository *sftpRepo = [GitRepository repoAtPath:@"Dependencies/RDSFTP"];
+        expectedSFTPRevision = commit(sftpRepo, @"main.m", @"public static void main", @"FTP – kaka");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up subrepos"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
+        S7Config *prevConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        // make local changes in ReaddleLib ...
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        NSString *uncommittedSystemInfoContents = @"iPhoneX";
+        [readdleLibSubrepoGit createFile:@"RDSystemInfo.h" withContents:uncommittedSystemInfoContents];
+
+        // forget about it and try to switch to a different branch in rd2
+        [repo checkoutRemoteTrackingBranch:@"release/pdfexpert-7.3"];
+
+        NSString *pdfexpertReleaseRevision = nil;
+        [repo getCurrentRevision:&pdfexpertReleaseRevision];
+
+        XCTAssertEqual(S7ExitCodeSubrepoHasLocalChanges, s7checkout(prevRevision, pdfexpertReleaseRevision));
+
+        // we cannot prevent rd2 update with post-checkout...
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertNotEqualObjects(actualConfig, controlConfig);
+        XCTAssertEqualObjects(prevConfig, controlConfig);
+
+        // but our hook must prevent subrepo update
+        readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        // ReaddleLib must stay at the same revision...
+        NSString *actualReaddleLibRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
+        XCTAssertEqualObjects(readdleLib_initialRevision, actualReaddleLibRevision);
+
+        NSString *RDSystemInfoContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/ReaddleLib/RDSystemInfo.h" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqualObjects(RDSystemInfoContents, uncommittedSystemInfoContents);
+
+        // other subrepos must update successfully despite failure in one subrepo
+        //
+        GitRepository *pdfKitRepo = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        NSString *actualPdfKitRevision = nil;
+        [pdfKitRepo getCurrentRevision:&actualPdfKitRevision];
+        XCTAssertEqualObjects(expectedPdfKitRevision, actualPdfKitRevision);
+
+        GitRepository *sftpRepo = [GitRepository repoAtPath:@"Dependencies/RDSFTP"];
+        NSString *actualSFTPRevision = nil;
+        [sftpRepo getCurrentRevision:&actualSFTPRevision];
+        XCTAssertEqualObjects(expectedSFTPRevision, actualSFTPRevision);
+    }];
+}
+
+- (void)testBranchSwitchDoesNotRemoveSubrepoDirIfInContainsUncommittedLocalChanges {
+    __block NSString *readdleLib_initialRevision = nil;
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        readdleLib_initialRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+
+        s7rebind();
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        [repo checkoutNewLocalBranch:@"release/pdfexpert-7.3"];
+
+        s7remove(@"Dependencies/ReaddleLib");
+
+        [repo add:@[ S7ConfigFileName, @".gitignore" ]];
+        [repo commitWithMessage:@"drop ReaddleLib subrepos"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
+        S7Config *prevConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        // make local changes in ReaddleLib ...
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        NSString *uncommittedSystemInfoContents = @"iPhoneX";
+        [readdleLibSubrepoGit createFile:@"RDSystemInfo.h" withContents:uncommittedSystemInfoContents];
+
+        // forget about it and try to switch to a different branch in rd2
+        [repo checkoutRemoteTrackingBranch:@"release/pdfexpert-7.3"];
+
+        NSString *pdfexpertReleaseRevision = nil;
+        [repo getCurrentRevision:&pdfexpertReleaseRevision];
+
+        XCTAssertEqual(0, s7checkout(prevRevision, pdfexpertReleaseRevision));
+
+        // we cannot prevent rd2 update with post-checkout...
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        // unlike in case of update, we exit with success (0) and do not prevent contol config from update
+        // user will see a warning and subrepo dir will be kept locally, it will also become untracked
+        // as it's been removed from .gitignore
+        //
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig);
+        XCTAssertNotEqualObjects(prevConfig, controlConfig);
+
+        // but our hook must prevent subrepo update
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
+
+        readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        // ReaddleLib must stay at the same revision...
+        NSString *actualReaddleLibRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
+        XCTAssertEqualObjects(readdleLib_initialRevision, actualReaddleLibRevision);
+
+        NSString *RDSystemInfoContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/ReaddleLib/RDSystemInfo.h" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqualObjects(RDSystemInfoContents, uncommittedSystemInfoContents);
+    }];
+}
+
+- (void)testBranchSwitchDoesNotRemoveSubrepoDirIfInContainsUnpushedCommits {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+
+        s7rebind();
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        [repo checkoutNewLocalBranch:@"release/pdfexpert-7.3"];
+
+        s7remove(@"Dependencies/ReaddleLib");
+
+        [repo add:@[ S7ConfigFileName, @".gitignore" ]];
+        [repo commitWithMessage:@"drop ReaddleLib subrepos"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *prevRevision = nil;
+        [repo getCurrentRevision:&prevRevision];
+
+        S7Config *prevConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        // make local changes in ReaddleLib ...
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        NSString *committedSystemInfoContents = @"iPhoneX";
+        NSString *expectedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", committedSystemInfoContents, @"commit and forget to push");
+
+        // forget about it and try to switch to a different branch in rd2
+        [repo checkoutRemoteTrackingBranch:@"release/pdfexpert-7.3"];
+
+        NSString *pdfexpertReleaseRevision = nil;
+        [repo getCurrentRevision:&pdfexpertReleaseRevision];
+
+        XCTAssertEqual(0, s7checkout(prevRevision, pdfexpertReleaseRevision));
+
+        // we cannot prevent rd2 update with post-checkout...
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        // unlike in case of update, we exit with success (0) and do not prevent contol config from update
+        // user will see a warning and subrepo dir will be kept locally, it will also become untracked
+        // as it's been removed from .gitignore
+        //
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig);
+        XCTAssertNotEqualObjects(prevConfig, controlConfig);
+
+        // but our hook must prevent subrepo update
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
+
+        readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        // ReaddleLib must stay at the same revision...
+        NSString *actualReaddleLibRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
+        XCTAssertEqualObjects(expectedReaddleLibRevision, actualReaddleLibRevision);
+
+        NSString *RDSystemInfoContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/ReaddleLib/RDSystemInfo.h" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqualObjects(RDSystemInfoContents, committedSystemInfoContents);
+    }];
+}
+
+// test recursive – maybe this will make me to use `checkout -B` instead of `checkout + reset --hard`,
+// as 'reset' has no hook, and checkout does have – thus I can do nothing special – just guaranties
+// that subrepos have installed hooks
 
 @end

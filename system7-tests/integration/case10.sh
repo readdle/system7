@@ -54,5 +54,5 @@ cat .s7substate
 echo
 
 assert test master = `cat Dependencies/ReaddleLib/RDMath.h`
-grep '"<<<"' .s7substate > /dev/null
+grep "<<<" .s7substate > /dev/null
 assert test 0 -ne $? # must be no conflict marker in .s7substate

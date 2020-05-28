@@ -243,7 +243,7 @@
         fprintf(stdout, " pushing...\n");
 
         // if subrepo is a s7 repo itself, pre-push hook in it will do the rest for us
-        const int gitExitStatus = [subrepoGit pushAll];
+        const int gitExitStatus = [subrepoGit pushAllBranchesNeedingPush];
         if (0 != gitExitStatus) {
             return gitExitStatus;
         }
