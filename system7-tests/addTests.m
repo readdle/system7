@@ -52,7 +52,7 @@
 
 - (void)testAddAlreadyClonedRepoWithJustDirectoryPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
-        s7init();
+        s7init_deactivateHooks();
 
         S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
@@ -120,7 +120,7 @@
 
 - (void)testAddRepoWithUrlAndNotStandartizedPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
-        s7init();
+        s7init_deactivateHooks();
 
         s7add(@"Dependencies/ReaddleLib/", self.env.githubReaddleLibRepo.absolutePath);
 
@@ -236,7 +236,7 @@
 
 - (void)testGitIgnoredIsUpdatedProperly {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *typicalGitIgnoreContent = @".DS_Store\n"
                                              "*.pbxuser\n"
@@ -266,7 +266,7 @@
     // '--stage' option performs `git add .s7substate .gitignore`
     //
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7AddCommand *command = [S7AddCommand new];
         const int addResult = [command runWithArguments:@[ @"--stage", @"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];

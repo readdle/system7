@@ -9,6 +9,8 @@
 #import "S7PostCheckoutHook.h"
 
 #import "S7Diff.h"
+#import "S7InitCommand.h"
+#import "Utils.h"
 
 @implementation S7PostCheckoutHook
 
@@ -251,6 +253,18 @@
                         [subrepoDesc.path fileSystemRepresentation]);
                 return S7ExitCodeGitOperationFailed;
             }
+
+            if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoDesc.path stringByAppendingPathComponent:S7ConfigFileName]]) {
+                const int initExitStatus =
+                executeInDirectory(subrepoDesc.path, ^int{
+                    S7InitCommand *initCommand = [S7InitCommand new];
+                    return [initCommand runWithArguments:@[]];
+                });
+
+                if (0 != initExitStatus) {
+                    return initExitStatus;
+                }
+            }
         }
 
         NSString *currentBranch = nil;
@@ -331,7 +345,7 @@
             //
             // Found an alternative – `git checkout -B branch revision`
             //
-            [subrepoGit resetToRevision:subrepoDesc.revision];
+            [subrepoGit forceCheckoutExistingLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision];
         }
     }
 

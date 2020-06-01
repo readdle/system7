@@ -301,6 +301,21 @@ static NSString *gitExecutablePath = nil;
                              stdErrOutput:NULL];
 }
 
+- (int)forceCheckoutExistingLocalBranch:(NSString *)branchName revision:(NSString *)revisions {
+    // pastey: theoretically, one can be concirned with "injection" here
+    // I think it's not a problem for two reasons:
+    //  1. s7 is purely a developer tool, so if someone wants to do some harm and they have access to our coce,
+    //     they have an easier ways than injections
+    //  2. anyway 'command' is then split into arguments and passed to git as an array, so git would most likely
+    //     not accept these arguments; unless the user is super smart to build some fancy git command that allows
+    //     exectuting different git commands (see point #1)
+    //
+    return [self runGitCommand:[NSString stringWithFormat:@"checkout -B %@ %@", branchName, revisions]
+                  stdOutOutput:NULL
+                  stdErrOutput:NULL];
+}
+
+
 - (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch {
     NSString *stdOutOutput = nil;
     NSString *stdErrOutput = nil;

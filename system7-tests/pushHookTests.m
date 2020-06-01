@@ -38,7 +38,7 @@
 
 - (void)testOnUpToDateRepo {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7PrePushHook *command = [S7PrePushHook new];
 
@@ -52,7 +52,7 @@
 
 - (void)testPushOnCorruptedS7Repo {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *revision = commit(repo, @"file", @"asdf", @"add sample file");
 
@@ -71,7 +71,7 @@
 
 - (void)testPushWithoutCommittedConfig {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *revision = commit(repo, @"file", @"asdf", @"add sample file");
 
@@ -87,7 +87,7 @@
 
 - (void)testSubrepoIsntPushedIfConfigIsUnknownToGit {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -112,7 +112,7 @@
 
 - (void)testPushDoesntWorkOnNotReboundSubrepo {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -147,7 +147,7 @@
 
 - (void)testPushDoesntWorkOnReboundSubrepoIfConfigIsNotCommitted {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -187,7 +187,7 @@
 
 - (void)testPushWorksOnReboundSubrepoWithCommittedConfig {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -228,7 +228,7 @@
 
 - (void)testPushSubrepoWithCustomBranch {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -396,7 +396,7 @@
 
 - (void)testInitialPush {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         NSString *readdleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");

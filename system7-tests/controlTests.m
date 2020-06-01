@@ -26,7 +26,7 @@
 
 - (void)testGitResetCanBeDetectedWithHash {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
 

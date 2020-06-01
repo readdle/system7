@@ -17,8 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 // utils operate on current directory
 //
 
-void s7init(void);
-void s7init_deactivateHooks(void);
+int s7init_deactivateHooks(void);
 
 GitRepository *s7add(NSString *subrepoPath, NSString *url);
 GitRepository *s7add_stage(NSString *subrepoPath, NSString *url);

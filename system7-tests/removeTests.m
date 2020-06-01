@@ -38,7 +38,7 @@
 
 - (void)testWithoutMandatoryArguments {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7RemoveCommand *command = [S7RemoveCommand new];
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
@@ -47,7 +47,7 @@
 
 - (void)testUnknownSubrepo {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         S7RemoveCommand *command = [S7RemoveCommand new];
         XCTAssertEqual(S7ExitCodeInvalidArgument, [command runWithArguments:@[ @"no-such" ]]);

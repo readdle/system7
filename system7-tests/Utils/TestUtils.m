@@ -18,13 +18,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-void s7init(void) {
-    S7InitCommand *initCommand = [S7InitCommand new];
-    const int result = [initCommand runWithArguments:@[]];
-    NSCAssert(0 == result, @"");
-}
-
-void s7init_deactivateHooks(void) {
+int s7init_deactivateHooks(void) {
     S7InitCommand *initCommand = [S7InitCommand new];
 
     // disable real hooks installed by `s7 init` to work in clear environment
@@ -35,6 +29,7 @@ void s7init_deactivateHooks(void) {
     initCommand.installFakeHooks = YES;
     const int result = [initCommand runWithArguments:@[]];
     NSCAssert(0 == result, @"");
+    return result;
 }
 
 GitRepository *s7add_impl(NSString *subrepoPath, NSString *url, BOOL stage) {

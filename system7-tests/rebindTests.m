@@ -53,7 +53,7 @@
 
 - (void)testRebindTheOnlySubrepo {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -77,7 +77,7 @@
 
 - (void)testRebindAllSubreposAtOnce {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *readdleLibSubrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *readdleLibSubrepoGit = s7add(readdleLibSubrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -118,7 +118,7 @@
 
 - (void)testRebindJustOneSubreposAtATime {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *readdleLibSubrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *readdleLibSubrepoGit = s7add(readdleLibSubrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -158,7 +158,7 @@
 
 - (void)testRebindSubrepoSwitchedToDifferentBranch {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -189,7 +189,7 @@
     // it can be confused with '--all'. Like, `rebind all`. `rebind --stage` cannot be misread.
     //
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        s7init();
+        s7init_deactivateHooks();
 
         NSString *subrepoPath = @"Dependencies/ReaddleLib";
         GitRepository *subrepoGit = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
@@ -226,7 +226,7 @@
     }];
 }
 
-- (void)testRebindSubrepoWIthDetachedHead {
+- (void)testRebindSubrepoWithDetachedHead {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init_deactivateHooks();
 

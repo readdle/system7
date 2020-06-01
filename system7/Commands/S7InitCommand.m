@@ -33,6 +33,11 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
+    GitRepository *repo = [GitRepository repoAtPath:@"."];
+    if (nil == repo) {
+        return S7ExitCodeNotGitRepository;
+    }
+
     BOOL isDirectory = NO;
     const BOOL configFileExisted = [[NSFileManager defaultManager] fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory];
     if (NO == configFileExisted) {
@@ -42,7 +47,8 @@
         }
     }
 
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName]) {
+    const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
+    if (NO == controlFileExisted) {
         if (0 != [[S7Config emptyConfig] saveToFileAtPath:S7ControlFileName]) {
             fprintf(stderr,
                     "failed to save %s to disk.\n",
@@ -79,6 +85,31 @@
     const int configUpdateExitStatus = [self installS7ConfigMergeDriver];
     if (0 != configUpdateExitStatus) {
         return configUpdateExitStatus;
+    }
+
+    if (NO == controlFileExisted) {
+        NSString *currentRevision = nil;
+        if (0 != [repo getCurrentRevision:&currentRevision]) {
+            return S7ExitCodeGitOperationFailed;
+        }
+
+        // pastey:
+        // I considered two options:
+        //  1. make 'init' pure, i.e. it just creates necessary files and (re-)installs hooks
+        //     thus to get to work on an existing s7 repo, user would have to run two commands
+        //      -- s7 init
+        //      -- s7 reset / git checkout -- .s7substate
+        //  2. make init run checkout on user's behalf to make setup easier
+        //
+        // I stuck to the second variant. Only if that's a first init (control file didn't exist)
+        // This would make end user's experience better
+        //
+        const int checkoutExitStatus = [S7PostCheckoutHook checkoutSubreposForRepo:repo
+                                                                      fromRevision:[GitRepository nullRevision]
+                                                                        toRevision:currentRevision];
+        if (0 != checkoutExitStatus) {
+            return checkoutExitStatus;
+        }
     }
 
     if (configFileExisted) {
