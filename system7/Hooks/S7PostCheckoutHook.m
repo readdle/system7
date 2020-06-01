@@ -81,10 +81,10 @@
         return S7ExitCodeInvalidArgument;
     }
 
-    return [self checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];
+    return [self.class checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];
 }
 
-- (int)checkoutSubreposForRepo:(GitRepository *)repo
++ (int)checkoutSubreposForRepo:(GitRepository *)repo
                   fromRevision:(NSString *)fromRevision
                     toRevision:(NSString *)toRevision
 {
@@ -140,7 +140,7 @@
     return 0;
 }
 
-- (int)checkoutSubreposForRepo:(GitRepository *)repo
++ (int)checkoutSubreposForRepo:(GitRepository *)repo
                     fromConfig:(S7Config *)fromConfig
                       toConfig:(S7Config *)toConfig
 {

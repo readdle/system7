@@ -12,7 +12,7 @@
 
 #import "S7Diff.h"
 #import "Utils.h"
-#import "S7CheckoutCommand.h"
+#import "S7PostCheckoutHook.h"
 #import "S7SubrepoDescriptionConflict.h"
 
 
@@ -155,21 +155,18 @@
     if (nil == baseConfigFilePath) {
         fprintf(stderr,
                 "required argument BASE is missing\n");
-        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
     if (nil == ourConfigFilePath) {
         fprintf(stderr,
                 "required argument OUR is missing\n");
-        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
     if (nil == theirConfigFilePath) {
         fprintf(stderr,
                 "required argument THEIR is missing\n");
-        [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
 
@@ -551,8 +548,7 @@ saveResultToFilePath:(NSString *)resultFilePath
         return S7ExitCodeMergeFailed;
     }
 
-    S7CheckoutCommand *checkoutCommand = [S7CheckoutCommand new];
-    return [checkoutCommand checkoutSubreposForRepo:repo fromConfig:ourConfig toConfig:mergeResult];
+    return [S7PostCheckoutHook checkoutSubreposForRepo:repo fromConfig:ourConfig toConfig:mergeResult];
 }
 
 @end

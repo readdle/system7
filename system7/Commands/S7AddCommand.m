@@ -11,7 +11,7 @@
 #import "Git.h"
 #import "Utils.h"
 #import "S7InitCommand.h"
-#import "S7CheckoutCommand.h"
+#import "S7PostCheckoutHook.h"
 
 @implementation S7AddCommand
 
@@ -263,8 +263,9 @@
                 NSString *currentRevision = nil;
                 [gitSubrepo getCurrentRevision:&currentRevision];
 
-                S7CheckoutCommand *command = [S7CheckoutCommand new];
-                const int checkoutExitStatus = [command runWithArguments:@[[GitRepository nullRevision], currentRevision]];
+                const int checkoutExitStatus = [S7PostCheckoutHook checkoutSubreposForRepo:gitSubrepo
+                                                                              fromRevision:[GitRepository nullRevision]
+                                                                                toRevision:currentRevision];
                 return checkoutExitStatus;
             });
 

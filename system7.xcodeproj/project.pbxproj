@@ -28,7 +28,6 @@
 		BE3A29F02460712F004A2B31 /* S7InitCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29EE2460712F004A2B31 /* S7InitCommand.m */; };
 		BE3A29F224607234004A2B31 /* initTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29F124607234004A2B31 /* initTests.m */; };
 		BE3A29F424607419004A2B31 /* addTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29F324607419004A2B31 /* addTests.m */; };
-		BE4BB43A246159BA00545358 /* checkoutTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE4BB439246159BA00545358 /* checkoutTests.m */; };
 		BE4BB43C24615CFD00545358 /* rebindTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE4BB43B24615CFD00545358 /* rebindTests.m */; };
 		BE4BB43E246166CE00545358 /* pushHookTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE4BB43D246166CE00545358 /* pushHookTests.m */; };
 		BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */; };
@@ -55,8 +54,6 @@
 		BED60FBB245AC222008EA752 /* Git.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE928A02456DA6500BD6B86 /* Git.m */; };
 		BED60FBD245AC23E008EA752 /* S7Types.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FBC245AC23D008EA752 /* S7Types.m */; };
 		BED60FBE245AC23E008EA752 /* S7Types.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FBC245AC23D008EA752 /* S7Types.m */; };
-		BED60FC6245AFBEA008EA752 /* S7CheckoutCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FC5245AFBEA008EA752 /* S7CheckoutCommand.m */; };
-		BED60FC7245AFBEA008EA752 /* S7CheckoutCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FC5245AFBEA008EA752 /* S7CheckoutCommand.m */; };
 		BEE1CD03246A9F6F00E2CC3B /* controlTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE1CD02246A9F6F00E2CC3B /* controlTests.m */; };
 		BEE1CD09246AEE9E00E2CC3B /* S7Command.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE1CD08246AEE9E00E2CC3B /* S7Command.m */; };
 		BEE1CD0A246AEE9E00E2CC3B /* S7Command.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE1CD08246AEE9E00E2CC3B /* S7Command.m */; };
@@ -101,7 +98,6 @@
 		BE3A29EE2460712F004A2B31 /* S7InitCommand.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7InitCommand.m; sourceTree = "<group>"; };
 		BE3A29F124607234004A2B31 /* initTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = initTests.m; sourceTree = "<group>"; };
 		BE3A29F324607419004A2B31 /* addTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = addTests.m; sourceTree = "<group>"; };
-		BE4BB439246159BA00545358 /* checkoutTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = checkoutTests.m; sourceTree = "<group>"; };
 		BE4BB43B24615CFD00545358 /* rebindTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = rebindTests.m; sourceTree = "<group>"; };
 		BE4BB43D246166CE00545358 /* pushHookTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = pushHookTests.m; sourceTree = "<group>"; };
 		BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7PrePushHook.m; sourceTree = "<group>"; };
@@ -132,8 +128,6 @@
 		BED60FB7245ABB43008EA752 /* S7RebindCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7RebindCommand.h; sourceTree = "<group>"; };
 		BED60FB8245ABB43008EA752 /* S7RebindCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7RebindCommand.m; sourceTree = "<group>"; };
 		BED60FBC245AC23D008EA752 /* S7Types.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7Types.m; sourceTree = "<group>"; };
-		BED60FC4245AFBEA008EA752 /* S7CheckoutCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7CheckoutCommand.h; sourceTree = "<group>"; };
-		BED60FC5245AFBEA008EA752 /* S7CheckoutCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7CheckoutCommand.m; sourceTree = "<group>"; };
 		BEE1CD02246A9F6F00E2CC3B /* controlTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = controlTests.m; sourceTree = "<group>"; };
 		BEE1CD08246AEE9E00E2CC3B /* S7Command.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7Command.m; sourceTree = "<group>"; };
 		BEE9289F2456DA6500BD6B86 /* Git.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Git.h; sourceTree = "<group>"; };
@@ -240,7 +234,6 @@
 				BE4BB43B24615CFD00545358 /* rebindTests.m */,
 				BEBD16942455824400E81673 /* diffTests.m */,
 				BE3A29E424604C10004A2B31 /* statusTests.m */,
-				BE4BB439246159BA00545358 /* checkoutTests.m */,
 				BED36BE2246D8A4B00D6EB1C /* postCheckoutHookTests.m */,
 				BE4BB43D246166CE00545358 /* pushHookTests.m */,
 				BED36BEC246E908300D6EB1C /* mergeAlgorithmTests.m */,
@@ -274,8 +267,6 @@
 				BE389213246304F200394CA8 /* S7RemoveCommand.m */,
 				BED60FB7245ABB43008EA752 /* S7RebindCommand.h */,
 				BED60FB8245ABB43008EA752 /* S7RebindCommand.m */,
-				BED60FC4245AFBEA008EA752 /* S7CheckoutCommand.h */,
-				BED60FC5245AFBEA008EA752 /* S7CheckoutCommand.m */,
 				BE3A29E624604D1B004A2B31 /* S7StatusCommand.h */,
 				BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */,
 			);
@@ -397,7 +388,6 @@
 				BED60FB5245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BED36BE0246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */,
 				BEE928A12456DA6500BD6B86 /* Git.m in Sources */,
-				BED60FC6245AFBEA008EA752 /* S7CheckoutCommand.m in Sources */,
 				BE3A29EF2460712F004A2B31 /* S7InitCommand.m in Sources */,
 				BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
 				BED36BEA246E904E00D6EB1C /* S7PostMergeHook.m in Sources */,
@@ -426,7 +416,6 @@
 				BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BE3A29F424607419004A2B31 /* addTests.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
-				BED60FC7245AFBEA008EA752 /* S7CheckoutCommand.m in Sources */,
 				BED36BED246E908300D6EB1C /* mergeAlgorithmTests.m in Sources */,
 				BEE1CD0A246AEE9E00E2CC3B /* S7Command.m in Sources */,
 				BEBD16952455824400E81673 /* diffTests.m in Sources */,
@@ -452,7 +441,6 @@
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,
 				BE3A29F02460712F004A2B31 /* S7InitCommand.m in Sources */,
 				BED60E172458811A008EA752 /* Utils.m in Sources */,
-				BE4BB43A246159BA00545358 /* checkoutTests.m in Sources */,
 				BE28CB332472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */,
 				BED60FBA245ABB43008EA752 /* S7RebindCommand.m in Sources */,
 			);

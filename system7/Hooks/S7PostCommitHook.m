@@ -8,7 +8,7 @@
 
 #import "S7PostCommitHook.h"
 
-#import "S7CheckoutCommand.h"
+#import "S7PostCheckoutHook.h"
 
 @implementation S7PostCommitHook
 
@@ -63,8 +63,7 @@
     S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
     S7Config *postMergeConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
-    S7CheckoutCommand *checkoutCommand = [S7CheckoutCommand new];
-    const int checkoutExitStatus = [checkoutCommand checkoutSubreposForRepo:repo fromConfig:controlConfig toConfig:postMergeConfig];
+    const int checkoutExitStatus = [S7PostCheckoutHook checkoutSubreposForRepo:repo fromConfig:controlConfig toConfig:postMergeConfig];
     if (0 != checkoutExitStatus) {
         return checkoutExitStatus;
     }
