@@ -306,4 +306,46 @@
     }];
 }
 
+- (void)testAddAnotherS7Repo {
+    int cloneExitStatus = 0;
+    GitRepository *pdfKitRepo = [GitRepository cloneRepoAtURL:self.env.githubRDPDFKitRepo.absolutePath destinationPath:[self.env.root stringByAppendingPathComponent:@"pastey/rdpdfkit"] exitStatus:&cloneExitStatus];
+    XCTAssertEqual(0, cloneExitStatus);
+    XCTAssertNotNil(pdfKitRepo);
+
+    __block NSString *expectedFormCalcRevision = nil;
+    [pdfKitRepo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        s7add_stage(@"Dependencies/FormCalc", self.env.githubFormCalcRepo.absolutePath);
+
+        [repo commitWithMessage:@"add FormCalc subrepo"];
+
+        GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/FormCalc"];
+        XCTAssertNotNil(formCalcSubrepoGit);
+
+        expectedFormCalcRevision = commit(formCalcSubrepoGit, @"Parser.c", @"AST", @"ast");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up FormCalc"];
+
+        [formCalcSubrepoGit pushAllBranchesNeedingPush];
+        [repo pushCurrentBranch];
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        S7AddCommand *command = [S7AddCommand new];
+        const int addResult = [command runWithArguments:@[ @"--stage", @"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath ]];
+        XCTAssertEqual(0, addResult);
+
+        GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit/Dependencies/FormCalc"];
+        XCTAssertNotNil(formCalcSubrepoGit);
+
+        NSString *actualFormCalcRevision = nil;
+        [formCalcSubrepoGit getCurrentRevision:&actualFormCalcRevision];
+        XCTAssertEqualObjects(actualFormCalcRevision, expectedFormCalcRevision);
+    }];
+}
+
 @end

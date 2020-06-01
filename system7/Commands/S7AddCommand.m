@@ -10,6 +10,8 @@
 #import "S7Config.h"
 #import "Git.h"
 #import "Utils.h"
+#import "S7InitCommand.h"
+#import "S7CheckoutCommand.h"
 
 @implementation S7AddCommand
 
@@ -234,6 +236,43 @@
     const int gitignoreAddResult = addLineToGitIgnore(path);
     if (0 != gitignoreAddResult) {
         return gitignoreAddResult;
+    }
+
+    if ([NSFileManager.defaultManager fileExistsAtPath:[path stringByAppendingPathComponent:S7ConfigFileName] isDirectory:&isDirectory]) {
+        if (isDirectory) {
+            fprintf(stderr,
+                    "warn: added subrepo '%s' contains %s, but that's a directory\n",
+                    path.fileSystemRepresentation,
+                    S7ConfigFileName.fileSystemRepresentation);
+        }
+        else {
+            const int subrepoS7InitExitCode =
+            executeInDirectory(path, ^int{
+                S7InitCommand *initCommand = [S7InitCommand new];
+                const int initExitCode = [initCommand runWithArguments:@[]];
+                if (0 != initExitCode) {
+                    return initExitCode;
+                }
+
+                // pastey:
+                // I could have called `git checkout -- .s7substate` or `git checkout BRANCH`
+                // to make just installed hook (post-checkout) do the trick,
+                // but this would be harder to test (as unit-test would rely on the s7 installed
+                // at test machine)
+                //
+                NSString *currentRevision = nil;
+                [gitSubrepo getCurrentRevision:&currentRevision];
+
+                S7CheckoutCommand *command = [S7CheckoutCommand new];
+                const int checkoutExitStatus = [command runWithArguments:@[[GitRepository nullRevision], currentRevision]];
+                return checkoutExitStatus;
+            });
+
+            if (0 != subrepoS7InitExitCode) {
+                fprintf(stderr, "failed to init system 7 in subrepo '%s'\n", path.fileSystemRepresentation);
+                return subrepoS7InitExitCode;
+            }
+        }
     }
 
     S7Config *updatedConfig = [[S7Config alloc] initWithSubrepoDescriptions:newConfig];

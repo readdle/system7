@@ -37,14 +37,28 @@ void s7init_deactivateHooks(void) {
     NSCAssert(0 == result, @"");
 }
 
-GitRepository *s7add(NSString *subrepoPath, NSString *url) {
+GitRepository *s7add_impl(NSString *subrepoPath, NSString *url, BOOL stage) {
     S7AddCommand *addCommand = [S7AddCommand new];
-    const int addResult = [addCommand runWithArguments:@[ subrepoPath, url ]];
+    NSArray<NSString *> *arguments = @[];
+    if (stage) {
+        arguments = [arguments arrayByAddingObject:@"--stage"];
+    }
+    arguments = [arguments arrayByAddingObjectsFromArray:@[ subrepoPath, url ]];
+
+    const int addResult = [addCommand runWithArguments:arguments];
     NSCAssert(0 == addResult, @"");
 
     GitRepository *subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoPath];
     NSCAssert(subrepoGit, @"");
     return subrepoGit;
+}
+
+GitRepository *s7add(NSString *subrepoPath, NSString *url) {
+    return s7add_impl(subrepoPath, url, NO);
+}
+
+GitRepository *s7add_stage(NSString *subrepoPath, NSString *url) {
+    return s7add_impl(subrepoPath, url, YES);
 }
 
 void s7remove(NSString *subrepoPath) {
