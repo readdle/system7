@@ -337,14 +337,7 @@
                     subrepoDesc.path.fileSystemRepresentation,
                     [subrepoDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
-            // I really hope that `reset` is always a good way to checkout a revision considering we are already
-            // at the right branch.
-            // I'm a bit confused, cause, for example, HG does `merge --ff` if we are going up, but their logic
-            // is a bit different, so nevermind.
-            // Life will show if I am right.
-            //
-            // Found an alternative – `git checkout -B branch revision`
-            //
+            // `git checkout -B branch revision`
             [subrepoGit forceCheckoutExistingLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision];
         }
     }

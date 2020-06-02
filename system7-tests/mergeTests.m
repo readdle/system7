@@ -1081,10 +1081,10 @@
 
 // what happens if subrepo merge ends with merge conflict? – test this – we should save .s7substate with conflict markers
 
-// [LOW] test merge and checkout if subrepo has switched to a different url – we must drop an old one and clone from a new url
+// [LOW] test merge and checkout if subrepo has switched to a different url – we must drop an old one and clone from a new url (aka migration)
 // [LOW] test how we react if merged subrepo is not a git repo (user has done something bad to it)
 
-// recursive?
+// recursive? must be implemented by hooks in subrepos
 
 // renormalize – seems like the thing for clang-format
 // .gitattributes 'ident' – interesting stuff for hgrevision.h/swift substitution

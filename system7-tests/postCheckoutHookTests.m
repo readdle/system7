@@ -1111,8 +1111,8 @@
     }];
 }
 
-// test recursive – maybe this will make me to use `checkout -B` instead of `checkout + reset --hard`,
-// as 'reset' has no hook, and checkout does have – thus I can do nothing special – just guaranties
-// that subrepos have installed hooks
+// there's no unit test for recursive checkout as it works on hooks
+// and I don't want to rely on hooks (s7 version installed on test machine) in unit-tests,
+// that's why recursive is tested by integration tests only
 
 @end
