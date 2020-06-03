@@ -146,6 +146,17 @@
                     fromConfig:(S7Config *)fromConfig
                       toConfig:(S7Config *)toConfig
 {
+    return [self checkoutSubreposForRepo:repo
+                              fromConfig:fromConfig
+                                toConfig:toConfig
+                                   clean:NO];
+}
+
++ (int)checkoutSubreposForRepo:(GitRepository *)repo
+                    fromConfig:(S7Config *)fromConfig
+                      toConfig:(S7Config *)toConfig
+                         clean:(BOOL)clean
+{
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
@@ -216,24 +227,26 @@
             }
 
             if ([subrepoGit hasUncommitedChanges]) {
-//                if (NO == self.clean) {
+                if (NO == clean) {
                     anySubrepoContainedUncommittedChanges = YES;
 
                     fprintf(stderr,
-                            " 🚨 uncommited local changes in subrepo '%s'\n",
+                            "\033[31m"
+                            " uncommited local changes in subrepo '%s'\n"
+                            "\033[0m",
                             subrepoDesc.path.fileSystemRepresentation);
 
                     continue;
-//                }
-//                else {
-//                    const int resetExitStatus = [subrepoGit resetLocalChanges];
-//                    if (0 != resetExitStatus) {
-//                        fprintf(stderr,
-//                                "failed to discard uncommited changes in subrepo '%s'\n",
-//                                subrepoDesc.path.fileSystemRepresentation);
-//                        return resetExitStatus;
-//                    }
-//                }
+                }
+                else {
+                    const int resetExitStatus = [subrepoGit resetLocalChanges];
+                    if (0 != resetExitStatus) {
+                        fprintf(stderr,
+                                "failed to discard uncommited changes in subrepo '%s'\n",
+                                subrepoDesc.path.fileSystemRepresentation);
+                        return resetExitStatus;
+                    }
+                }
             }
         }
         else {
@@ -348,8 +361,12 @@
                 "\n"
                 "  subrepos with uncommitted local changes were not updated\n"
                 "  to prevent possible data loss\n"
-                "  (use `s7 reset` to discard subrepo changes.\n"
-                "   see `s7 help reset` for more info)\n"
+                "\n"
+                "  Use `s7 reset` to discard subrepo changes.\n"
+                "  (see `s7 help reset` for more info)\n"
+                "\n"
+                "  Or you can run `git reset REV && git reset --hard REV`\n"
+                "  in subrepo yourself.\n"
                 "\033[0m");
         return S7ExitCodeSubrepoHasLocalChanges;
     }

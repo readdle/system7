@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BE0173E124864DF300BA4B2F /* resetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E024864DF300BA4B2F /* resetTests.m */; };
+		BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
+		BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
 		BE1079BC2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BB2466C516002A2A45 /* S7SubrepoDescriptionConflict.m */; };
 		BE1079BD2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BB2466C516002A2A45 /* S7SubrepoDescriptionConflict.m */; };
 		BE1079C02466C557002A2A45 /* S7SubrepoDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BF2466C557002A2A45 /* S7SubrepoDescription.m */; };
@@ -20,6 +23,9 @@
 		BE3892112463049400394CA8 /* removeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3892102463049300394CA8 /* removeTests.m */; };
 		BE389214246304F200394CA8 /* S7RemoveCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE389213246304F200394CA8 /* S7RemoveCommand.m */; };
 		BE389215246304F200394CA8 /* S7RemoveCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE389213246304F200394CA8 /* S7RemoveCommand.m */; };
+		BE394D392486AD7D00ED6E05 /* checkoutTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE394D382486AD7D00ED6E05 /* checkoutTests.m */; };
+		BE394D3C2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */; };
+		BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */; };
 		BE3A29E524604C10004A2B31 /* statusTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29E424604C10004A2B31 /* statusTests.m */; };
 		BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */; };
 		BE3A29E924604D1B004A2B31 /* S7StatusCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */; };
@@ -73,6 +79,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BE0173E024864DF300BA4B2F /* resetTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = resetTests.m; sourceTree = "<group>"; };
+		BE0173E224864EBF00BA4B2F /* S7ResetCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7ResetCommand.h; sourceTree = "<group>"; };
+		BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7ResetCommand.m; sourceTree = "<group>"; };
 		BE1079BA2466C516002A2A45 /* S7SubrepoDescriptionConflict.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7SubrepoDescriptionConflict.h; sourceTree = "<group>"; };
 		BE1079BB2466C516002A2A45 /* S7SubrepoDescriptionConflict.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7SubrepoDescriptionConflict.m; sourceTree = "<group>"; };
 		BE1079BE2466C557002A2A45 /* S7SubrepoDescription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7SubrepoDescription.h; sourceTree = "<group>"; };
@@ -89,6 +98,9 @@
 		BE3892102463049300394CA8 /* removeTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = removeTests.m; sourceTree = "<group>"; };
 		BE389212246304F200394CA8 /* S7RemoveCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7RemoveCommand.h; sourceTree = "<group>"; };
 		BE389213246304F200394CA8 /* S7RemoveCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7RemoveCommand.m; sourceTree = "<group>"; };
+		BE394D382486AD7D00ED6E05 /* checkoutTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = checkoutTests.m; sourceTree = "<group>"; };
+		BE394D3A2486ADB500ED6E05 /* S7CheckoutCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7CheckoutCommand.h; sourceTree = "<group>"; };
+		BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7CheckoutCommand.m; sourceTree = "<group>"; };
 		BE3A29E424604C10004A2B31 /* statusTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = statusTests.m; sourceTree = "<group>"; };
 		BE3A29E624604D1B004A2B31 /* S7StatusCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7StatusCommand.h; sourceTree = "<group>"; };
 		BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7StatusCommand.m; sourceTree = "<group>"; };
@@ -239,6 +251,8 @@
 				BED36BEC246E908300D6EB1C /* mergeAlgorithmTests.m */,
 				BE172C4824642C3B00B57557 /* mergeTests.m */,
 				BEE1CD02246A9F6F00E2CC3B /* controlTests.m */,
+				BE0173E024864DF300BA4B2F /* resetTests.m */,
+				BE394D382486AD7D00ED6E05 /* checkoutTests.m */,
 			);
 			path = "system7-tests";
 			sourceTree = "<group>";
@@ -269,6 +283,10 @@
 				BED60FB8245ABB43008EA752 /* S7RebindCommand.m */,
 				BE3A29E624604D1B004A2B31 /* S7StatusCommand.h */,
 				BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */,
+				BE0173E224864EBF00BA4B2F /* S7ResetCommand.h */,
+				BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */,
+				BE394D3A2486ADB500ED6E05 /* S7CheckoutCommand.h */,
+				BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */,
 			);
 			path = Commands;
 			sourceTree = "<group>";
@@ -392,6 +410,7 @@
 				BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
 				BED36BEA246E904E00D6EB1C /* S7PostMergeHook.m in Sources */,
 				BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */,
+				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
 				BE172CD224657CA700B57557 /* S7Diff.m in Sources */,
 				BE389214246304F200394CA8 /* S7RemoveCommand.m in Sources */,
@@ -404,6 +423,7 @@
 				BED60FB9245ABB43008EA752 /* S7RebindCommand.m in Sources */,
 				BE1079C02466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
 				BED36BE6246E809000D6EB1C /* S7PostCommitHook.m in Sources */,
+				BE394D3C2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -415,6 +435,7 @@
 				BE172C4924642C3B00B57557 /* mergeTests.m in Sources */,
 				BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BE3A29F424607419004A2B31 /* addTests.m in Sources */,
+				BE0173E124864DF300BA4B2F /* resetTests.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
 				BED36BED246E908300D6EB1C /* mergeAlgorithmTests.m in Sources */,
 				BEE1CD0A246AEE9E00E2CC3B /* S7Command.m in Sources */,
@@ -423,6 +444,7 @@
 				BE50AA01246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
 				BE1079C12466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
 				BED36BE7246E809000D6EB1C /* S7PostCommitHook.m in Sources */,
+				BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BED60FBB245AC222008EA752 /* Git.m in Sources */,
 				BE3A29F224607234004A2B31 /* initTests.m in Sources */,
 				BE3A29E924604D1B004A2B31 /* S7StatusCommand.m in Sources */,
@@ -436,7 +458,9 @@
 				BED60FBE245AC23E008EA752 /* S7Types.m in Sources */,
 				BE82188E2452C1ED00E878A8 /* S7Config.m in Sources */,
 				BE4BB43E246166CE00545358 /* pushHookTests.m in Sources */,
+				BE394D392486AD7D00ED6E05 /* checkoutTests.m in Sources */,
 				BEE1CD03246A9F6F00E2CC3B /* controlTests.m in Sources */,
+				BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 				BE3A29E524604C10004A2B31 /* statusTests.m in Sources */,
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,
 				BE3A29F02460712F004A2B31 /* S7InitCommand.m in Sources */,

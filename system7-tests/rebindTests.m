@@ -11,7 +11,6 @@
 
 #import "TestReposEnvironment.h"
 
-#import "S7InitCommand.h"
 #import "S7AddCommand.h"
 #import "S7RebindCommand.h"
 
@@ -43,8 +42,7 @@
 
 - (void)testOnEmptyS7Repo {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        S7InitCommand *initCommand = [S7InitCommand new];
-        XCTAssertEqual(0, [initCommand runWithArguments:@[]]);
+        s7init_deactivateHooks();
 
         S7RebindCommand *command = [S7RebindCommand new];
         XCTAssertEqual(0, [command runWithArguments:@[]]);

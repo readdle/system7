@@ -8,7 +8,6 @@
 
 #import <XCTest/XCTest.h>
 
-#import "S7InitCommand.h"
 #import "S7StatusCommand.h"
 
 #import "TestReposEnvironment.h"

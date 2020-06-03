@@ -15,6 +15,8 @@
 #import "S7RemoveCommand.h"
 #import "S7RebindCommand.h"
 #import "S7StatusCommand.h"
+#import "S7ResetCommand.h"
+#import "S7CheckoutCommand.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -178,14 +180,17 @@ void printHelp() {
     puts("");
     puts("Available commands:");
     puts("");
-    puts("  help      show help for a given command or this a help overview");
+    puts("  help      show help for a given command or this a overview");
     puts("");
-    puts("  init      create all necessary config files in the git repo");
+    puts("  init      create all necessary config files/hooks in the git repo");
     puts("");
     puts("  add       add a new subrepo");
-    puts("  remove    removes a subrepo(s)");
+    puts("  remove    remove a subrepo(s)");
     puts("");
     puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
+    puts("");
+    puts("  checkout  update subrepos to correspond to the state saved in .s7substate");
+    puts("  reset     reset subrepo(s) to the last committed state from .s7substate");
     puts("");
     puts("  status    show changed subrepos");
     puts("");
@@ -193,15 +198,13 @@ void printHelp() {
     puts("FAQ.");
     puts("");
     puts(" Q: how to push changes to subrepos together with the main repo?");
-    puts(" A: just `git push [OPTIONS]` on the main repo. S7 hooks will push\n");
+    puts(" A: just `git push [OPTIONS]` on the main repo. S7 git-hooks will push\n");
     puts("    necessary subrepos automatically.");
     puts("");
     puts(" Q: how to checkout subrepos after I pull or checkout a different");
     puts("    branch/revision?");
     puts(" A: just `git pull`/`git checkout` as you normally do.");
-    puts("    S7 hooks will update subrepos as necessary.");
-    puts("    If you want to reset subrepos to the last committed state,");
-    puts("    do `git checkout -- .s7substate`");
+    puts("    S7 git-hooks will update subrepos as necessary.");
 }
 
 Class commandClassByName(NSString *commandName) {
@@ -216,6 +219,8 @@ Class commandClassByName(NSString *commandName) {
             [S7RemoveCommand class],
             [S7RebindCommand class],
             [S7StatusCommand class],
+            [S7ResetCommand class],
+            [S7CheckoutCommand class],
         ]];
 
         for (Class<S7Command> commandClass in commandClasses) {

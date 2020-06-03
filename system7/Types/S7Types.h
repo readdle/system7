@@ -20,6 +20,7 @@ typedef enum {
     S7ExitCodeUnknownCommand,
     S7ExitCodeMissingRequiredArgument,
     S7ExitCodeInvalidArgument,
+    S7ExitCodeInvalidParameterValue,
     S7ExitCodeUnrecognizedOption,
     S7ExitCodeFileOperationFailed,
     S7ExitCodeGitOperationFailed,
