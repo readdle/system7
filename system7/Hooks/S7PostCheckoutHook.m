@@ -191,7 +191,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     NSAssert(reason, @"");
 
                     fprintf(stderr,
-                            "⚠️ not removing repo '%s' because it has %s.\n",
+                            "⚠️  not removing repo '%s' because it has %s.\n",
                             subrepoPath.fileSystemRepresentation,
                             reason);
                     continue;
