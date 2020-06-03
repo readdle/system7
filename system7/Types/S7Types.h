@@ -13,6 +13,7 @@
 
 extern NSString * const S7ConfigFileName;
 extern NSString * const S7ControlFileName;
+extern NSString * const S7BakFileName;
 
 typedef enum {
     S7ExitCodeDirty = -1,

@@ -12,6 +12,8 @@
 #import "S7InitCommand.h"
 #import "Utils.h"
 
+static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberOfCommits) = nil;
+
 @implementation S7PostCheckoutHook
 
 + (NSString *)gitHookName {
@@ -334,17 +336,6 @@
         }
 
         if (NO == [subrepoDesc.revision isEqualToString:currentBranchHeadRevision]) {
-            // todo: nil branch is not possible any more, but we are 'loosing' branch HEAD here
-            // add safety here
-//            if (nil == subrepoDesc.branch) {
-//                fprintf(stdout,
-//                        "checking out detached HEAD in subrepository '%s'\n",
-//                        [subrepoDesc.path fileSystemRepresentation]);
-//
-//                fprintf(stdout,
-//                        "check out a git branch if you intend to make changes\n");
-//            }
-
             fprintf(stdout,
                     " checkout '%s' to %s\n",
                     subrepoDesc.path.fileSystemRepresentation,
@@ -352,6 +343,75 @@
 
             // `git checkout -B branch revision`
             [subrepoGit forceCheckoutExistingLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision];
+        }
+
+        int numberOfOrphanedCommits = 0;
+        if (NO == [subrepoGit isRevisionReachableFromAnyBranch:currentRevision
+                                       numberOfOrphanedCommits:&numberOfOrphanedCommits])
+        {
+            // say you've been working on master branch in subrepo. You've created commits 4–6.
+            // someone else had been working on this subrepo, and created commit 7. They rebound
+            // the subrepo and pushed.
+            // Looks like this:
+            //
+            //    * 7 origin/master
+            //    | * 6 master
+            //    | * 5
+            //    | * 4
+            //     /
+            //    * 3
+            //    * 2
+            //    * 1
+            //
+            // You pulled in main repo and now, your local master would be forced to revision 7
+            //
+            //    * 7  master -> origin/master
+            //    | * 6  [nothing is pointing here]
+            //    | * 5
+            //    | * 4
+            //     /
+            //    * 3
+            //    * 2
+            //    * 1
+            //
+            // As no other branch is pointing to 6, then it will be "lost" somewhere in the guts
+            // of git ref-log
+            //
+            // We warn user about this situation
+            //
+
+            fprintf(stdout,
+                    "\033[33m"
+                    "Warning: you are leaving %2$d commit(s) behind, not connected to\n"
+                    "any of your branches:\n"
+                    "\n"
+                    "  %1$s detached\n"
+                    "\n"
+                    "If you want to keep it by creating a new branch, this may be a good time\n"
+                    "to do so with:\n"
+                    "\n"
+                    " git branch <new-branch-name> %1$s\n"
+                    "\n"
+                    "Detached commit hash was also saved to %3$s\n"
+                    "\033[0m",
+                    [currentRevision cStringUsingEncoding:NSUTF8StringEncoding],
+                    numberOfOrphanedCommits,
+                    S7BakFileName.fileSystemRepresentation);
+
+            if (_warnAboutDetachingCommitsHook) {
+                _warnAboutDetachingCommitsHook(currentRevision, numberOfOrphanedCommits);
+            }
+
+            FILE *backupFile = fopen(S7BakFileName.fileSystemRepresentation, "a+");
+            if (backupFile) {
+                fprintf(backupFile,
+                        "%s %s detached commit %s\n",
+                        [NSDate.now description].fileSystemRepresentation,
+                        subrepoDesc.path.fileSystemRepresentation,
+                        currentRevision.fileSystemRepresentation);
+
+                fclose(backupFile);
+            }
         }
     }
 
@@ -372,6 +432,14 @@
     }
 
     return 0;
+}
+
++ (void (^)(NSString * _Nonnull, int))warnAboutDetachingCommitsHook {
+    return _warnAboutDetachingCommitsHook;
+}
+
++ (void)setWarnAboutDetachingCommitsHook:(void (^)(NSString * _Nonnull, int))warnAboutDetachingCommitsHook {
+    _warnAboutDetachingCommitsHook = warnAboutDetachingCommitsHook;
 }
 
 @end
