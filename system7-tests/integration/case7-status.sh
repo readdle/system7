@@ -81,6 +81,8 @@ s7status rebind_another_commit_and_uncommitted_changes
 
 assert git commit -m '"up ReaddleLib"'
 
+FIRST_COMMIT=`git rev-parse HEAD`
+
 s7status commit_rebound_changes
 
 pushd Dependencies/ReaddleLib > /dev/null
@@ -89,6 +91,31 @@ pushd Dependencies/ReaddleLib > /dev/null
 popd > /dev/null
 
 s7status detached_head
+
+assert s7 reset --all
+
+s7status after_s7_reset
+
+pushd Dependencies/ReaddleLib > /dev/null
+  echo "matrix II" >> RDMath.h
+  git commit -am"the matrix II"
+popd > /dev/null
+
+assert s7 rebind --stage
+
+assert git commit -m'"up ReaddleLib"'
+
+git reset --hard $FIRST_COMMIT
+
+echo status after_git_reset
+echo
+s7 status
+assert test 0 -ne $? # status must fail to denote 'subrepos not in sync'
+echo
+
+assert s7 checkout
+
+s7status after_s7_checkout
 
 s7 rm Dependencies/ReaddleLib
 
