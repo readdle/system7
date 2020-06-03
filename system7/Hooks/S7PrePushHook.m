@@ -55,14 +55,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    const char *debug = getenv("S7_DEBUG");
-    if (debug) {
-        fprintf(stdout, "🏅 s7 pre-push-hook start\n");
-    }
+    fprintf(stdout, "s7: pre-push hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    if (debug) {
-        fprintf(stdout, "🥉✅ s7 pre-push-hook complete\n\n");
-    }
+    fprintf(stdout, "s7: pre-push hook complete\n\n");
     return result;
 }
 

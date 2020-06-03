@@ -109,14 +109,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    const char *debug = getenv("S7_DEBUG");
-    if (debug) {
-        fprintf(stdout, "🥈 start s7 config merge driver\n");
-    }
+    fprintf(stdout, "s7: config merge driver start\n");
     const int result = [self doRunWithArguments:arguments];
-    if (debug) {
-        fprintf(stdout, "🥈✅ finished s7 config merge driver\n");
-    }
+    fprintf(stdout, "s7: config merge driver complete\n");
     return result;
 }
 
