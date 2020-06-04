@@ -290,6 +290,13 @@ static NSString *gitExecutablePath = nil;
                              stdErrOutput:NULL];
 }
 
+- (int)deleteRemoteBranch:(NSString *)branchName {
+    NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
+    return [self runGitCommand:[NSString stringWithFormat:@"push origin --delete %@", branchName]
+                             stdOutOutput:NULL
+                             stdErrOutput:NULL];
+}
+
 - (int)checkoutNewLocalBranch:(NSString *)branchName {
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:@[ @"checkout", @"-b", branchName ]

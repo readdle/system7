@@ -577,10 +577,57 @@
     }];
 }
 
+- (void)testPushToDeletedRemoteBranch {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [readdleLibSubrepoGit checkoutNewLocalBranch:@"experiment"];
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"add geometry utils");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    int exitStatus = 0;
+    GitRepository *readdleLibRepo = [GitRepository
+                                     cloneRepoAtURL:self.env.githubReaddleLibRepo.absolutePath
+                                     destinationPath:[self.env.root stringByAppendingPathComponent:@"pastey/projects/ReaddleLib"]
+                                     exitStatus:&exitStatus];
+    XCTAssertNotNil(readdleLibRepo);
+    XCTAssertEqual(0, exitStatus);
+
+    [readdleLibRepo run:^(GitRepository * _Nonnull repo) {
+        XCTAssertEqual(0, [repo deleteRemoteBranch:@"experiment"]);
+    }];
+
+    __block NSString *commitMadeAfterBranchRemove = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        commitMadeAfterBranchRemove = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"matrix", @"matrices");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [readdleLibRepo run:^(GitRepository * _Nonnull repo) {
+        [repo fetch];
+
+        XCTAssertTrue([repo isRevisionAvailableLocally:commitMadeAfterBranchRemove]);
+        XCTAssertEqual(0, [repo checkoutRemoteTrackingBranch:@"experiment"]);
+        NSString *RDGeometryContents = [[NSString alloc] initWithContentsOfFile:@"RDGeometry.h" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqualObjects(@"matrix", RDGeometryContents);
+    }];
+}
+
 // recursive push is tested by integration test (case20-pushPullWorkRecursively.sh)
 
-
-// what if branch has been dropped at remote?
 // test push on a new branch
 
 @end
