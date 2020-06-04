@@ -626,8 +626,40 @@
     }];
 }
 
-// recursive push is tested by integration test (case20-pushPullWorkRecursively.sh)
+- (void)testNewBranchPushDoesntPushNotReboundRepos {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
 
-// test push on a new branch
+        GitRepository *readdleLibSubrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"add geometry utils");
+
+        GitRepository *pdfKitSubrepoGit = s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", @"/Type /Ink", @"ink annotations");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"add subrepos"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+        [repo checkoutNewLocalBranch:@"experiment"];
+
+        NSString *readdleLibCommitExpectedToBePushed = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sin(Pi)", @"pi");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        NSString *pdfKitCommitNotToBePushed = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", @"WIP", @"unrelated bugfix");
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+        XCTAssertTrue([self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibCommitExpectedToBePushed]);
+        XCTAssertFalse([self.env.githubRDPDFKitRepo isRevisionAvailableLocally:pdfKitCommitNotToBePushed]);
+    }];
+
+}
+
+// recursive push is tested by integration test (case20-pushPullWorkRecursively.sh)
 
 @end
