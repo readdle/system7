@@ -292,13 +292,13 @@ Class hookClassByName(NSString *hookName) {
     return gitHookNameToClass[hookName];
 }
 
-int helpCommand(int argc, const char *argv[]) {
-    if (argc < 1) {
+int helpCommand(NSArray<NSString *> *arguments) {
+    if (arguments.count < 1) {
         printHelp();
         return 0;
     }
 
-    NSString *commandName = [NSString stringWithCString:argv[0] encoding:NSUTF8StringEncoding];
+    NSString *commandName = arguments.firstObject;
     Class<S7Command> commandClass = commandClassByName(commandName);
     if (commandClass) {
         [commandClass printCommandHelp];
@@ -325,7 +325,7 @@ int main(int argc, const char * argv[]) {
     }
 
     if ([commandName isEqualToString:@"help"]) {
-        return helpCommand(argc - 2, argv + 2);
+        return helpCommand(arguments);
     }
 
     NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
