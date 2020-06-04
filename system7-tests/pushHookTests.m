@@ -537,26 +537,50 @@
     }];
 }
 
-// test: user has rebound subrepo and checked out a different branch in it. Push must treat this properly and push only
-//     what must be pushed
-// check subrepo revision and branch consistency? If revision is not at branch, then we will do a kaka to everyone checking out this subrepo.
-// validate config – check that full 40-symbol revision saved. Prevent push if not
-// test all commited changes to subrepo branch (even not rebound) get pushed to remote
-// test subrepo changes commited after push are not pushed unless subrepo is rebound (and config committed) again
-// test recursive push – pdf kit rebound formcalc
-// test push works on all branches where config was changed
+- (void)testPushDoesntPushNotReboundChanges {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        NSString *subrepoPath = @"Dependencies/ReaddleLib";
+        GitRepository *subrepoGit = s7add_stage(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
+        commit(subrepoGit, @"RDGeometry.h", @"sqrt", @"math");
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        NSString *rd2RevisionAfterSubrepoAdd = nil;
+        [repo getCurrentRevision:&rd2RevisionAfterSubrepoAdd];
+
+        S7PrePushHook *command = [S7PrePushHook new];
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+                                     rd2RevisionAfterSubrepoAdd,
+                                     [GitRepository nullRevision]];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+
+        NSString *readdleLibRevisionNotToBePushed = commit(subrepoGit, @"RDGeometry.h", @"RDRectArea", @"area");
+
+        [repo createFile:@"main.m" withContents:@"int main(void) { return 0; }"];
+        [repo commitWithMessage:@"technical commit"];
+
+        NSString *rd2Revision = nil;
+        [repo getCurrentRevision:&rd2Revision];
+
+        command = [S7PrePushHook new];
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+                                     rd2Revision,
+                                     rd2RevisionAfterSubrepoAdd];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+        const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevisionNotToBePushed];
+        XCTAssertFalse(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
+    }];
+}
+
+// recursive push is tested by integration test (case20-pushPullWorkRecursively.sh)
+
+
 // what if branch has been dropped at remote?
-// do not push if in detached HEAD
-// если я обновил сабрепу в одном из коммитов, а потом удалил эту сабрепу – пычкать нет смысла. Вопрос – мог ли я грохнуть незакоммиченные изм-я в сабрепе, когда удалял ее
-// если я обновил сабрепу, а потом отдельным коммитом откатил обновление – пычкать? Подсмотреть в HG
 // test push on a new branch
-//
-// Пользователь мог наделать изм-й на нескольких ветках в главном репозитории, и в сабрепах. s7 push выглядит так,
-// что точно должен запычкать все ветки где был сделан s7 rebind. Но не пычкать другие ветки – бред.
-// Если вызов из хука, то там четко пычкаем все что сказал хук. А вот просто s7 push – вопрос.
-// Можно сделать ход конем! s7 push делает git push --all, а дальше все по накатанной схеме!
-
-
-
 
 @end
