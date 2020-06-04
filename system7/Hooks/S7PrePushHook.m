@@ -184,6 +184,11 @@
               remoteRef:(NSString *)remoteRef
              remoteSha1:(NSString *)latestRemoteRevisionAtThisBranch
 {
+    if ([localSha1ToPush isEqualToString:[GitRepository nullRevision]]) {
+        // ignore remote branch delete
+        return 0;
+    }
+
     int gitExitStatus = 0;
     NSString *configContentsAtRevisionToPush = [repo showFile:S7ConfigFileName
                                                    atRevision:localSha1ToPush
