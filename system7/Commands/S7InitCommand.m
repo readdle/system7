@@ -14,6 +14,7 @@
 #import "S7PostCheckoutHook.h"
 #import "S7PostCommitHook.h"
 #import "S7PostMergeHook.h"
+#import "S7PrepareCommitMsgHook.h"
 
 @implementation S7InitCommand
 
@@ -63,6 +64,7 @@
         [S7PostCheckoutHook class],
         [S7PostCommitHook class],
         [S7PostMergeHook class],
+        [S7PrepareCommitMsgHook class],
     ]];
 
     int hookInstallationExitCode = 0;

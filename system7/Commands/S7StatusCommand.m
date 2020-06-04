@@ -44,7 +44,6 @@
                     "\033[31m"
                     "Subrepos not in sync.\n"
                     "This might be the result of:\n"
-                    " - interrupted update\n"
                     " - conflicting merge\n"
                     " - git reset\n"
                     "\n"

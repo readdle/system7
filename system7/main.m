@@ -22,6 +22,7 @@
 #import "S7PostCheckoutHook.h"
 #import "S7PostCommitHook.h"
 #import "S7PostMergeHook.h"
+#import "S7PrepareCommitMsgHook.h"
 
 #import "S7ConfigMergeDriver.h"
 
@@ -78,47 +79,6 @@
 // This trick is also used by the `post-checkout` hook to understand if user updated an unrelated file
 // or our precious .s7substate.
 //
-
-
-
-
-
-//🔥 start merge of s7substate
-//start args
-//custom
-//argument
-//.merge_file_05ePqP
-//.merge_file_tDaVai
-//.merge_file_LxEapG
-//end args
-// pwd: /var/folders/50/lx2tslds6ds4qwp8nny38k1c0000gn/T/271092D6-4818-4556-A681-51FA817EAE13/pastey/projects/rd2
-//* master
-//  test
-//GIT_REFLOG_ACTION=merge test
-//GIT_PREFIX=
-//PWD=/var/folders/50/lx2tslds6ds4qwp8nny38k1c0000gn/T/271092D6-4818-4556-A681-51FA817EAE13/pastey/projects/rd2
-//GITHEAD_edd53c082b5ad6dfb41f05ae91e6da518c6fdfd7=test
-//_=/usr/bin/env
-//✅ merge done
-
-
-// можно прописать один раз в глобальные атрибуты:
-// "If you wish to affect only a single repository (i.e., to assign attributes to files that are particular to one user’s workflow for that repository), then attributes should be placed in the $GIT_DIR/info/attributes file. Attributes which should be version-controlled and distributed to other repositories (i.e., attributes of interest to all users) should go into .gitattributes files. Attributes that should affect all repositories for a single user should be placed in a file specified by the core.attributesFile configuration option (see git-config[1]). Its default value is $XDG_CONFIG_HOME/git/attributes. If $XDG_CONFIG_HOME is either not set or empty, $HOME/.config/git/attributes is used instead. Attributes for all users on a system should be placed in the $(prefix)/etc/gitattributes file."
-
-// in .git/config (or in global config, which would be better)
-//[merge "s7"]
-//  name = A custom merge driver used to resolve conflicts in .s7substate files
-//  driver = merge_s7.sh custom argument %O %A %B // change to `s7 merge-config`
-
-// echo ".s7substate merge=s7" > .gitattributes
-
-
-// получается, что merge-driver – недостаточно, т.к. он вызывается только если файл надо мержить, т.к. он поменялся
-// с двух сторон. Довольно частый случай, что файл поменялся лишь с одной стороны. Тогда нужно привязываться к хуку.
-// Какому?
-
-// prepare-commit-msg – всегда вызывается. Есть флаг "merge"
-
 
 
 //
@@ -279,6 +239,7 @@ Class hookClassByName(NSString *hookName) {
             [S7PostCheckoutHook class],
             [S7PostCommitHook class],
             [S7PostMergeHook class],
+            [S7PrepareCommitMsgHook class],
         ]];
 
         for (Class<S7Hook> hookClass in hookClasses) {
