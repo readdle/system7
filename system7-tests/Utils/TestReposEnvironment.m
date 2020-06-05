@@ -107,7 +107,9 @@
         [tmpRepo commitWithMessage:@"add .gitignore"];
         [tmpRepo pushAllBranchesNeedingPush];
 
-        NSParameterAssert([NSFileManager.defaultManager removeItemAtPath:@"tmp" error:nil]);
+        if (NO == [NSFileManager.defaultManager removeItemAtPath:@"tmp" error:nil]) {
+            NSParameterAssert(NO);
+        }
 
         return 0;
     });

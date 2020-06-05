@@ -6,7 +6,8 @@
 build
 /build/
 *.orig
-xcuserdata/
+**/xcuserdata/
 *.xcuserstate
 *.xcbkptlist
 *.xcworkspacedata
+system7-tests/integration/case7/*.actual

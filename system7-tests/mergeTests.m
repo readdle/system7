@@ -415,6 +415,7 @@
         XCTAssertEqual(0, mergeHookExitStatus);
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
 
         readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
 
