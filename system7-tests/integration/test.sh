@@ -52,7 +52,12 @@ function tearDown {
     rm -Rf root 2>/dev/null
 }
 
-trap tearDown EXIT
+function globalCleanUp {
+    rm "${ORIGINAL_PWD}/failed-cases" 2>/dev/null
+    tearDown
+}
+
+trap globalCleanUp EXIT
 
 source assertions
 
@@ -70,6 +75,7 @@ do
     echo
     if [ -f "${S7_ROOT}/FAIL" ]
     then
+        echo "$CASE" >> "${ORIGINAL_PWD}/failed-cases"
         echo "[❌ FAIL]"
         ANY_TEST_FAILED=1
     else
@@ -84,6 +90,11 @@ done
 echo
 if [ $ANY_TEST_FAILED -eq 1 ]
 then
+    echo "[🚨🚨🚨]"
+    echo
+    echo "The following tests failed:"
+    cat "${ORIGINAL_PWD}/failed-cases" | sed 's/^/    /'
+    echo
     echo "[❌ TESTS FAILED]"
 else
     echo "[✅ SUCCESS]"
