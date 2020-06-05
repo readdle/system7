@@ -192,11 +192,9 @@
 
         if (nil == currentBranch) {
             // the only case getCurrentBranch will succeed (return 0), but leave branch name nil
-            // is the detached HEAD, but let's make it clear
-            if ([subrepoGit isInDetachedHEAD]) {
-                [subreposInDetachedHEAD addObject:subrepoPath];
-                continue;
-            }
+            // is the detached HEAD
+            [subreposInDetachedHEAD addObject:subrepoPath];
+            continue;
         }
 
         NSString *currentRevision = nil;
