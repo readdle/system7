@@ -148,48 +148,37 @@ static NSString *gitExecutablePath = nil;
     // we must use semaphore to make sure we finish reading from pipes properly once task finished it's execution.
     dispatch_semaphore_t pipeCloseSemaphore = dispatch_semaphore_create(0);
 
-    NSMutableData *outputData = [NSMutableData new];
-    if (ppStdOutOutput) {
-        NSPipe *outputPipe = [NSPipe new];
-
-        task.standardOutput = outputPipe;
-
-        __weak __auto_type weakOutputPipe = outputPipe;
-        outputPipe.fileHandleForReading.readabilityHandler = ^ (NSFileHandle * _Nonnull handle) {
+    __auto_type setUpPipeReadabilityHandler = ^ void (NSPipe *pipe, NSMutableData *resultingData) {
+        __weak __auto_type weakPipe = pipe;
+        pipe.fileHandleForReading.readabilityHandler = ^ (NSFileHandle * _Nonnull handle) {
             // DO NOT use -availableData in these handlers.
             NSData *newData = [handle readDataOfLength:NSUIntegerMax];
             if (0 == newData.length) {
                 dispatch_semaphore_signal(pipeCloseSemaphore);
 
-                __strong __auto_type strongOutputPipe = weakOutputPipe;
-                strongOutputPipe.fileHandleForReading.readabilityHandler = nil;
+                __strong __auto_type strongPipe = weakPipe;
+                strongPipe.fileHandleForReading.readabilityHandler = nil;
             }
             else {
-               [outputData appendData:newData];
+               [resultingData appendData:newData];
             }
         };
+    };
+
+    __block NSMutableData *outputData = nil;
+    if (ppStdOutOutput) {
+        outputData = [NSMutableData new];
+        NSPipe *outputPipe = [NSPipe new];
+        task.standardOutput = outputPipe;
+        setUpPipeReadabilityHandler(outputPipe, outputData);
     }
 
-    NSMutableData *errorData = [NSMutableData new];
+    NSMutableData *errorData = nil;
     if (ppStdErrOutput) {
+        errorData = [NSMutableData new];
         NSPipe *errorPipe = [NSPipe new];
-
         task.standardError = errorPipe;
-
-        __weak __auto_type weakErrorPipe = errorPipe;
-        errorPipe.fileHandleForReading.readabilityHandler = ^ (NSFileHandle * _Nonnull handle) {
-            // DO NOT use -availableData in these handlers.
-            NSData *newData = [handle readDataOfLength:NSUIntegerMax];
-            if (0 == newData.length) {
-                dispatch_semaphore_signal(pipeCloseSemaphore);
-
-                __strong __auto_type strongErrorPipe = weakErrorPipe;
-                strongErrorPipe.fileHandleForReading.readabilityHandler = nil;
-            }
-            else {
-                [errorData appendData:newData];
-            }
-        };
+        setUpPipeReadabilityHandler(errorPipe, errorData);
     }
 
     NSError *error = nil;
