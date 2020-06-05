@@ -46,7 +46,7 @@
 // For now, I think that we will start with manual rebind of subrepos and commit of .s7substate as any other file.
 //
 // We use s7 for de-facto centralized commercial repos that use single (GitHub) server and branch-based
-// pull requests. We are not using forks, we are not using other kinds of remotes except origin.
+// pull requests. We are not using forks, we are not using other kinds of remotes except 'origin'.
 // Thus: s7 always assumes that there's just one remote and it's named 'origin'
 //
 // Second assumption: we do not play the game of naming local branches differently from remote branches,
@@ -79,61 +79,6 @@
 // This trick is also used by the `post-checkout` hook to understand if user updated an unrelated file
 // or our precious .s7substate.
 //
-
-
-//
-// Сценарии:
-//
-
-// git clone rd2
-// result empty rd2 + .s7config
-// s7 checkout
-// ============
-// s7 clone url
-// ============
-// (global one time) s7 install – installs global git templates
-// git clone url (s7 update – automatically)
-
-// 1. надо склонить проект со всеми сабрепами (это делается только хаками через https://git-scm.com/docs/git-init#_template_directory
-//    либо делать руками – s7 checkout)
-// 1* clone recursively
-//
-// 2. пописал что-то в ПДФ-ките. Надо обновить RD2 на новую ревизию
-//  s7 status – pdfkit updated
-//  s7 "commit" – changes revision in .s7substate
-//  git add .s7substate
-//  git commit -m"up pdf kit"
-
-// hg commit if subrepo has changes – fails telling "uncommited changes in SUBREPO ..."
-// do the same for us
-// do not allow push if there're changes in subrepos – do this in git hook
-
-// 3. кто-то пописал, что-то в ПДФ-ките и поднял ревизию, а я просто обновился на последние кода
-//     git pull (post-checkout hook calls 's7 update')
-//     s7 checkout
-//
-// 4. я пописал что-то в ПДФ-ките, поднял ревизию. Оказалось, что кто-то тоже параллельно обновил кит. Надо смержиться
-//     rd2# git pull (pre-merge-commit hook calls 's7 merge')
-//     or s7 merge manually
-//
-//  add merge-tool for .s7substate
-//
-// 5. вторая вариация на ту же тему. Мержу релизную ветку в мастер. У нас разные ревизии кита.
-// 6. в PEM хочу подтянуть последний кит
-// 7. кто-то обновил в ките сабрепу (flounder), и обновил кит в rd2. Мне просто обновиться в rd2. Recursive stuff
-//
-// 8. я что-то поменял в ките, и в rd2 – хочу посмотреть диф. Nice to have
-// 9. я что-то поменял в ките, и в rd2 – хочу сделать коммит. Nice to have
-// 10. я что-то поменял в ките, и в rd2 – хочу сделать пуш
-// 11. все это дело должно работать на Jenkins-е без всяких шаманств
-
-
-// git reset – это крайне стремная штука – если ревизии не запычканы, то отыскать их можно будет только ref-log-ом,
-// и то – надо помнить/знать что искать. Надо тут добавить проверок. Если пользователь откатывается на более раннюю
-// ревизию, то надо проверить, чтобы на текущую ревизию указывало хоть что-то (кроме локальной ветки, которую мы откатим),
-// иначе ревизии просрутся. Моге делать фиктивную ветку. Могу предупреждать пользователя, и абортить – пусть
-// сам разбирается.
-
 
 void printHelp() {
     puts("usage: s7 <command> [<arguments>]");
