@@ -145,7 +145,7 @@
         return S7ExitCodeSubrepoHasLocalChanges;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

@@ -129,7 +129,7 @@
         puts("");
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 + (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> * _Nullable __autoreleasing * _Nonnull)ppStatus {
@@ -255,7 +255,7 @@
 
     *ppStatus = status;
     
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

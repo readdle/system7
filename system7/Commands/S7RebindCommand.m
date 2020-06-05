@@ -97,15 +97,13 @@
         }
 
         NSString *revision = nil;
-        int gitExitStatus = [gitSubrepo getCurrentRevision:&revision];
-        if (0 != gitExitStatus) {
-            return gitExitStatus;
+        if (0 != [gitSubrepo getCurrentRevision:&revision]) {
+            return S7ExitCodeGitOperationFailed;
         }
 
         NSString *branch = nil;
-        gitExitStatus = [gitSubrepo getCurrentBranch:&branch];
-        if (0 != gitExitStatus) {
-            return gitExitStatus;
+        if (0 != [gitSubrepo getCurrentBranch:&branch]) {
+            return S7ExitCodeGitOperationFailed;
         }
 
         if (nil == branch) {
@@ -144,7 +142,7 @@
     if ([newConfigSubrepoDescriptions isEqual:parsedConfig.subrepoDescriptions]) {
         fprintf(stdout,
                 "(seems like there's nothing to rebind)\n");
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
     S7Config *updatedConfig = [[S7Config alloc] initWithSubrepoDescriptions:newConfigSubrepoDescriptions];
@@ -162,7 +160,9 @@
     }
 
     if (stageConfig) {
-        return [repo add:@[ S7ConfigFileName ]];
+        if (0 != [repo add:@[ S7ConfigFileName ]]) {
+            return S7ExitCodeGitOperationFailed;
+        }
     }
     else {
         fprintf(stdout, "\nrebound the following subrepos:\n");
@@ -174,7 +174,7 @@
                 S7ConfigFileName.fileSystemRepresentation);
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

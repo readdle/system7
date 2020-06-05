@@ -125,7 +125,7 @@
         fprintf(stdout, "initialized s7 repo\n");
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (int)installHook:(Class<S7Hook>)hookClass {
