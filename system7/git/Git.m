@@ -219,8 +219,7 @@ static NSString *gitExecutablePath = nil;
         return exitStatus;
     }
 
-    NSString *configValue = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    return [configValue isEqualToString:@"true"];
+    return [stdOutOutput containsString:@"true"];
 }
 
 - (BOOL)isEmptyRepo {
