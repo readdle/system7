@@ -269,8 +269,6 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
-    NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
-
     // check if we are tracking this branch already
     if ([self isBranchTrackingRemoteBranch:branchName]) {
         return [self checkoutExistingLocalBranch:branchName];
@@ -300,7 +298,7 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (int)forceCheckoutExistingLocalBranch:(NSString *)branchName revision:(NSString *)revisions {
-    // pastey: theoretically, one can be concirned with "injection" here
+    // pastey: theoretically, one can be concerned with "injection" here
     // I think it's not a problem for two reasons:
     //  1. s7 is purely a developer tool, so if someone wants to do some harm and they have access to our coce,
     //     they have an easier ways than injections
@@ -341,18 +339,12 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (BOOL)isInDetachedHEAD {
-    NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
-    const int revParseExitStatus = [self.class runGitInRepoAtPath:self.absolutePath
-                                                    withArguments:@[ @"rev-parse", @"--abbrev-ref", @"HEAD" ]
-                                                     stdOutOutput:&stdOutOutput
-                                                     stdErrOutput:&stdErrOutput];
-    if (0 != revParseExitStatus) {
-        return NO;
+    NSString *branch = nil;
+    if (0 == [self getCurrentBranch:&branch] && nil == branch) {
+        return YES;
     }
 
-    NSString *branch = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    return [branch isEqualToString:@"HEAD"];
+    return NO;
 }
 
 #pragma mark - revisions -
