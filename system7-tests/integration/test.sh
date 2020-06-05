@@ -55,6 +55,7 @@ function tearDown {
 trap tearDown EXIT
 
 source assertions
+source utils
 
 ANY_TEST_FAILED=0
 

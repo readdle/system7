@@ -20,23 +20,10 @@ assert s7 rebind --stage
 
 assert git commit -m '"add ReaddleLib subrepo"'
 
-# test how s7 works with more modern command 'switch'
-function isGitGreaterThan2_23 {
-    git version | cut -d ' ' -f3 > tmp
-    echo 2.23 >> tmp
-    local smaller_version=`sort -V < tmp | head -n 1`
-    rm tmp
-    if [ $smaller_version = "2.23" ]
-    then
-        true
-    else
-        false
-    fi
-}
-
 echo
 
-if isGitGreaterThan2_23
+# test how s7 works with more modern command 'switch'
+if isGitVersionGreaterThan2_23
 then
     echo "modern Git"
     git switch -c experiment
