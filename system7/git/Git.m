@@ -89,8 +89,7 @@ static NSString *gitExecutablePath = nil;
         command = [command stringByAppendingString:@" --bare"];
     }
 
-    command = [command stringByAppendingString:@" "];
-    command = [command stringByAppendingString:path];
+    command = [command stringByAppendingFormat:@" %@", path];
 
     const int gitInitResult = [self executeCommand:command];
 
