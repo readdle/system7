@@ -421,7 +421,6 @@ saveResultToFilePath:(NSString *)resultFilePath
     NSParameterAssert(mergeResult);
 
     if (detectedConflict && NULL == self.resolveConflictBlock) {
-        // todo: log
         NSAssert(NO, @"WTF?!");
         return S7ExitCodeInternalError;
     }

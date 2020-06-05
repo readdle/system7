@@ -203,7 +203,6 @@
     else {
         const int gitExitStatus = [gitSubrepo getCurrentBranch:&branch];
         if (0 != gitExitStatus) {
-            // todo: log
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -213,7 +212,6 @@
                 branch = @"master"; // ?
             }
             else {
-                // todo: log
                 return S7ExitCodeGitOperationFailed;
             }
         }

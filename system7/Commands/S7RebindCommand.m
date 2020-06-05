@@ -99,14 +99,12 @@
         NSString *revision = nil;
         int gitExitStatus = [gitSubrepo getCurrentRevision:&revision];
         if (0 != gitExitStatus) {
-            // todo: log
             return gitExitStatus;
         }
 
         NSString *branch = nil;
         gitExitStatus = [gitSubrepo getCurrentBranch:&branch];
         if (0 != gitExitStatus) {
-            // todo: log
             return gitExitStatus;
         }
 
