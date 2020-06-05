@@ -66,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)resetToRevision:(NSString *)revision;
 
 - (int)getRemote:(NSString * _Nullable __autoreleasing * _Nonnull)ppRemote;
-- (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl forRemote:(NSString *)remote;
+- (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl;
 
 @end
 

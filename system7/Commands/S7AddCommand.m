@@ -140,13 +140,8 @@
         gitSubrepo = [[GitRepository alloc] initWithRepoPath:path];
         NSCAssert(gitSubrepo, @"");
 
-        NSString *remote = nil;
-        if (0 != [gitSubrepo getRemote:&remote]) {
-            return S7ExitCodeGitOperationFailed;
-        }
-
         NSString *actualRemoteUrl = nil;
-        if (0 != [gitSubrepo getUrl:&actualRemoteUrl forRemote:remote]) {
+        if (0 != [gitSubrepo getUrl:&actualRemoteUrl]) {
             return S7ExitCodeGitOperationFailed;
         }
 

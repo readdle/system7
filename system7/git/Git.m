@@ -552,11 +552,11 @@ static NSString *gitExecutablePath = nil;
     return 0;
 }
 
-- (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl forRemote:(NSString *)remote {
+- (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl {
     NSString *stdOutOutput = nil;
     NSString *stdErrOutput = nil;
     const int exitStatus = [self.class runGitInRepoAtPath:self.absolutePath
-                                                    withArguments:@[ @"remote", @"get-url", remote ]
+                                                    withArguments:@[ @"remote", @"get-url", @"origin" ]
                                                      stdOutOutput:&stdOutOutput
                                                      stdErrOutput:&stdErrOutput];
     if (0 != exitStatus) {
