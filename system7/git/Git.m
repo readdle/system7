@@ -319,10 +319,9 @@ static NSString *gitExecutablePath = nil;
 
 - (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch {
     NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int revParseExitStatus = [self runGitCommand:@"rev-parse --abbrev-ref HEAD"
                                           stdOutOutput:&stdOutOutput
-                                          stdErrOutput:&stdErrOutput];
+                                          stdErrOutput:NULL];
     if (0 != revParseExitStatus) {
         if (128 == revParseExitStatus) {
             // most likely – an empty repo. Let's make sure
@@ -344,10 +343,9 @@ static NSString *gitExecutablePath = nil;
 
 - (BOOL)isInDetachedHEAD {
     NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int revParseExitStatus = [self runGitCommand:@"rev-parse --abbrev-ref HEAD"
                                           stdOutOutput:&stdOutOutput
-                                          stdErrOutput:&stdErrOutput];
+                                          stdErrOutput:NULL];
     if (0 != revParseExitStatus) {
         return NO;
     }
@@ -441,7 +439,7 @@ static NSString *gitExecutablePath = nil;
     NSString *devNull = nil;
     const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"show -s --format='%%H' %@^2", revision]
                                   stdOutOutput:&devNull
-                                  stdErrOutput:&devNull];
+                                  stdErrOutput:NULL];
     if (0 != exitStatus) {
         return NO;
     }
@@ -451,10 +449,9 @@ static NSString *gitExecutablePath = nil;
 
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision {
     NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int revParseExitStatus = [self runGitCommand:@"rev-parse HEAD"
                                           stdOutOutput:&stdOutOutput
-                                          stdErrOutput:&stdErrOutput];
+                                          stdErrOutput:NULL];
     if (0 != revParseExitStatus) {
         if (128 == revParseExitStatus) {
             // most likely – an empty repo. Let's make sure
@@ -488,10 +485,9 @@ static NSString *gitExecutablePath = nil;
     }
 
     NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int revParseExitStatus = [self runGitCommand:[NSString stringWithFormat:@"rev-parse %@", remoteBranchName]
                                           stdOutOutput:&stdOutOutput
-                                          stdErrOutput:&stdErrOutput];
+                                          stdErrOutput:NULL];
     if (0 != revParseExitStatus) {
         return revParseExitStatus;
     }
@@ -514,10 +510,9 @@ static NSString *gitExecutablePath = nil;
 
 - (int)getRemote:(NSString * _Nullable __autoreleasing * _Nonnull)ppRemote {
     NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int exitStatus = [self runGitCommand:@"remote"
                                   stdOutOutput:&stdOutOutput
-                                  stdErrOutput:&stdErrOutput];
+                                  stdErrOutput:NULL];
     if (0 != exitStatus) {
         return exitStatus;
     }
@@ -530,10 +525,9 @@ static NSString *gitExecutablePath = nil;
 
 - (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl {
     NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int exitStatus = [self runGitCommand:@"remote get-url origin"
                                   stdOutOutput:&stdOutOutput
-                                  stdErrOutput:&stdErrOutput];
+                                  stdErrOutput:NULL];
     if (0 != exitStatus) {
         return exitStatus;
     }
@@ -547,20 +541,16 @@ static NSString *gitExecutablePath = nil;
 #pragma mark - exchange -
 
 - (int)fetch {
-    NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int exitStatus = [self runGitCommand:@"fetch"
-                                  stdOutOutput:&stdOutOutput
-                                  stdErrOutput:&stdErrOutput];
+                                  stdOutOutput:NULL
+                                  stdErrOutput:NULL];
     return exitStatus;
 }
 
 - (int)pull {
-    NSString *stdOutOutput = nil;
-    NSString *stdErrOutput = nil;
     const int exitStatus = [self runGitCommand:@"pull"
-                                  stdOutOutput:&stdOutOutput
-                                  stdErrOutput:&stdErrOutput];
+                                  stdOutOutput:NULL
+                                  stdErrOutput:NULL];
     return exitStatus;
 }
 
