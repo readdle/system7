@@ -113,6 +113,16 @@ static NSString *gitExecutablePath = nil;
         stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
         stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
+    // Local helper method to run simple git commands.
+    //
+    // Easier to use and read than -runGitInRepoAtPath:withArguments:,
+    // which accepts an array of arguments.
+    //
+    // User must be cautios though – as this methods splits command into arguments
+    // by whitespace, it cannot be used for arguments that may contain spaces,
+    // for example, "commit -m\"up pdf kit\"" is a bad 'command' – it will confuse git
+    // and it will fail.
+    //
     NSArray<NSString *> *arguments = [command componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     arguments = [arguments filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString * _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
         return evaluatedObject.length > 0;
