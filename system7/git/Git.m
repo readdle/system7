@@ -235,16 +235,10 @@ static NSString *gitExecutablePath = nil;
     }
 
     // I could have checked if 'heads' dir is just empty, but I'm afraid of stuff like .DS_Store
-    BOOL repoHasAnyHead = NO;
     for (NSString *fileName in headsDirectoryContents) {
         if (NO == [fileName hasPrefix:@"."]) {
-            repoHasAnyHead = YES;
-            break;
+            return NO;
         }
-    }
-
-    if (repoHasAnyHead) {
-        return NO;
     }
 
     return YES;
