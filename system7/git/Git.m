@@ -219,8 +219,7 @@ static NSString *gitExecutablePath = nil;
         return exitStatus;
     }
 
-    NSString *configValue = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    return [configValue isEqualToString:@"true"];
+    return [stdOutOutput containsString:@"true"];
 }
 
 - (BOOL)isEmptyRepo {
@@ -236,16 +235,10 @@ static NSString *gitExecutablePath = nil;
     }
 
     // I could have checked if 'heads' dir is just empty, but I'm afraid of stuff like .DS_Store
-    BOOL repoHasAnyHead = NO;
     for (NSString *fileName in headsDirectoryContents) {
         if (NO == [fileName hasPrefix:@"."]) {
-            repoHasAnyHead = YES;
-            break;
+            return NO;
         }
-    }
-
-    if (repoHasAnyHead) {
-        return NO;
     }
 
     return YES;
@@ -353,10 +346,7 @@ static NSString *gitExecutablePath = nil;
     static NSString *result = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        result = [[NSMutableString alloc] initWithCapacity:40];
-        for (int i=0; i<40; ++i) {
-            [((NSMutableString *)result) appendString:@"0"];
-        }
+        result = [@"" stringByPaddingToLength:40 withString:@"0" startingAtIndex:0];
     });
 
     return result;
