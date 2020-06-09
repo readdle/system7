@@ -351,6 +351,7 @@
                     [subrepoDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
             // `git checkout -B branch revision`
+            // this also makes checkout recursive if subrepo is a S7 repo itself
             [subrepoGit forceCheckoutExistingLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision];
         }
     }
