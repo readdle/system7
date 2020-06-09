@@ -319,9 +319,10 @@ static NSString *gitExecutablePath = nil;
 
 - (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch {
     NSString *stdOutOutput = nil;
+    NSString *devNull = nil;
     const int revParseExitStatus = [self runGitCommand:@"rev-parse --abbrev-ref HEAD"
                                           stdOutOutput:&stdOutOutput
-                                          stdErrOutput:NULL];
+                                          stdErrOutput:&devNull];
     if (0 != revParseExitStatus) {
         if (128 == revParseExitStatus) {
             // most likely – an empty repo. Let's make sure
@@ -439,7 +440,7 @@ static NSString *gitExecutablePath = nil;
     NSString *devNull = nil;
     const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"show -s --format='%%H' %@^2", revision]
                                   stdOutOutput:&devNull
-                                  stdErrOutput:NULL];
+                                  stdErrOutput:&devNull];
     if (0 != exitStatus) {
         return NO;
     }
@@ -449,9 +450,10 @@ static NSString *gitExecutablePath = nil;
 
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision {
     NSString *stdOutOutput = nil;
+    NSString *devNull = nil;
     const int revParseExitStatus = [self runGitCommand:@"rev-parse HEAD"
                                           stdOutOutput:&stdOutOutput
-                                          stdErrOutput:NULL];
+                                          stdErrOutput:&devNull];
     if (0 != revParseExitStatus) {
         if (128 == revParseExitStatus) {
             // most likely – an empty repo. Let's make sure
