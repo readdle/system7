@@ -532,7 +532,7 @@ static NSString *gitExecutablePath = nil;
         return exitStatus;
     }
 
-    NSString *url = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *url = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
     *ppUrl = url;
 
     return 0;
