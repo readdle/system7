@@ -86,7 +86,7 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     }
 
     NSArray<NSString *> *existingGitIgnoreLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    if (NSNotFound != [existingGitIgnoreLines indexOfObject:lineToAppend]) {
+    if ([existingGitIgnoreLines containsObject:lineToAppend]) {
         // do not add twice
         return 0;
     }
