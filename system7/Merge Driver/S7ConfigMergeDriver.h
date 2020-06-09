@@ -11,12 +11,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_OPTIONS(uint32_t, S7ConflictResolutionOption) {
-    S7ConflictResolutionTypeKeepLocal = (1 << 0),
-    S7ConflictResolutionTypeKeepRemote = (1 << 1),
-    S7ConflictResolutionTypeMerge = (1 << 2),
-    S7ConflictResolutionTypeKeepChanged = (1 << 3),
-    S7ConflictResolutionTypeDelete = (1 << 4),
-    S7ConflictResolutionTypeKeepConflict = (1 << 5),
+    S7ConflictResolutionOptionKeepLocal = (1 << 0),
+    S7ConflictResolutionOptionKeepRemote = (1 << 1),
+    S7ConflictResolutionOptionMerge = (1 << 2),
+    S7ConflictResolutionOptionKeepChanged = (1 << 3),
+    S7ConflictResolutionOptionDelete = (1 << 4),
+    S7ConflictResolutionOptionKeepConflict = (1 << 5),
 };
 
 @class S7SubrepoDescription;

@@ -54,13 +54,13 @@
                 char *userInput = fgets(buf, BUF_LEN, stdin);
                 if (userInput && 1 == strlen(userInput)) {
                     if (tolower(userInput[0]) == 'm') {
-                        return S7ConflictResolutionTypeMerge;
+                        return S7ConflictResolutionOptionMerge;
                     }
                     else if (tolower(userInput[0]) == 'l') {
-                        return S7ConflictResolutionTypeKeepLocal;
+                        return S7ConflictResolutionOptionKeepLocal;
                     }
                     else if (tolower(userInput[0]) == 'r') {
-                        return S7ConflictResolutionTypeKeepRemote;
+                        return S7ConflictResolutionOptionKeepRemote;
                     }
                 }
 
@@ -90,10 +90,10 @@
                 char *userInput = fgets(buf, BUF_LEN, stdin);
                 if (userInput && 1 == strlen(userInput)) {
                     if (tolower(userInput[0]) == 'c') {
-                        return S7ConflictResolutionTypeKeepChanged;
+                        return S7ConflictResolutionOptionKeepChanged;
                     }
                     else if (tolower(userInput[0]) == 'd') {
-                        return S7ConflictResolutionTypeDelete;
+                        return S7ConflictResolutionOptionDelete;
                     }
                 }
 
@@ -425,15 +425,15 @@ saveResultToFilePath:(NSString *)resultFilePath
             S7ConflictResolutionOption possibleConflictResolutionOptions = 0;
             if (conflict.ourVersion && conflict.theirVersion) {
                 possibleConflictResolutionOptions =
-                    S7ConflictResolutionTypeKeepLocal |
-                    S7ConflictResolutionTypeKeepRemote |
-                    S7ConflictResolutionTypeMerge;
+                    S7ConflictResolutionOptionKeepLocal |
+                    S7ConflictResolutionOptionKeepRemote |
+                    S7ConflictResolutionOptionMerge;
             }
             else {
                 NSAssert(conflict.ourVersion || conflict.theirVersion, @"");
                 possibleConflictResolutionOptions =
-                    S7ConflictResolutionTypeKeepChanged |
-                    S7ConflictResolutionTypeDelete;
+                    S7ConflictResolutionOptionKeepChanged |
+                    S7ConflictResolutionOptionDelete;
             }
 
             NSUInteger numberOfTries = 0;
@@ -442,7 +442,7 @@ saveResultToFilePath:(NSString *)resultFilePath
                 ++numberOfTries;
                 if (numberOfTries > 10) {
                     fprintf(stderr, "too many attempts – will leave conflict unresolved\n");
-                    userDecision = S7ConflictResolutionTypeKeepConflict;
+                    userDecision = S7ConflictResolutionOptionKeepConflict;
                     conflictResolved = NO;
                     NSAssert(NO, @"");
                     break;
@@ -465,15 +465,15 @@ saveResultToFilePath:(NSString *)resultFilePath
             } while (1);
 
             switch (userDecision) {
-                case S7ConflictResolutionTypeKeepLocal:
+                case S7ConflictResolutionOptionKeepLocal:
                     [resolvedMergeResultSubrepos addObject:conflict.ourVersion];
                     break;
 
-                case S7ConflictResolutionTypeKeepRemote:
+                case S7ConflictResolutionOptionKeepRemote:
                     [resolvedMergeResultSubrepos addObject:conflict.theirVersion];
                     break;
 
-                case S7ConflictResolutionTypeMerge: {
+                case S7ConflictResolutionOptionMerge: {
                     int subrepoMergeExitStatus = 0;
                     S7SubrepoDescription *subrepoMergeResult = [self mergeSubrepoConflict:conflict exitStatus:&subrepoMergeExitStatus];
                     NSAssert(subrepoMergeResult, @"");
@@ -486,7 +486,7 @@ saveResultToFilePath:(NSString *)resultFilePath
                     break;
                 }
 
-                case S7ConflictResolutionTypeKeepChanged:
+                case S7ConflictResolutionOptionKeepChanged:
                     if (conflict.ourVersion) {
                         [resolvedMergeResultSubrepos addObject:conflict.ourVersion];
                     }
@@ -496,11 +496,11 @@ saveResultToFilePath:(NSString *)resultFilePath
                     }
                     break;
 
-                case S7ConflictResolutionTypeDelete:
+                case S7ConflictResolutionOptionDelete:
                     // do nothing – this subrepo's life has just finished
                     break;
 
-                case S7ConflictResolutionTypeKeepConflict:
+                case S7ConflictResolutionOptionKeepConflict:
                     [resolvedMergeResultSubrepos addObject:conflict];
                     break;
             }
