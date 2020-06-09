@@ -196,7 +196,7 @@
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(readdleLibSubrepoGit);
 
-        NSCParameterAssert(0 == [readdleLibSubrepoGit checkoutNewLocalBranch:customBranchName]);
+        XCTAssertEqual(0, [readdleLibSubrepoGit checkoutNewLocalBranch:customBranchName]);
         // ^^^^^^^^^
 
         nikCreatedReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", nil, @"add system info");
@@ -273,7 +273,7 @@
         // make more changes to ReaddleLib, but commit and push them only to ReaddleLib repo
         readdleLibRevisionOnMasterPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
 
-        NSCParameterAssert(0 == [readdleLibSubrepoGit pushAllBranchesNeedingPush]);
+        XCTAssertEqual(0, [readdleLibSubrepoGit pushAllBranchesNeedingPush]);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {

@@ -89,8 +89,7 @@ static NSString *gitExecutablePath = nil;
         command = [command stringByAppendingString:@" --bare"];
     }
 
-    command = [command stringByAppendingString:@" "];
-    command = [command stringByAppendingString:path];
+    command = [command stringByAppendingFormat:@" %@", path];
 
     const int gitInitResult = [self executeCommand:command];
 
@@ -113,6 +112,16 @@ static NSString *gitExecutablePath = nil;
         stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
         stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
+    // Local helper method to run simple git commands.
+    //
+    // Easier to use and read than -runGitInRepoAtPath:withArguments:,
+    // which accepts an array of arguments.
+    //
+    // User must be cautios though – as this methods splits command into arguments
+    // by whitespace, it cannot be used for arguments that may contain spaces,
+    // for example, "commit -m\"up pdf kit\"" is a bad 'command' – it will confuse git
+    // and it will fail.
+    //
     NSArray<NSString *> *arguments = [command componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     arguments = [arguments filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString * _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
         return evaluatedObject.length > 0;
@@ -141,48 +150,37 @@ static NSString *gitExecutablePath = nil;
     // we must use semaphore to make sure we finish reading from pipes properly once task finished it's execution.
     dispatch_semaphore_t pipeCloseSemaphore = dispatch_semaphore_create(0);
 
-    NSMutableData *outputData = [NSMutableData new];
-    if (ppStdOutOutput) {
-        NSPipe *outputPipe = [NSPipe new];
-
-        task.standardOutput = outputPipe;
-
-        __weak __auto_type weakOutputPipe = outputPipe;
-        outputPipe.fileHandleForReading.readabilityHandler = ^ (NSFileHandle * _Nonnull handle) {
+    __auto_type setUpPipeReadabilityHandler = ^ void (NSPipe *pipe, NSMutableData *resultingData) {
+        __weak __auto_type weakPipe = pipe;
+        pipe.fileHandleForReading.readabilityHandler = ^ (NSFileHandle * _Nonnull handle) {
             // DO NOT use -availableData in these handlers.
             NSData *newData = [handle readDataOfLength:NSUIntegerMax];
             if (0 == newData.length) {
                 dispatch_semaphore_signal(pipeCloseSemaphore);
 
-                __strong __auto_type strongOutputPipe = weakOutputPipe;
-                strongOutputPipe.fileHandleForReading.readabilityHandler = nil;
+                __strong __auto_type strongPipe = weakPipe;
+                strongPipe.fileHandleForReading.readabilityHandler = nil;
             }
             else {
-               [outputData appendData:newData];
+               [resultingData appendData:newData];
             }
         };
+    };
+
+    __block NSMutableData *outputData = nil;
+    if (ppStdOutOutput) {
+        outputData = [NSMutableData new];
+        NSPipe *outputPipe = [NSPipe new];
+        task.standardOutput = outputPipe;
+        setUpPipeReadabilityHandler(outputPipe, outputData);
     }
 
-    NSMutableData *errorData = [NSMutableData new];
+    NSMutableData *errorData = nil;
     if (ppStdErrOutput) {
+        errorData = [NSMutableData new];
         NSPipe *errorPipe = [NSPipe new];
-
         task.standardError = errorPipe;
-
-        __weak __auto_type weakErrorPipe = errorPipe;
-        errorPipe.fileHandleForReading.readabilityHandler = ^ (NSFileHandle * _Nonnull handle) {
-            // DO NOT use -availableData in these handlers.
-            NSData *newData = [handle readDataOfLength:NSUIntegerMax];
-            if (0 == newData.length) {
-                dispatch_semaphore_signal(pipeCloseSemaphore);
-
-                __strong __auto_type strongErrorPipe = weakErrorPipe;
-                strongErrorPipe.fileHandleForReading.readabilityHandler = nil;
-            }
-            else {
-                [errorData appendData:newData];
-            }
-        };
+        setUpPipeReadabilityHandler(errorPipe, errorData);
     }
 
     NSError *error = nil;
@@ -223,8 +221,7 @@ static NSString *gitExecutablePath = nil;
         return exitStatus;
     }
 
-    NSString *configValue = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    return [configValue isEqualToString:@"true"];
+    return [stdOutOutput containsString:@"true"];
 }
 
 - (BOOL)isEmptyRepo {
@@ -240,16 +237,10 @@ static NSString *gitExecutablePath = nil;
     }
 
     // I could have checked if 'heads' dir is just empty, but I'm afraid of stuff like .DS_Store
-    BOOL repoHasAnyHead = NO;
     for (NSString *fileName in headsDirectoryContents) {
         if (NO == [fileName hasPrefix:@"."]) {
-            repoHasAnyHead = YES;
-            break;
+            return NO;
         }
-    }
-
-    if (repoHasAnyHead) {
-        return NO;
     }
 
     return YES;
@@ -271,8 +262,6 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
-    NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
-
     // check if we are tracking this branch already
     if ([self isBranchTrackingRemoteBranch:branchName]) {
         return [self checkoutExistingLocalBranch:branchName];
@@ -303,9 +292,9 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (int)forceCheckoutExistingLocalBranch:(NSString *)branchName revision:(NSString *)revisions {
-    // pastey: theoretically, one can be concirned with "injection" here
+    // pastey: theoretically, one can be concerned with "injection" here
     // I think it's not a problem for two reasons:
-    //  1. s7 is purely a developer tool, so if someone wants to do some harm and they have access to our coce,
+    //  1. s7 is purely a developer tool, so if someone wants to do some harm and they have access to our code,
     //     they have an easier ways than injections
     //  2. anyway 'command' is then split into arguments and passed to git as an array, so git would most likely
     //     not accept these arguments; unless the user is super smart to build some fancy git command that allows
@@ -343,16 +332,12 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (BOOL)isInDetachedHEAD {
-    NSString *stdOutOutput = nil;
-    const int revParseExitStatus = [self runGitCommand:@"rev-parse --abbrev-ref HEAD"
-                                          stdOutOutput:&stdOutOutput
-                                          stdErrOutput:NULL];
-    if (0 != revParseExitStatus) {
-        return NO;
+    NSString *branch = nil;
+    if (0 == [self getCurrentBranch:&branch] && nil == branch) {
+        return YES;
     }
 
-    NSString *branch = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    return [branch isEqualToString:@"HEAD"];
+    return NO;
 }
 
 #pragma mark - revisions -
@@ -361,10 +346,7 @@ static NSString *gitExecutablePath = nil;
     static NSString *result = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        result = [[NSMutableString alloc] initWithCapacity:40];
-        for (int i=0; i<40; ++i) {
-            [((NSMutableString *)result) appendString:@"0"];
-        }
+        result = [@"" stringByPaddingToLength:40 withString:@"0" startingAtIndex:0];
     });
 
     return result;

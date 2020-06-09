@@ -41,7 +41,9 @@ GitRepository *s7add_impl(NSString *subrepoPath, NSString *url, BOOL stage) {
     arguments = [arguments arrayByAddingObjectsFromArray:@[ subrepoPath, url ]];
 
     const int addResult = [addCommand runWithArguments:arguments];
-    NSCAssert(0 == addResult, @"");
+    if (0 != addResult) {
+        NSCAssert(NO, @"");
+    }
 
     GitRepository *subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoPath];
     NSCAssert(subrepoGit, @"");
@@ -59,25 +61,33 @@ GitRepository *s7add_stage(NSString *subrepoPath, NSString *url) {
 void s7remove(NSString *subrepoPath) {
     S7RemoveCommand *rebindCommand = [S7RemoveCommand new];
     const int result = [rebindCommand runWithArguments:@[subrepoPath]];
-    NSCAssert(0 == result, @"");
+    if (0 != result) {
+        NSCAssert(NO, @"");
+    }
 }
 
 void s7rebind(void) {
     S7RebindCommand *rebindCommand = [S7RebindCommand new];
     const int result = [rebindCommand runWithArguments:@[]];
-    NSCAssert(0 == result, @"");
+    if (0 != result) {
+        NSCAssert(NO, @"");
+    }
 }
 
 void s7rebind_with_stage(void) {
     S7RebindCommand *rebindCommand = [S7RebindCommand new];
     const int result = [rebindCommand runWithArguments:@[ @"--stage" ]];
-    NSCAssert(0 == result, @"");
+    if (0 != result) {
+        NSCAssert(NO, @"");
+    }
 }
 
 void s7rebind_specific(NSString *subrepoPath) {
     S7RebindCommand *rebindCommand = [S7RebindCommand new];
     const int result = [rebindCommand runWithArguments:@[ subrepoPath ]];
-    NSCAssert(0 == result, @"");
+    if (0 != result) {
+        NSCAssert(NO, @"");
+    }
 }
 
 int s7push_currentBranch(GitRepository *repo) {
@@ -131,11 +141,23 @@ int s7checkout(NSString *fromRevision, NSString *toRevision) {
 
 NSString * commit(GitRepository *repo, NSString *fileName, NSString * _Nullable fileContents, NSString *commitMessage) {
     NSCParameterAssert(repo);
-    NSCParameterAssert(0 == [repo createFile:fileName withContents:fileContents]);
-    NSCParameterAssert(0 == [repo add:@[ fileName ]]);
-    NSCParameterAssert(0 == [repo commitWithMessage:commitMessage]);
+    if (0 != [repo createFile:fileName withContents:fileContents]) {
+        NSCParameterAssert(NO);
+    }
+
+    if (0 != [repo add:@[ fileName ]]) {
+        NSCParameterAssert(NO);
+    }
+
+    if (0 != [repo commitWithMessage:commitMessage]) {
+        NSCParameterAssert(NO);
+    }
+
     NSString *resultingRevision = nil;
-    NSCParameterAssert(0 == [repo getCurrentRevision:&resultingRevision]);
+    if (0 != [repo getCurrentRevision:&resultingRevision]) {
+        NSCParameterAssert(NO);
+    }
+    
     return resultingRevision;
 }
 

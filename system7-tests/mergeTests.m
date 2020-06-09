@@ -43,6 +43,14 @@
 
 #pragma mark -
 
+- (void)testMergeDriverWithMissingRequiredArguments {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        S7ConfigMergeDriver *mergeDriver = [S7ConfigMergeDriver new];
+        const int exitStatus = [mergeDriver runWithArguments:@[ @"one", @"two" ]];
+        XCTAssertEqual(S7ExitCodeMissingRequiredArgument, exitStatus);
+    }];
+}
+
 - (void)testSuccessfullDifferentBranchesNonConflictMerge {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         GitRepository *readdleLibGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
@@ -429,6 +437,7 @@
         XCTAssertEqual(0, mergeHookExitStatus);
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
 
         readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
 
@@ -463,29 +472,29 @@
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
             S7ConflictResolutionOption expectedResolutionOptions =
-                S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote | S7ConflictResolutionTypeMerge;
+                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
             XCTAssertEqual(expectedResolutionOptions, possibleOptions);
 
             ++callNumber;
 
             if (1 == callNumber) {
                 // play a fool and return an option not in 'possibleOptions'
-                return S7ConflictResolutionTypeKeepChanged;
+                return S7ConflictResolutionOptionKeepChanged;
             }
             else if (2 == callNumber) {
                 // play a fool and return an option not in 'possibleOptions' one more time
-                return S7ConflictResolutionTypeDelete;
+                return S7ConflictResolutionOptionDelete;
             }
             else if (3 == callNumber) {
                 // шоб да, так нет
-                return S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote;
+                return S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote;
             }
             else if (callNumber > 4) {
                 // it keeps asking us?
                 XCTFail(@"");
             }
 
-            return S7ConflictResolutionTypeMerge;
+            return S7ConflictResolutionOptionMerge;
          }];
 
         const int mergeExitStatus = [configMergeDriver
@@ -590,10 +599,10 @@
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
             S7ConflictResolutionOption expectedResolutionOptions =
-                S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote | S7ConflictResolutionTypeMerge;
+                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
             XCTAssertEqual(expectedResolutionOptions, possibleOptions);
 
-            return S7ConflictResolutionTypeMerge;
+            return S7ConflictResolutionOptionMerge;
          }];
 
         XCTAssertNotEqual(0, [repo merge]);
@@ -722,10 +731,10 @@
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
             S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote | S7ConflictResolutionTypeMerge;
+            S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
             XCTAssertEqual(expectedResolutionOptions, possibleOptions);
 
-            return S7ConflictResolutionTypeKeepLocal;
+            return S7ConflictResolutionOptionKeepLocal;
         }];
 
         const int mergeExitStatus = [configMergeDriver
@@ -828,10 +837,10 @@
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
             S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionTypeKeepLocal | S7ConflictResolutionTypeKeepRemote | S7ConflictResolutionTypeMerge;
+            S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
             XCTAssertEqual(expectedResolutionOptions, possibleOptions);
 
-            return S7ConflictResolutionTypeKeepRemote;
+            return S7ConflictResolutionOptionKeepRemote;
         }];
 
         const int mergeExitStatus = [configMergeDriver
@@ -937,10 +946,10 @@
             XCTAssertEqualObjects(theirVersion.path, @"Dependencies/ReaddleLib");
 
             S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionTypeKeepChanged | S7ConflictResolutionTypeDelete;
+            S7ConflictResolutionOptionKeepChanged | S7ConflictResolutionOptionDelete;
             XCTAssertEqual(expectedResolutionOptions, possibleOptions);
 
-            return S7ConflictResolutionTypeDelete;
+            return S7ConflictResolutionOptionDelete;
         }];
 
         const int mergeExitStatus = [configMergeDriver
@@ -1041,10 +1050,10 @@
             XCTAssertEqualObjects(theirVersion.path, @"Dependencies/ReaddleLib");
 
             S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionTypeKeepChanged | S7ConflictResolutionTypeDelete;
+            S7ConflictResolutionOptionKeepChanged | S7ConflictResolutionOptionDelete;
             XCTAssertEqual(expectedResolutionOptions, possibleOptions);
 
-            return S7ConflictResolutionTypeKeepChanged;
+            return S7ConflictResolutionOptionKeepChanged;
         }];
 
         const int mergeExitStatus = [configMergeDriver

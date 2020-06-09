@@ -22,8 +22,7 @@ int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void)) {
     }
     @finally {
         if (NO == [[NSFileManager defaultManager] changeCurrentDirectoryPath:cwd]) {
-            NSCAssert(NO, @"todo: add logs");
-            return 4;
+            NSCAssert(NO, @"failed to return CWD to the old state");
         }
     }
 }
@@ -87,7 +86,7 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     }
 
     NSArray<NSString *> *existingGitIgnoreLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    if (NSNotFound != [existingGitIgnoreLines indexOfObject:lineToAppend]) {
+    if ([existingGitIgnoreLines containsObject:lineToAppend]) {
         // do not add twice
         return 0;
     }

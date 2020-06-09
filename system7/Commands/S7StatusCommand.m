@@ -37,7 +37,7 @@
     GitRepository *repo = [GitRepository repoAtPath:@"."];
 
     NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
-    const int exitStatus = [[self class] repo:repo calculateStatus:&status];
+    const int exitStatus = [S7StatusCommand repo:repo calculateStatus:&status];
     if (0 != exitStatus) {
         if (S7ExitCodeSubreposNotInSync == exitStatus) {
             fprintf(stderr,
@@ -210,11 +210,9 @@
 
         if (nil == currentBranch) {
             // the only case getCurrentBranch will succeed (return 0), but leave branch name nil
-            // is the detached HEAD, but let's make it clear
-            if ([subrepoGit isInDetachedHEAD]) {
-                [subreposInDetachedHEAD addObject:subrepoPath];
-                continue;
-            }
+            // is the detached HEAD
+            [subreposInDetachedHEAD addObject:subrepoPath];
+            continue;
         }
 
         NSString *currentRevision = nil;

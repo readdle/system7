@@ -71,12 +71,11 @@
     for (Class<S7Hook> hookClass in hookClasses) {
         hookInstallationExitCode = [self installHook:hookClass];
         if (0 != hookInstallationExitCode) {
-            break;
+            fprintf(stderr,
+                    "error: failed to install `%s` git hook\n",
+                        [hookClass gitHookName].fileSystemRepresentation);
+            return hookInstallationExitCode;
         }
-    }
-
-    if (0 != hookInstallationExitCode) {
-        return hookInstallationExitCode;
     }
 
     const int gitIgnoreUpdateExitCode = addLineToGitIgnore(S7ControlFileName);
@@ -219,7 +218,7 @@
 
     NSString *mergeDriverDeclarationHeader = @"[merge \"s7\"]";
     NSArray<NSString *> *existingGitConfigLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    if (NSNotFound == [existingGitConfigLines indexOfObject:mergeDriverDeclarationHeader]) {
+    if (NO == [existingGitConfigLines containsObject:mergeDriverDeclarationHeader]) {
         if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
             [newContent appendString:@"\n"];
         }
@@ -274,7 +273,7 @@ int addLineToGitAttributes(NSString *lineToAppend) {
     }
 
     NSArray<NSString *> *existingGitattributeLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    if (NSNotFound != [existingGitattributeLines indexOfObject:lineToAppend]) {
+    if ([existingGitattributeLines containsObject:lineToAppend]) {
         // do not add twice
         return 0;
     }

@@ -63,7 +63,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         // if that's an unrelated file, then we don't care,
         // but if that's our .s7substate config, then we do care.
         // The only way to find out if config content has been changed,
-        // is to compare actual config sha1 to the one saved in S7ControlFileName
+        // is to compare actual config to S7ControlFileName
         //
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         if ([actualConfig isEqual:lastSavedS7Config]) {
@@ -350,6 +350,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     [subrepoDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
             // `git checkout -B branch revision`
+            // this also makes checkout recursive if subrepo is a S7 repo itself
             [subrepoGit forceCheckoutExistingLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision];
         }
 

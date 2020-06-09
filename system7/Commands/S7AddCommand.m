@@ -157,7 +157,7 @@
 
                     // there's a chance that this is the same local url in absolute and relative form
                     // 'actualRemoteUrl' returned by 'git remote get-url origin' is always absolute
-                    if ([url hasPrefix:@"."] && NO == [url hasPrefix:@"/"]) {
+                    if ([url hasPrefix:@"./"]) {
                         // can also use 'standartizePath', but have no need at the moment
                         // leave that for future desperado programmers
                         NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
@@ -213,6 +213,8 @@
         return S7ExitCodeGitOperationFailed;
     }
 
+    NSCAssert(parsedConfig && parsedConfig.subrepoDescriptions, @"");
+
     NSMutableArray<S7SubrepoDescription *> *newConfig = [parsedConfig.subrepoDescriptions mutableCopy];
     [newConfig addObject:[[S7SubrepoDescription alloc] initWithPath:path url:url revision:revision branch:branch]];
 
@@ -248,12 +250,9 @@
                 // but this would be harder to test (as unit-test would rely on the s7 installed
                 // at test machine)
                 //
-                NSString *currentRevision = nil;
-                [gitSubrepo getCurrentRevision:&currentRevision];
-
                 const int checkoutExitStatus = [S7PostCheckoutHook checkoutSubreposForRepo:gitSubrepo
                                                                               fromRevision:[GitRepository nullRevision]
-                                                                                toRevision:currentRevision];
+                                                                                toRevision:revision];
                 return checkoutExitStatus;
             });
 

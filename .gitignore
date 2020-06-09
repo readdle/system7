@@ -6,7 +6,7 @@
 build
 /build/
 *.orig
-xcuserdata/
+**/xcuserdata/
 *.xcuserstate
 *.xcbkptlist
 *.xcworkspacedata
