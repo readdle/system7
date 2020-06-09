@@ -164,7 +164,7 @@
 
                     // there's a chance that this is the same local url in absolute and relative form
                     // 'actualRemoteUrl' returned by 'git remote get-url origin' is always absolute
-                    if ([url hasPrefix:@"."] && NO == [url hasPrefix:@"/"]) {
+                    if ([url hasPrefix:@"./"]) {
                         // can also use 'standartizePath', but have no need at the moment
                         // leave that for future desperado programmers
                         NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
