@@ -260,12 +260,9 @@
                 // but this would be harder to test (as unit-test would rely on the s7 installed
                 // at test machine)
                 //
-                NSString *currentRevision = nil;
-                [gitSubrepo getCurrentRevision:&currentRevision];
-
                 const int checkoutExitStatus = [S7PostCheckoutHook checkoutSubreposForRepo:gitSubrepo
                                                                               fromRevision:[GitRepository nullRevision]
-                                                                                toRevision:currentRevision];
+                                                                                toRevision:revision];
                 return checkoutExitStatus;
             });
 
