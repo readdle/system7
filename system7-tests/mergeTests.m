@@ -60,6 +60,14 @@
 
 #pragma mark -
 
+- (void)testMergeDriverWithMissingRequiredArguments {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        S7ConfigMergeDriver *mergeDriver = [S7ConfigMergeDriver new];
+        const int exitStatus = [mergeDriver runWithArguments:@[ @"one", @"two" ]];
+        XCTAssertEqual(S7ExitCodeMissingRequiredArgument, exitStatus);
+    }];
+}
+
 - (void)testSuccessfullDifferentBranchesNonConflictMerge {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         GitRepository *readdleLibGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);

@@ -136,39 +136,17 @@
         return S7ExitCodeNotGitRepository;
     }
 
-    NSString *baseConfigFilePath = nil;
-    NSString *ourConfigFilePath = nil;
-    NSString *theirConfigFilePath = nil;
-
-    for (NSString *argument in arguments) {
-        if (nil == baseConfigFilePath) {
-            baseConfigFilePath = argument;
-        }
-        else if (nil == ourConfigFilePath) {
-            ourConfigFilePath = argument;
-        }
-        else if (nil == theirConfigFilePath) {
-            theirConfigFilePath = argument;
-        }
-    }
-
-    if (nil == baseConfigFilePath) {
+    if (arguments.count < 3) {
+        char *names[] = { "BASE", "OUR", "THEIR" };
         fprintf(stderr,
-                "required argument BASE is missing\n");
+                "required argument %s is missing\n",
+                names[arguments.count]);
         return S7ExitCodeMissingRequiredArgument;
     }
 
-    if (nil == ourConfigFilePath) {
-        fprintf(stderr,
-                "required argument OUR is missing\n");
-        return S7ExitCodeMissingRequiredArgument;
-    }
-
-    if (nil == theirConfigFilePath) {
-        fprintf(stderr,
-                "required argument THEIR is missing\n");
-        return S7ExitCodeMissingRequiredArgument;
-    }
+    NSString *baseConfigFilePath = arguments[0];
+    NSString *ourConfigFilePath = arguments[1];
+    NSString *theirConfigFilePath = arguments[2];
 
     S7Config *baseConfig = [[S7Config alloc] initWithContentsOfFile:baseConfigFilePath];
     S7Config *ourConfig = [[S7Config alloc] initWithContentsOfFile:ourConfigFilePath];
