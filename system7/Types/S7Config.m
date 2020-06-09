@@ -281,7 +281,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     S7Config *other = (S7Config *)object;
-    return [other.subrepoDescriptions isEqual:self.subrepoDescriptions];
+    return [other.pathToDescriptionMap isEqual:self.pathToDescriptionMap];
 }
 
 - (NSUInteger)hash {
