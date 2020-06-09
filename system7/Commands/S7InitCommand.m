@@ -267,7 +267,7 @@ int addLineToGitAttributes(NSString *lineToAppend) {
     }
 
     NSArray<NSString *> *existingGitattributeLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    if (NSNotFound != [existingGitattributeLines indexOfObject:lineToAppend]) {
+    if ([existingGitattributeLines containsObject:lineToAppend]) {
         // do not add twice
         return 0;
     }
