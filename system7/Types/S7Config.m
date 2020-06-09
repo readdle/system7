@@ -103,6 +103,13 @@ NS_ASSUME_NONNULL_BEGIN
 
             inConflict = NO;
 
+            // Use arrays here to keep an order of subrepos.
+            // This will result in a better diff of .s7substate file.
+            // An alternative way would be to throw our and their subrepo paths in a single set,
+            // and iterate over that set here – would remove the need of a separate run through
+            // 'conflictTheirSideSubrepoDescriptions', but would change the order of lines
+            // in .s7substate
+            //
             NSArray<NSString *> *ourSideConflictPaths = [conflictOurSideSubrepoDescriptions.allKeys copy];
             for (NSString *subrepoPath in ourSideConflictPaths) {
                 S7SubrepoDescription *ourDesc = conflictOurSideSubrepoDescriptions[subrepoPath];
