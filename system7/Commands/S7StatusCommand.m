@@ -37,7 +37,7 @@
     GitRepository *repo = [GitRepository repoAtPath:@"."];
 
     NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
-    const int exitStatus = [[self class] repo:repo calculateStatus:&status];
+    const int exitStatus = [S7StatusCommand repo:repo calculateStatus:&status];
     if (0 != exitStatus) {
         return exitStatus;
     }
