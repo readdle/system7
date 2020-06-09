@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)configWithString:(NSString *)configContents;
 
 - (nullable instancetype)initWithContentsOfFile:(NSString *)filePath;
-- (instancetype)initWithSubrepoDescriptions:(NSArray<S7SubrepoDescription *> *)subrepoDescriptions;
+- (instancetype)initWithSubrepoDescriptions:(NSArray<S7SubrepoDescription *> *)subrepoDescriptions NS_DESIGNATED_INITIALIZER;
 
 + (instancetype)emptyConfig;
 
