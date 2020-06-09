@@ -212,7 +212,7 @@
 
     NSString *mergeDriverDeclarationHeader = @"[merge \"s7\"]";
     NSArray<NSString *> *existingGitConfigLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    if (NSNotFound == [existingGitConfigLines indexOfObject:mergeDriverDeclarationHeader]) {
+    if (NO == [existingGitConfigLines containsObject:mergeDriverDeclarationHeader]) {
         if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
             [newContent appendString:@"\n"];
         }
