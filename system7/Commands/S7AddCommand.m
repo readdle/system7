@@ -225,6 +225,8 @@
         return getRevisionResult;
     }
 
+    NSCAssert(parsedConfig && parsedConfig.subrepoDescriptions, @"");
+
     NSMutableArray<S7SubrepoDescription *> *newConfig = [parsedConfig.subrepoDescriptions mutableCopy];
     [newConfig addObject:[[S7SubrepoDescription alloc] initWithPath:path url:url revision:revision branch:branch]];
 
