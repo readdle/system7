@@ -72,12 +72,8 @@
             fprintf(stderr,
                     "error: failed to install `%s` git hook\n",
                         [hookClass gitHookName].fileSystemRepresentation);
-            break;
+            return hookInstallationExitCode;
         }
-    }
-
-    if (0 != hookInstallationExitCode) {
-        return hookInstallationExitCode;
     }
 
     const int gitIgnoreUpdateExitCode = addLineToGitIgnore(S7ControlFileName);
