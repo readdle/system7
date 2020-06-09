@@ -269,7 +269,7 @@ typedef enum {
         detectedConflict = YES;
     }
 
-    NSMutableDictionary * sortHint = [NSMutableDictionary dictionaryWithCapacity:ourConfig.subrepoDescriptions.count];
+    NSMutableDictionary<NSString *, NSNumber *> *sortHint = [NSMutableDictionary dictionaryWithCapacity:ourConfig.subrepoDescriptions.count];
 
     for (NSUInteger i = 0; i < ourConfig.subrepoDescriptions.count; ++i) {
 
