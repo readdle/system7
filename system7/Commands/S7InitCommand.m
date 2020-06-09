@@ -69,6 +69,9 @@
     for (Class<S7Hook> hookClass in hookClasses) {
         hookInstallationExitCode = [self installHook:hookClass];
         if (0 != hookInstallationExitCode) {
+            fprintf(stderr,
+                    "error: failed to install `%s` git hook\n",
+                        [hookClass gitHookName].fileSystemRepresentation);
             break;
         }
     }
