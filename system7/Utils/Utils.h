@@ -32,4 +32,17 @@ BOOL isExactlyOneBitSetInNumber(uint32_t bits);
         }                                           \
     } while (0);
 
+#define SAVE_UPDATED_CONFIG_TO_MAIN_AND_CONTROL_FILE(updatedConfig)                 \
+    do {                                                                            \
+        int configSaveResult = [updatedConfig saveToFileAtPath:S7ConfigFileName];   \
+        if (0 != configSaveResult) {                                                \
+            return configSaveResult;                                                \
+        }                                                                           \
+                                                                                    \
+        configSaveResult = [updatedConfig saveToFileAtPath:S7ControlFileName];      \
+        if (0 != configSaveResult) {                                                \
+            return configSaveResult;                                                \
+        }                                                                           \
+    } while(0);
+
 NS_ASSUME_NONNULL_END

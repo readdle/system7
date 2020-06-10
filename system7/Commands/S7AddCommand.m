@@ -266,18 +266,8 @@
     }
 
     S7Config *updatedConfig = [[S7Config alloc] initWithSubrepoDescriptions:newConfig];
-    const int configSaveResult = [updatedConfig saveToFileAtPath:S7ConfigFileName];
-    if (0 != configSaveResult) {
-        return configSaveResult;
-    }
 
-    if (0 != [updatedConfig saveToFileAtPath:S7ControlFileName]) {
-        fprintf(stderr,
-                "failed to save %s to disk.\n",
-                S7ControlFileName.fileSystemRepresentation);
-        
-        return S7ExitCodeFileOperationFailed;
-    }
+    SAVE_UPDATED_CONFIG_TO_MAIN_AND_CONTROL_FILE(updatedConfig);
 
     if (stageConfig) {
         if (0 != [repo add:@[ S7ConfigFileName, @".gitignore" ]]) {

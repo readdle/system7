@@ -178,18 +178,7 @@
 
     S7Config *resultingConfig = [[S7Config alloc] initWithSubrepoDescriptions:resultingSubrepoDescriptions];
 
-    const int configSaveResult = [resultingConfig saveToFileAtPath:S7ConfigFileName];
-    if (0 != configSaveResult) {
-        return configSaveResult;
-    }
-
-    if (0 != [resultingConfig saveToFileAtPath:S7ControlFileName]) {
-        fprintf(stderr,
-                "failed to save %s to disk.\n",
-                S7ControlFileName.fileSystemRepresentation);
-
-        return S7ExitCodeFileOperationFailed;
-    }
+    SAVE_UPDATED_CONFIG_TO_MAIN_AND_CONTROL_FILE(resultingConfig);
 
     return S7ExitCodeSuccess;
 }
