@@ -34,7 +34,7 @@
 //            @throw error
 //        }
 
-        const int BUF_LEN = 2;
+        const int BUF_LEN = 20;
         char buf[BUF_LEN];
 
         if (ourVersion && theirVersion) {
@@ -52,7 +52,7 @@
 
             do {
                 char *userInput = fgets(buf, BUF_LEN, stdin);
-                if (userInput && 1 == strlen(userInput)) {
+                if (userInput && strlen(userInput) >= 1) {
                     if (tolower(userInput[0]) == 'm') {
                         return S7ConflictResolutionOptionMerge;
                     }
@@ -88,7 +88,7 @@
 
             do {
                 char *userInput = fgets(buf, BUF_LEN, stdin);
-                if (userInput && 1 == strlen(userInput)) {
+                if (userInput && strlen(userInput) >= 1) {
                     if (tolower(userInput[0]) == 'c') {
                         return S7ConflictResolutionOptionKeepChanged;
                     }
@@ -109,14 +109,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    const char *debug = getenv("S7_DEBUG");
-    if (debug) {
-        fprintf(stdout, "🥈 start s7 config merge driver\n");
-    }
+    fprintf(stdout, "s7: config merge driver start\n");
     const int result = [self doRunWithArguments:arguments];
-    if (debug) {
-        fprintf(stdout, "🥈✅ finished s7 config merge driver\n");
-    }
+    fprintf(stdout, "s7: config merge driver complete\n");
     return result;
 }
 

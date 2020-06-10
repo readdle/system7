@@ -22,14 +22,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    const char *debug = getenv("S7_DEBUG");
-    if (debug) {
-        fprintf(stdout, "🥉 start s7 post-commit hook\n");
-    }
+    fprintf(stdout, "s7: post-commit hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    if (debug) {
-        fprintf(stdout, "🥉✅ finished s7 post-commit hook\n");
-    }
+    fprintf(stdout, "s7: post-commit hook complete\n");
     return result;
 }
 
