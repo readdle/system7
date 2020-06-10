@@ -110,6 +110,12 @@ void printHelp() {
     puts("    branch/revision?");
     puts(" A: just `git pull`/`git checkout` as you normally do.");
     puts("    S7 git-hooks will update subrepos as necessary.");
+    puts("");
+    puts(" Q: I ran `git reset` or `git stash` and now s7 complains that it's");
+    puts("    not in sync.");
+    puts(" A: git doesn't run any hooks for these commands, so you would have");
+    puts("    to updates subrepos using `s7 checkout` (see `s7 help checkout`");
+    puts("    for more info).");
 }
 
 Class commandClassByName(NSString *commandName) {
