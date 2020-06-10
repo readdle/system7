@@ -8,6 +8,7 @@
 
 #import "S7ResetCommand.h"
 
+#import "Utils.h"
 #import "S7PostCheckoutHook.h"
 
 @implementation S7ResetCommand
@@ -58,24 +59,11 @@
         return S7ExitCodeGitOperationFailed;
     }
 
-    int showExitStatus = 0;
-    NSString *toConfigContents = [repo showFile:S7ConfigFileName atRevision:currentRevision exitStatus:&showExitStatus];
+    S7Config *lastCommittedConfig = nil;
+    int showExitStatus = getConfig(repo, currentRevision, &lastCommittedConfig);
     if (0 != showExitStatus) {
-        if (128 == showExitStatus) {
-            // s7 config has been removed? Or we are back to revision where there was no s7 yet
-            toConfigContents = @"";
-        }
-        else {
-            fprintf(stderr,
-                    "failed to retrieve .s7substate config at revision %s.\n"
-                    "Git exit status: %d\n",
-                    [currentRevision cStringUsingEncoding:NSUTF8StringEncoding],
-                    showExitStatus);
-            return S7ExitCodeGitOperationFailed;
-        }
+        return showExitStatus;
     }
-
-    S7Config *lastCommittedConfig = [[S7Config alloc] initWithContentsString:toConfigContents];
 
     BOOL resetAll = NO;
     NSMutableSet<NSString *> *excludePaths = [NSMutableSet new];

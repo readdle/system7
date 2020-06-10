@@ -8,6 +8,7 @@
 
 #import "S7PrePushHook.h"
 
+#import "Utils.h"
 #import "S7Diff.h"
 #import "S7StatusCommand.h"
 
@@ -211,24 +212,13 @@
         return S7ExitCodeNoCommittedS7Config;
     }
 
-    NSString *lastRemoteConfigContents = [repo showFile:S7ConfigFileName
-                                             atRevision:latestRemoteRevisionAtThisBranch
-                                             exitStatus:&gitExitStatus];
-    if (nil == lastRemoteConfigContents || 0 != gitExitStatus) {
-        if (128 == gitExitStatus) {
-            // config didn't exist before. Consider that we've just initialized s7 and are about to push this
-            lastRemoteConfigContents = @"";
-        }
-        else {
-            fprintf(stderr,
-                    "failed to retrieve latest pushed .s7substate config. Git exit status: %d\n",
-                    gitExitStatus);
-            return S7ExitCodeGitOperationFailed;
-        }
-    }
-
     S7Config *lastCommittedConfig = [[S7Config alloc] initWithContentsString:configContentsAtRevisionToPush];
-    S7Config *lastPushedConfig = [[S7Config alloc] initWithContentsString:lastRemoteConfigContents];
+
+    S7Config *lastPushedConfig = nil;
+    gitExitStatus = getConfig(repo, latestRemoteRevisionAtThisBranch, &lastPushedConfig);
+    if (0 != gitExitStatus) {
+        return gitExitStatus;
+    }
 
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
