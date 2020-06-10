@@ -32,6 +32,11 @@
         char buf[BUF_LEN];
 
         if (ourVersion && theirVersion) {
+            NSCAssert(possibleOptions == (S7ConflictResolutionOptionKeepLocal |
+                                          S7ConflictResolutionOptionKeepRemote |
+                                          S7ConflictResolutionOptionMerge),
+                      @"");
+
             // should write this to stdout or stderr?
             fprintf(stdout,
                     " subrepo '%s' diverged\n"
@@ -67,6 +72,10 @@
         }
         else {
             NSCAssert(ourVersion || theirVersion, @"");
+            NSCAssert(possibleOptions == (S7ConflictResolutionOptionKeepChanged |
+                                          S7ConflictResolutionOptionDelete),
+                      @"");
+
             if (ourVersion) {
                 fprintf(stdout,
                         "  local changed subrepository '%s' which remote removed\n"
