@@ -24,9 +24,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: start post-checkout hook\n");
+    fprintf(stdout, "s7: post-checkout hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    fprintf(stdout, "s7: finished post-checkout hook\n");
+    fprintf(stdout, "s7: post-checkout hook complete\n");
     return result;
 }
 
