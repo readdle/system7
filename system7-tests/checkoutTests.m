@@ -13,6 +13,7 @@
 #import "S7CheckoutCommand.h"
 #import "S7PostMergeHook.h"
 #import "S7PostCommitHook.h"
+#import "S7PostCheckoutHook.h"
 
 @interface checkoutTests : XCTestCase
 @property (nonatomic, strong) TestReposEnvironment *env;
@@ -25,7 +26,7 @@
 }
 
 - (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+    S7PostCheckoutHook.warnAboutDetachingCommitsHook = nil;
 }
 
 #pragma mark -
@@ -116,6 +117,65 @@
         XCTAssertEqual(0, [postCommitHook runWithArguments:@[]]);
 
         actualReaddleLibRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
+        XCTAssertEqualObjects(actualReaddleLibRevision, readdleLib_niks_Revision);
+    }];
+}
+
+- (void)testCheckoutWarnsAboutDetachingLocalCommits {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        s7push_currentBranch(repo);
+    }];
+
+    __block NSString *readdleLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"iPad 11''", @"add support for a new iPad model");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"matrix", @"matrix");
+        NSString *readdleLib_pasteys_Revision =
+            commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"math");
+
+        [repo pull];
+
+        __block BOOL warningPrinted = NO;
+        S7PostCheckoutHook.warnAboutDetachingCommitsHook = ^(NSString * _Nonnull topRevision, int numberOfCommits) {
+            warningPrinted = YES;
+            XCTAssertEqual(2, numberOfCommits);
+            XCTAssertEqualObjects(topRevision, readdleLib_pasteys_Revision);
+        };
+
+        S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
+        const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
+        XCTAssertEqual(0, mergeHookExitStatus);
+
+        XCTAssertTrue(warningPrinted);
+
+        readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+
+        NSString *actualReaddleLibRevision = nil;
         [readdleLibSubrepoGit getCurrentRevision:&actualReaddleLibRevision];
         XCTAssertEqualObjects(actualReaddleLibRevision, readdleLib_niks_Revision);
     }];
