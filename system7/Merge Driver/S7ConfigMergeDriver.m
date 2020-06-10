@@ -8,8 +8,6 @@
 
 #import "S7ConfigMergeDriver.h"
 
-#include <unistd.h>
-
 #import "S7Diff.h"
 #import "Utils.h"
 #import "S7PostCheckoutHook.h"
@@ -29,10 +27,6 @@
                                                               S7ConflictResolutionOption possibleOptions)
      {
         void *self __attribute((unused)) __attribute((unavailable));
-
-//        if (!istty(stdin)) {
-//            @throw error
-//        }
 
         const int BUF_LEN = 20;
         char buf[BUF_LEN];
