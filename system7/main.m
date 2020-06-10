@@ -103,7 +103,7 @@ void printHelp() {
     puts("FAQ.");
     puts("");
     puts(" Q: how to push changes to subrepos together with the main repo?");
-    puts(" A: just `git push [OPTIONS]` on the main repo. S7 git-hooks will push\n");
+    puts(" A: just `git push [OPTIONS]` on the main repo. S7 git-hooks will push");
     puts("    necessary subrepos automatically.");
     puts("");
     puts(" Q: how to checkout subrepos after I pull or checkout a different");

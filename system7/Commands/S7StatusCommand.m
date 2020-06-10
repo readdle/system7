@@ -25,7 +25,7 @@
     puts("s7 status");
     printCommandAliases(self);
     puts("");
-    puts("TODO");
+    puts("show changed subrepos");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
