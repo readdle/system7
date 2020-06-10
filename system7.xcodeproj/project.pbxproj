@@ -119,7 +119,7 @@
 		BE50AA02246C2CEA00DBB618 /* S7Hook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Hook.h; sourceTree = "<group>"; };
 		BE5B752C248947AD008E7378 /* S7PrepareCommitMsgHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PrepareCommitMsgHook.h; sourceTree = "<group>"; };
 		BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PrepareCommitMsgHook.m; sourceTree = "<group>"; };
-		BE8218742452BA7300E878A8 /* system7 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = system7; sourceTree = BUILT_PRODUCTS_DIR; };
+		BE8218742452BA7300E878A8 /* s7 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = s7; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE8218772452BA7300E878A8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		BE82187F2452C16A00E878A8 /* S7Config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Config.h; sourceTree = "<group>"; };
 		BE8218802452C16A00E878A8 /* S7Config.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7Config.m; sourceTree = "<group>"; };
@@ -218,7 +218,7 @@
 		BE8218752452BA7300E878A8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BE8218742452BA7300E878A8 /* system7 */,
+				BE8218742452BA7300E878A8 /* s7 */,
 				BE8218862452C1DE00E878A8 /* system7-tests.xctest */,
 			);
 			name = Products;
@@ -338,7 +338,7 @@
 			);
 			name = system7;
 			productName = system7;
-			productReference = BE8218742452BA7300E878A8 /* system7 */;
+			productReference = BE8218742452BA7300E878A8 /* s7 */;
 			productType = "com.apple.product-type.tool";
 		};
 		BE8218852452C1DE00E878A8 /* system7-tests */ = {
@@ -598,7 +598,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = system7/system7.pch;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = s7;
 			};
 			name = Debug;
 		};
@@ -608,7 +608,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = system7/system7.pch;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = s7;
 			};
 			name = Release;
 		};
