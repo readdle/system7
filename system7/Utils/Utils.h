@@ -20,4 +20,16 @@ int addLineToGitIgnore(NSString *lineToAppend);
 
 BOOL isExactlyOneBitSetInNumber(uint32_t bits);
 
+#define S7_REPO_PRECONDITION_CHECK()                \
+    do {                                            \
+        BOOL isDirectory = NO;                      \
+        if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory] \
+            || isDirectory)                         \
+        {                                           \
+            fprintf(stderr,                         \
+                    "abort: not s7 repo root\n");   \
+            return S7ExitCodeNotS7Repo;             \
+        }                                           \
+    } while (0);
+
 NS_ASSUME_NONNULL_END

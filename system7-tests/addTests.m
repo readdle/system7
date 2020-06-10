@@ -33,12 +33,18 @@
 }
 
 - (void)testWithoutMandatoryArguments {
-    S7AddCommand *command = [S7AddCommand new];
-    XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
+    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
+        S7AddCommand *command = [S7AddCommand new];
+        XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
+    });
 }
 
 - (void)testAddExistingNonGitRepoAsSubrepo {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
         NSError *error = nil;
         XCTAssertTrue([[NSFileManager defaultManager] createDirectoryAtPath:@"Dependencies/ReaddleLib"
                                                 withIntermediateDirectories:YES
@@ -89,6 +95,8 @@
 
 - (void)testAddRepoWithUrlAndPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
         S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
 
@@ -151,6 +159,8 @@
 
 - (void)testAddRepoWithUrlAndInvalidPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
         S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
 
@@ -162,6 +172,8 @@
 
 - (void)testAddBareRepoWithUrlAndPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
         S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
 
@@ -212,6 +224,8 @@
     });
 
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init_deactivateHooks();
+        
         S7Config *initialConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(0, initialConfig.subrepoDescriptions.count);
 

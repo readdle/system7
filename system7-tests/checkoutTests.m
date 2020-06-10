@@ -45,6 +45,8 @@
     __block S7Config *baseConfig = nil;
     __block NSString *readdleLib_initialRevision = nil;
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+        
         GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
 

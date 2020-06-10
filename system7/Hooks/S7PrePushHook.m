@@ -78,16 +78,7 @@
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
-    BOOL isDirectory = NO;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
-        || isDirectory)
-    {
-        // if we got here, then `pre-push` hook is installed, then `s7 init` had been called,
-        // then this must be an s7 repo
-        fprintf(stderr,
-                "abort: not s7 repo root\n");
-        return S7ExitCodeNotS7Repo;
-    }
+    S7_REPO_PRECONDITION_CHECK();
 
     GitRepository *repo = [[GitRepository alloc] initWithRepoPath:@"."];
     if (nil == repo) {

@@ -29,14 +29,7 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    BOOL isDirectory = NO;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
-        || isDirectory)
-    {
-        fprintf(stderr,
-                "abort: not s7 repo root\n");
-        return S7ExitCodeNotS7Repo;
-    }
+    S7_REPO_PRECONDITION_CHECK();
 
     if (arguments.count < 1) {
         [[self class] printCommandHelp];

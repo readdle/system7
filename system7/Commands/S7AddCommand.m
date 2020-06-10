@@ -31,6 +31,8 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
+    S7_REPO_PRECONDITION_CHECK();
+
     if (arguments.count < 1) {
         [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
