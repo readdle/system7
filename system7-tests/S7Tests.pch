@@ -1,0 +1,10 @@
+
+#import <XCTest/XCTest.h>
+
+#import "TestReposEnvironment.h"
+#import "TestUtils.h"
+#import "Git.h"
+#import "S7Config.h"
+#import "Utils.h"
+#import "S7Types.h"
+#import "S7SubrepoDescription.h"

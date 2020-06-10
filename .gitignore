@@ -1,0 +1,13 @@
+.DS_Store
+*.mode1v3
+*.pbxuser
+*.orig
+*.perspectivev3
+build
+/build/
+*.orig
+**/xcuserdata/
+*.xcuserstate
+*.xcbkptlist
+*.xcworkspacedata
+system7-tests/integration/case7/*.actual
