@@ -141,8 +141,6 @@ static NSString *gitExecutablePath = nil;
              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
-    NSLog(@"*** %@", [arguments componentsJoinedByString:@" "]);
-
     NSTask *task = [NSTask new];
     [task setLaunchPath:gitExecutablePath];
     [task setArguments:arguments];
