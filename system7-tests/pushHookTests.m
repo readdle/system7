@@ -657,7 +657,67 @@
         XCTAssertTrue([self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibCommitExpectedToBePushed]);
         XCTAssertFalse([self.env.githubRDPDFKitRepo isRevisionAvailableLocally:pdfKitCommitNotToBePushed]);
     }];
+}
 
+- (void)testMainRepoBranchDeletePush {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"add geometry utils");
+
+        GitRepository *pdfKitSubrepoGit = s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", @"/Type /Ink", @"ink annotations");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"add subrepos"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+
+        [repo checkoutNewLocalBranch:@"experiment"];
+
+        NSString *lastPushedReaddleLibCommit = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"RDRectArea", @"geometry utils");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"up ReaddleLib 1"];
+
+        NSString *lastPushedCommitOnExperimentBranch = nil;
+        [repo getCurrentRevision:&lastPushedCommitOnExperimentBranch];
+
+        s7push_currentBranch(repo);
+
+
+        NSString *readdleLibCommitNotToBePushed = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sin(Pi)", @"pi");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"up ReaddleLib 2"];
+
+        NSString *pdfKitCommitNotToBePushed = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", @"WIP", @"unrelated bugfix");
+
+        S7PrePushHook *command = [S7PrePushHook new];
+
+        command.testStdinContents = [NSString stringWithFormat:@"(delete) %@ refs/heads/experiment %@",
+                                     [GitRepository nullRevision],
+                                     lastPushedCommitOnExperimentBranch];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+        XCTAssertEqual(0, [repo deleteRemoteBranch:@"experiment"]);
+        
+
+        [repo checkoutExistingLocalBranch:@"master"];
+
+        commit(repo, @"file", @"test", @"subrepos unrealted stuff");
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+        XCTAssertTrue([self.env.githubReaddleLibRepo isRevisionAvailableLocally:lastPushedReaddleLibCommit]);
+        XCTAssertFalse([self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibCommitNotToBePushed]);
+        XCTAssertFalse([self.env.githubRDPDFKitRepo isRevisionAvailableLocally:pdfKitCommitNotToBePushed]);
+    }];
 }
 
 // recursive push is tested by integration test (case20-pushPullWorkRecursively.sh)
