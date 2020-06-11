@@ -110,7 +110,7 @@
             "           I would recommend to reset local changes and checkout\n"
             "           a REV you want to in a proper way – using `git checkout REV`\n"
             "           (optionally, with '-b <branch-name>')\n"
-            "           If you use `git checkou`, then s7 will checkout subrepos\n"
+            "           If you use `git checkout`, then s7 will checkout subrepos\n"
             "           automatically.\n"
             "\n"
             "           After you have clean REV and subrepos are in sync, you can\n"
