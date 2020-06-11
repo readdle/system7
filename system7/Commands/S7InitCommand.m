@@ -81,6 +81,10 @@
         return gitIgnoreUpdateExitCode;
     }
 
+    if (0 != addLineToGitIgnore(S7BakFileName)) {
+        return S7ExitCodeFileOperationFailed;
+    }
+
     const int configUpdateExitStatus = [self installS7ConfigMergeDriver];
     if (0 != configUpdateExitStatus) {
         return configUpdateExitStatus;

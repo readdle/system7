@@ -127,6 +127,9 @@ static NSString *gitExecutablePath = nil;
         return evaluatedObject.length > 0;
     }]];
 
+    NSAssert(NO == [arguments.firstObject isEqualToString:@"git"],
+             @"please, don't use git command itself – just arguments to git");
+
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:arguments
                              stdOutOutput:ppStdOutOutput
@@ -359,6 +362,26 @@ static NSString *gitExecutablePath = nil;
                             stdOutOutput:NULL
                             stdErrOutput:NULL];
     return 0 == exitStatus;
+}
+
+- (BOOL)isRevisionDetached:(NSString *)revision numberOfOrphanedCommits:(int *)pNumberOfOrphanedCommits {
+    NSString *stdOutOutput = nil;
+    __unused const int exitStatus = [self
+                                    runGitCommand:[NSString stringWithFormat:@"rev-list %@ --not --branches --remotes", revision]
+                                    stdOutOutput:&stdOutOutput
+                                    stdErrOutput:NULL];
+    NSAssert(0 == exitStatus, @"");
+
+    stdOutOutput = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (0 == stdOutOutput.length) {
+        *pNumberOfOrphanedCommits = 0;
+        return NO;
+    }
+    else {
+        NSArray<NSString *> *commits = [stdOutOutput componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        *pNumberOfOrphanedCommits = (int)commits.count;
+        return YES;
+    }
 }
 
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName {

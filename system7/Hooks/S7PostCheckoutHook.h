@@ -12,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface S7PostCheckoutHook : NSObject <S7Hook>
 
+@property (class, nullable) void (^warnAboutDetachingCommitsHook)(NSString *topRevision, int numberOfCommits);
+
 + (int)checkoutSubreposForRepo:(GitRepository *)repo
                   fromRevision:(NSString *)fromRevision
                     toRevision:(NSString *)toRevision;
