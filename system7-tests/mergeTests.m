@@ -12,32 +12,15 @@
 
 #import "S7ConfigMergeDriver.h"
 
+// all hook calls in these tests are pure simulation
 #import "S7PostMergeHook.h"
 #import "S7PostCommitHook.h"
+#import "S7PrepareCommitMsgHook.h"
 
 #import "S7RebindCommand.h"
+#import "S7CheckoutCommand.h"
+
 #import "S7SubrepoDescriptionConflict.h"
-
-
-// We use `prepare-commit-msg` hook to react at... merges.
-// You may wonder why don't I use `pre-merge-commit`. The answer is –
-// this crap "can be bypassed with the --no-verify option". This is for
-// starters.
-// Then "if the merge cannot be carried out automatically,
-// the conflicts need to be resolved and the result committed separately
-// ... this hook will not be executed, but the pre-commit hook will,
-// if it is enabled.".
-// So we come to `pre-commit` hook, you might think. But no, `pre-commit`
-// hook "can be bypassed with the --no-verify option."
-// Git – full of small pleasures 🤷‍♂️
-//
-// And even that's not all `prepare-commit-msg` is not enough to detect
-// merges/pulls. Sometimes we detect them from `post-merge` hook:
-//  - in case of fast-forward merge
-//  - in case of branch merge without conflict, as there's no way
-//    to understand from `post-merge` that this hook has already done
-//    the job
-//
 
 
 @interface mergeTests : XCTestCase
@@ -107,6 +90,8 @@
         [readdleLibGit getCurrentRevision:&actualReaddleLibRevision];
         XCTAssertEqualObjects(initialReaddleLibRevision, actualReaddleLibRevision);
 
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
 
         [repo mergeWith:@"experiment"];
 
@@ -146,6 +131,9 @@
 
         s7init_deactivateHooks();
 
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
+
         S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
         const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
         XCTAssertEqual(0, mergeHookExitStatus);
@@ -167,6 +155,11 @@
         NSString *readdleLib_pasteys_Revision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"iPad 11''", @"add support for a new iPad model");
 
         s7rebind_with_stage();
+
+        // just to show that in case of non-merge commit this hook doesn't do anything
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[]]);
+
         [repo commitWithMessage:@"up ReaddleLib"];
 
         S7Config *ourConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
@@ -176,7 +169,7 @@
 
         [repo fetch];
 
-        [repo merge];
+        // aka [repo merge];
 
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         const int mergeExitStatus = [configMergeDriver mergeRepo:repo baseConfig:baseConfig ourConfig:ourConfig theirConfig:niksConfig saveResultToFilePath:S7ConfigFileName];
@@ -223,6 +216,9 @@
 
         s7init_deactivateHooks();
 
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
+
         S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
         const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
         XCTAssertEqual(0, mergeHookExitStatus);
@@ -261,6 +257,9 @@
 
         s7init_deactivateHooks();
 
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
+
         S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
         const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
         XCTAssertEqual(0, mergeHookExitStatus);
@@ -291,7 +290,10 @@
 
         [repo fetch];
 
-        [repo merge];
+        // aka [repo merge];
+
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
 
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         const int mergeExitStatus = [configMergeDriver mergeRepo:repo baseConfig:baseConfig ourConfig:ourConfig theirConfig:niksConfig saveResultToFilePath:S7ConfigFileName];
@@ -363,12 +365,21 @@
 
         [repo pull];
 
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(1, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
+
         // conflict in an innocent-file. No hooks would be called. Resolve conflict, add file and commit.
         // and it's only here when the post-commit hook would get called.
 
         XCTAssertTrue([@"U2" writeToFile:@"best-band" atomically:YES encoding:NSUTF8StringEncoding error:nil]);
         [repo add:@[@"best-band"]];
         XCTAssertEqual(0, [repo commitWithMessage:@"merge"]);
+
+        S7CheckoutCommand *checkoutCommand = [S7CheckoutCommand new];
+        XCTAssertEqual(0, [checkoutCommand runWithArguments:@[]]);
+
+        prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
 
         S7PostCommitHook *postCommitHook = [S7PostCommitHook new];
         XCTAssertEqual(0, [postCommitHook runWithArguments:@[]]);
@@ -383,6 +394,9 @@
 - (void)testPostCommitHookDoesNothingOnSimpleCommit {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         commit(repo, @"file", @"asdf", @"test");
+
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[]]);
 
         S7PostCommitHook *postCommitHook = [S7PostCommitHook new];
         __block BOOL hookTriedToUpdatedSubrepos = NO;
@@ -493,6 +507,9 @@
 
         XCTAssertEqual(4, callNumber, @"we played a fool several times, but then responded with a valid value – `merge`");
 
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
+
         S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
         const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
         XCTAssertEqual(0, mergeHookExitStatus);
@@ -590,6 +607,9 @@
 
         XCTAssertNotEqual(0, [repo merge]);
 
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(1, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
+
         const int mergeExitStatus = [configMergeDriver
                                      mergeRepo:repo
                                      baseConfig:baseConfig
@@ -625,6 +645,9 @@
         XCTAssertEqualObjects(expectedMergedConfig, actualConfig);
 
         [repo commitWithMessage:@"merge"];
+
+        prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(0, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
 
         S7PostCommitHook *postCommitHook = [S7PostCommitHook new];
         XCTAssertEqual(0, [postCommitHook runWithArguments:@[]]);
@@ -1083,24 +1106,96 @@
     }];
 }
 
-// test – fail if no control file exists
-// test merge-driver when config doesn't exist at one side
+- (void)testMergeAfterReset {
+    //    1.
+    //      * 3 up pdf kit (experiment)
+    //     /
+    //    * 2 add pdf kit     (master)
+    //    * 1 add readdle lib
+    //
+    //    2. git reset --hard 1
+    //    3. git merge experiment
 
-// test merge is not allowed if there're uncommited local changes
+    __block NSString *rd2BaseRevision = nil;
+    __block NSString *pdfKitInitialRevision = nil;
 
-// what happens if subrepo merge ends with merge conflict? – test this – we should save .s7substate with conflict markers
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add ReaddleLib subrepos"];
+        [repo getCurrentRevision:&rd2BaseRevision];
 
-// [LOW] test merge and checkout if subrepo has switched to a different url – we must drop an old one and clone from a new url (aka migration)
-// [LOW] test how we react if merged subrepo is not a git repo (user has done something bad to it)
+        GitRepository *pdfKitSubrepoGit = s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        pdfKitInitialRevision = commit(pdfKitSubrepoGit, @"RDPDFAnnotation", @"/AP /N", @"appearance");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"add RDPDFKit"];
 
-// recursive? must be implemented by hooks in subrepos
+        s7push_currentBranch(repo);
+    }];
 
-// renormalize – seems like the thing for clang-format
-// .gitattributes 'ident' – interesting stuff for hgrevision.h/swift substitution
-// .gitattributes 'filter' – interesting stuff for clang-format (+ filter.<driver>.process)
-// .gitattributes 'merge' – penetrate s7 here
-//        Defining a custom merge driver
-//        The definition of a merge driver is done in the .git/config file, not in the gitattributes file, so strictly speaking this manual page is a wrong place to talk about it. However…
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
 
+        s7init_deactivateHooks();
+
+        S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
+        const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
+        XCTAssertEqual(0, mergeHookExitStatus);
+
+        [repo checkoutNewLocalBranch:@"experiment"];
+
+        GitRepository *pdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        XCTAssertNotNil(pdfKitSubrepoGit);
+
+        commit(pdfKitSubrepoGit, @"RDPDFAnnotation", @"/F 4", @"asdf");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up RDPDFKit"];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo fetch];
+
+        [repo checkoutExistingLocalBranch:@"master"];
+
+        [repo resetToRevision:rd2BaseRevision];
+
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertTrue([controlConfig.subrepoPathsSet containsObject:@"Dependencies/RDPDFKit"]);
+
+        S7Config *mainConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertFalse([mainConfig.subrepoPathsSet containsObject:@"Dependencies/RDPDFKit"]);
+
+        // say user wants to merge in 'experiment' now...
+
+        // prepare-commit-msg should prevent him from doing so
+        S7PrepareCommitMsgHook *prepareCommitHook = [S7PrepareCommitMsgHook new];
+        XCTAssertEqual(1, [prepareCommitHook runWithArguments:@[ @"merge" ]]);
+
+
+        // if we didn't prevent, then here's what would happen:
+        // PURE SIMULATION
+        // (in real life prepare-commit-msg hook won't be called in particularly this case
+        //  cause merge will run ff)
+        S7PostCommitHook *postCommitHook = [S7PostCommitHook new];
+        XCTAssertEqual(0, [postCommitHook runWithArguments:@[]]);
+
+        // RDPDFKit *folder* is there
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/RDPDFKit"]);
+        GitRepository *pdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        XCTAssertNotNil(pdfKitSubrepoGit);
+
+        // but pdf kit is not oficially a subrepo
+        mainConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertFalse([mainConfig.subrepoPathsSet containsObject:@"Dependencies/RDPDFKit"]);
+
+        // and it's not at the revision from experiment branch
+        NSString *actualPDFKitRevision = nil;
+        [pdfKitSubrepoGit getCurrentRevision:&actualPDFKitRevision];
+        XCTAssertEqualObjects(actualPDFKitRevision, pdfKitInitialRevision);
+    }];
+}
+
+// recursive must be implemented by hooks in subrepos
 
 @end
