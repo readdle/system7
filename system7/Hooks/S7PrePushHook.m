@@ -33,6 +33,21 @@
 //
 //   <local ref> <local sha1> <remote ref> <remote sha1>
 //
+//
+// I had several strategies of how we should push subrepos:
+//  1. strictly current branch in a subrepo.
+//     This is actually the way HG works with Git subrepos
+//     and we never noticed.
+//  2. all branches that have not pushed commits in a subrepo.
+//     This is how HG works with HG subrepos.
+//  3. only branches that were rebound in the main repo.
+//     I.e. if a branch in subrepo was never mentioned in the main
+//     repo .s7substate, then it won't be pushed. This would require
+//     too much hassle to determine – we would have to examine every
+//     commit about to push, check it updates .s7substate and collect
+//     branches for every subrepo. Fuck it
+// I decided to stick to the second variant for now.
+//
 
 @synthesize testStdinContents;
 
@@ -169,6 +184,11 @@
               remoteRef:(NSString *)remoteRef
              remoteSha1:(NSString *)latestRemoteRevisionAtThisBranch
 {
+    if ([localSha1ToPush isEqualToString:[GitRepository nullRevision]]) {
+        // ignore remote branch delete
+        return 0;
+    }
+
     int gitExitStatus = 0;
     NSString *configContentsAtRevisionToPush = [repo showFile:S7ConfigFileName
                                                    atRevision:localSha1ToPush

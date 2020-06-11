@@ -281,4 +281,31 @@
     }];
 }
 
+- (void)testResetDetachedHeadInSubrepo {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *subrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add ReaddeLib"];
+
+        NSString *firstCommitInReaddleLib = commit(subrepoGit, @"RDGeometry.h", @"tabula rasa", @"add geometry utils");
+        s7rebind_with_stage();
+
+        commit(subrepoGit, @"RDGeometry.h", @"sqrt", @"math");
+
+        [repo commitWithMessage:@"up ReaddeLib"];
+
+        [subrepoGit checkoutRevision:firstCommitInReaddleLib];
+
+        S7ResetCommand *command = [S7ResetCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+
+        NSString *RDGeometryContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/ReaddleLib/RDGeometry.h"
+                                                                       encoding:NSUTF8StringEncoding
+                                                                          error:nil];
+        XCTAssertEqualObjects(RDGeometryContents, @"tabula rasa");
+    }];
+}
+
+
 @end
