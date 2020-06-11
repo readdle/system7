@@ -141,6 +141,8 @@ static NSString *gitExecutablePath = nil;
              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
+    NSLog(@"*** %@", [arguments componentsJoinedByString:@" "]);
+
     NSTask *task = [NSTask new];
     [task setLaunchPath:gitExecutablePath];
     [task setArguments:arguments];
@@ -213,15 +215,30 @@ static NSString *gitExecutablePath = nil;
 #pragma mark - repo info -
 
 - (BOOL)isBareRepo {
-    NSString *stdOutOutput = nil;
-    const int exitStatus = [self runGitCommand:@"config --bool core.bare"
-                                  stdOutOutput:&stdOutOutput
-                                  stdErrOutput:NULL];
-    if (0 != exitStatus) {
-        return exitStatus;
+    // pastey:
+    // this is an optimized version of this command that doesn't spawn real git process.
+    // if we get any trouble with it, we can always return to an old and bullet-proof version,
+    // which is saved (commented) at the bottom of this method
+    //
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:[self.absolutePath stringByAppendingPathComponent:@".git"]]) {
+        if ([NSFileManager.defaultManager fileExistsAtPath:[self.absolutePath stringByAppendingPathComponent:@"HEAD"]]) {
+            NSString *config = [[NSString alloc] initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@"config"] encoding:NSUTF8StringEncoding error:nil];
+            NSArray<NSString *> *configLines = [config componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+            return [configLines containsObject:@"\tbare = true"];
+        }
     }
 
-    return [stdOutOutput containsString:@"true"];
+    return NO;
+
+//    NSString *stdOutOutput = nil;
+//    const int exitStatus = [self runGitCommand:@"config --bool core.bare"
+//                                  stdOutOutput:&stdOutOutput
+//                                  stdErrOutput:NULL];
+//    if (0 != exitStatus) {
+//        return exitStatus;
+//    }
+//
+//    return [stdOutOutput containsString:@"true"];
 }
 
 - (BOOL)isEmptyRepo {
@@ -307,28 +324,69 @@ static NSString *gitExecutablePath = nil;
 
 
 - (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch {
-    NSString *stdOutOutput = nil;
-    NSString *devNull = nil;
-    const int revParseExitStatus = [self runGitCommand:@"rev-parse --abbrev-ref HEAD"
-                                          stdOutOutput:&stdOutOutput
-                                          stdErrOutput:&devNull];
-    if (0 != revParseExitStatus) {
-        if (128 == revParseExitStatus) {
-            // most likely – an empty repo. Let's make sure
-            if ([self isEmptyRepo]) {
-                *ppBranch = @"master";
-                return 0;
-            }
+    // pastey:
+    // this is an optimized version of this command that doesn't spawn real git process.
+    // if we get any trouble with it, we can always return to an old and bullet-proof version,
+    // which is saved (commented) at the bottom of this method
+
+    BOOL bareRepo = NO;
+    NSError *error = nil;
+    NSString *HEAD = [[NSString alloc]
+                      initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@".git/HEAD"]
+                      encoding:NSUTF8StringEncoding
+                      error:&error];
+    if (nil == HEAD) {
+        if (NO == [self isBareRepo]) {
+            return S7ExitCodeGitOperationFailed;
         }
-        return revParseExitStatus;
+
+        bareRepo = YES;
+
+        HEAD = [[NSString alloc]
+                initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@"HEAD"]
+                encoding:NSUTF8StringEncoding
+                error:&error];
     }
 
-    NSString *branch = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (NO == [branch isEqualToString:@"HEAD"]) { // detached HEAD
-        *ppBranch = branch;
+    NSAssert(nil == error, @"");
+
+    HEAD = [HEAD stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+
+    if ([HEAD hasPrefix:@"ref: "]) {
+        NSArray<NSString *> *components = [HEAD componentsSeparatedByString:@" "];
+        NSAssert(2 == components.count, @"");
+        NSString *branchName = [components.lastObject stringByReplacingOccurrencesOfString:@"refs/heads/" withString:@""];
+        NSAssert(branchName.length > 0, @"");
+        *ppBranch = branchName;
+    }
+    else {
+        // detached HEAD
     }
 
     return 0;
+
+//    NSString *stdOutOutput = nil;
+//    NSString *devNull = nil;
+//    const int revParseExitStatus = [self runGitCommand:@"rev-parse --abbrev-ref HEAD"
+//                                          stdOutOutput:&stdOutOutput
+//                                          stdErrOutput:&devNull];
+//    if (0 != revParseExitStatus) {
+//        if (128 == revParseExitStatus) {
+//            // most likely – an empty repo. Let's make sure
+//            if ([self isEmptyRepo]) {
+//                *ppBranch = @"master";
+//                return 0;
+//            }
+//        }
+//        return revParseExitStatus;
+//    }
+//
+//    NSString *branch = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+//    if (NO == [branch isEqualToString:@"HEAD"]) { // detached HEAD
+//        *ppBranch = branch;
+//    }
+//
+//    return 0;
 }
 
 - (BOOL)isInDetachedHEAD {
@@ -353,10 +411,40 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (BOOL)isRevisionAvailableLocally:(NSString *)revision {
-    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"cat-file -e %@", revision]
-                                  stdOutOutput:NULL
-                                  stdErrOutput:NULL];
-    return 0 == exitStatus;
+    NSParameterAssert(40 == revision.length);
+
+    // pastey:
+    // this is an optimized version of this command that doesn't spawn real git process.
+    // if we get any trouble with it, we can always return to an old and bullet-proof version,
+    // which is saved (commented) at the bottom of this method
+    //
+
+    BOOL isDirectory = NO;
+    NSString *objectsDirPath = [self.absolutePath stringByAppendingPathComponent:@".git/objects"];
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:objectsDirPath isDirectory:&isDirectory]) {
+        if ([self isBareRepo]) {
+            objectsDirPath = [self.absolutePath stringByAppendingPathComponent:@"objects"];
+            if (NO == [NSFileManager.defaultManager fileExistsAtPath:objectsDirPath isDirectory:&isDirectory]) {
+                NSAssert(NO, @"");
+                return NO;
+            }
+        }
+    }
+
+    if (NO == isDirectory) {
+        NSAssert(NO, @"");
+        return NO;
+    }
+
+    NSString *relativeObjectPath = [[revision substringToIndex:2] stringByAppendingPathComponent:[revision substringFromIndex:2]];
+    NSString *absoluteObjectPath = [objectsDirPath stringByAppendingPathComponent:relativeObjectPath];
+
+    return [NSFileManager.defaultManager fileExistsAtPath:absoluteObjectPath];
+
+//    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"cat-file -e %@", revision]
+//                                  stdOutOutput:NULL
+//                                  stdErrOutput:NULL];
+//    return 0 == exitStatus;
 }
 
 - (BOOL)isRevisionReachableFromAnyBranch:(NSString *)revision numberOfOrphanedCommits:(int *)pNumberOfOrphanedCommits {
@@ -431,30 +519,87 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision {
-    NSString *stdOutOutput = nil;
-    NSString *devNull = nil;
-    const int revParseExitStatus = [self runGitCommand:@"rev-parse HEAD"
-                                          stdOutOutput:&stdOutOutput
-                                          stdErrOutput:&devNull];
-    if (0 != revParseExitStatus) {
-        if (128 == revParseExitStatus) {
-            // most likely – an empty repo. Let's make sure
-            if ([self isEmptyRepo]) {
-                *ppRevision = [self.class nullRevision];
-                return 0;
-            }
+    // pastey:
+    // this is an optimized version of this command that doesn't spawn real git process.
+    // if we get any trouble with it, we can always return to an old and bullet-proof version,
+    // which is saved (commented) at the bottom of this method
+
+    NSString *revision = nil;
+
+    BOOL bareRepo = NO;
+    NSError *error = nil;
+    NSString *HEAD = [[NSString alloc]
+                      initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@".git/HEAD"]
+                      encoding:NSUTF8StringEncoding
+                      error:&error];
+    if (nil == HEAD) {
+        if (NO == [self isBareRepo]) {
+            return 1;
         }
-        return revParseExitStatus;
+
+        bareRepo = YES;
+
+        error = nil;
+        HEAD = [[NSString alloc]
+                initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@"HEAD"]
+                encoding:NSUTF8StringEncoding
+                error:&error];
     }
 
-    NSString *revision = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (revision.length < 40) {
-        if ([self isBareRepo] && [revision isEqualToString:@"HEAD"]) {
-            // an empty and bare revision. Most likely a newborn repo
+    NSAssert(nil == error, @"");
+
+    HEAD = [HEAD stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+
+    if ([HEAD hasPrefix:@"ref: "]) {
+        NSArray<NSString *> *components = [HEAD componentsSeparatedByString:@" "];
+        NSAssert(2 == components.count, @"");
+        NSString *ref = components.lastObject;
+        NSAssert(ref.length > 0, @"");
+
+        NSString *refPath = bareRepo
+            ? [self.absolutePath stringByAppendingPathComponent:ref]
+            : [[self.absolutePath stringByAppendingPathComponent:@".git"] stringByAppendingPathComponent:ref];
+
+        NSString *refContents = [[NSString alloc]
+                                 initWithContentsOfFile:refPath
+                                 encoding:NSUTF8StringEncoding
+                                 error:&error];
+        if (nil == refContents) {
             *ppRevision = [self.class nullRevision];
             return 0;
         }
+
+        revision = [refContents stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
     }
+    else {
+        // detached HEAD
+        revision = HEAD;
+    }
+
+//    NSString *stdOutOutput = nil;
+//    NSString *devNull = nil;
+//    const int revParseExitStatus = [self runGitCommand:@"rev-parse HEAD"
+//                                          stdOutOutput:&stdOutOutput
+//                                          stdErrOutput:&devNull];
+//    if (0 != revParseExitStatus) {
+//        if (128 == revParseExitStatus) {
+//            // most likely – an empty repo. Let's make sure
+//            if ([self isEmptyRepo]) {
+//                *ppRevision = [self.class nullRevision];
+//                return 0;
+//            }
+//        }
+//        return revParseExitStatus;
+//    }
+//
+//    NSString *revision = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+//    if (revision.length < 40) {
+//        if ([self isBareRepo] && [revision isEqualToString:@"HEAD"]) {
+//            // an empty and bare revision. Most likely a newborn repo
+//            *ppRevision = [self.class nullRevision];
+//            return 0;
+//        }
+//    }
 
     NSAssert(40 == revision.length, @"");
     *ppRevision = revision;
