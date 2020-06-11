@@ -51,7 +51,10 @@
     }
 
     const char *GIT_REFLOG_ACTION = getenv("GIT_REFLOG_ACTION");
-    if (GIT_REFLOG_ACTION && 0 == strcmp(GIT_REFLOG_ACTION, "revert")) {
+    if (GIT_REFLOG_ACTION &&
+        (0 == strcmp(GIT_REFLOG_ACTION, "revert") ||
+         0 == strcmp(GIT_REFLOG_ACTION, "cherry-pick")))
+    {
         //
         // `git revert` seems to revert changes in the working dir and then "merge" them in.
         //
@@ -64,6 +67,11 @@
         // is here. I see no other way, but blindly checkout from .s7control to .s7substate.
         // There is a risk that user did `git reset` before this, and .s7control points to
         // some crap, but what can I do?
+        //
+        //
+        // `git cherry-pick`. This is the only hook it calls. No `post-commit`. Depending on
+        // the commit beeing picked, it _sometimes_ calls merge-driver. So, this is the only
+        // reliable place to handle cherry-pick
         //
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         S7Config *postRevertConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
