@@ -364,25 +364,23 @@ static NSString *gitExecutablePath = nil;
     return 0 == exitStatus;
 }
 
-- (BOOL)isRevisionReachableFromAnyBranch:(NSString *)revision numberOfOrphanedCommits:(int *)pNumberOfOrphanedCommits {
+- (BOOL)isRevisionDetached:(NSString *)revision numberOfOrphanedCommits:(int *)pNumberOfOrphanedCommits {
     NSString *stdOutOutput = nil;
-    const int exitStatus = [self
-                            runGitCommand:[NSString stringWithFormat:@"rev-list %@ --not --branches --remotes", revision]
-                            stdOutOutput:&stdOutOutput
-                            stdErrOutput:NULL];
-    if (0 != exitStatus) {
-        NSAssert(NO, @"");
-    }
+    __unused const int exitStatus = [self
+                                    runGitCommand:[NSString stringWithFormat:@"rev-list %@ --not --branches --remotes", revision]
+                                    stdOutOutput:&stdOutOutput
+                                    stdErrOutput:NULL];
+    NSAssert(0 == exitStatus, @"");
 
+    stdOutOutput = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (0 == stdOutOutput.length) {
         *pNumberOfOrphanedCommits = 0;
-        return YES;
+        return NO;
     }
     else {
-        stdOutOutput = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         NSArray<NSString *> *commits = [stdOutOutput componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
         *pNumberOfOrphanedCommits = (int)commits.count;
-        return NO;
+        return YES;
     }
 }
 
