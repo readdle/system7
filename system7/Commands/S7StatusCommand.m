@@ -39,6 +39,18 @@
     NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
     const int exitStatus = [S7StatusCommand repo:repo calculateStatus:&status];
     if (0 != exitStatus) {
+        if (S7ExitCodeSubreposNotInSync == exitStatus) {
+            fprintf(stderr,
+                    "\033[31m"
+                    "Subrepos not in sync.\n"
+                    "This might be the result of:\n"
+                    " - interrupted update\n"
+                    " - conflicting merge\n"
+                    " - git reset\n"
+                    "\n"
+                    "`s7 checkout` might help you to make subrepos up-to-date.\n"
+                    "\033[0m");
+        }
         return exitStatus;
     }
 
@@ -122,6 +134,10 @@
 }
 
 + (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> * _Nullable __autoreleasing * _Nonnull)ppStatus {
+    if (NO == [NSFileManager.defaultManager contentsEqualAtPath:S7ConfigFileName andPath:S7ControlFileName]) {
+        return S7ExitCodeSubreposNotInSync;
+    }
+
     NSString *lastCommittedRevision = nil;
     [repo getCurrentRevision:&lastCommittedRevision];
 

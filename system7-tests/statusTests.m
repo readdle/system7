@@ -294,4 +294,29 @@
     }];
 }
 
+- (void)testSubreposNotInSync {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *subrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add ReaddleLib"];
+
+        NSString *initialRevision = nil;
+        [repo getCurrentRevision:&initialRevision];
+
+        commit(subrepoGit, @"RDGeometry.h", @"sqrt", @"math");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [repo resetToRevision:initialRevision];
+
+        XCTAssertFalse([NSFileManager.defaultManager contentsEqualAtPath:S7ConfigFileName andPath:S7ControlFileName]);
+
+        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
+        XCTAssertEqual(S7ExitCodeSubreposNotInSync, exitCode);
+    }];
+}
+
+
 @end

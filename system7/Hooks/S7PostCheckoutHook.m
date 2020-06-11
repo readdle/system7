@@ -267,7 +267,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     NSAssert(reason, @"");
 
                     fprintf(stderr,
-                            "⚠️ not removing repo '%s' because it has %s.\n",
+                            "⚠️  not removing repo '%s' because it has %s.\n",
                             subrepoPath.fileSystemRepresentation,
                             reason);
                     continue;
@@ -363,6 +363,18 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         if (0 != gitExitStatus) {
             // todo: log
             return S7ExitCodeGitOperationFailed;
+        }
+
+        if (nil == currentBranch) {
+            // the only case getCurrentBranch will succeed (return 0), but leave branch name nil
+            // is the detached HEAD, but let's make it clear
+            if ([subrepoGit isInDetachedHEAD]) {
+                currentBranch = @"HEAD";
+            }
+            else {
+                NSAssert(NO, @"");
+                return S7ExitCodeGitOperationFailed;
+            }
         }
 
         NSString *currentRevision = nil;
