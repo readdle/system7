@@ -56,4 +56,4 @@ assert git push
 cd "$S7_ROOT/nik/rd2"
 
 git pull
-assert grep "matrix" Dependencies/ReaddleLib/RDMath.h > /dev/null
+assert grep '"matrix"' Dependencies/ReaddleLib/RDMath.h > /dev/null

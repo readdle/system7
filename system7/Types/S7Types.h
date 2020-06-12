@@ -16,7 +16,6 @@ extern NSString * const S7ControlFileName;
 extern NSString * const S7BakFileName;
 
 typedef enum {
-    S7ExitCodeDirty = -1,
     S7ExitCodeSuccess = 0,
     S7ExitCodeUnknownCommand,
     S7ExitCodeMissingRequiredArgument,
@@ -29,6 +28,7 @@ typedef enum {
     S7ExitCodeSubrepoIsNotGitRepository,
     S7ExitCodeSubrepoHasLocalChanges,
     S7ExitCodeDetachedHEAD,
+    S7ExitCodeSubrepoAlreadyExists,
     S7ExitCodeSubreposNotInSync,
     S7ExitCodeNonFastForwardPush,
     S7ExitCodeMergeFailed,

@@ -189,6 +189,11 @@
         return 0;
     }
 
+    if ([localRef hasPrefix:@"refs/tags/"]) {
+        // ignore tag push. We won't do anything anyways, but why even try, if we can skip it right away
+        return 0;
+    }
+
     int gitExitStatus = 0;
     NSString *configContentsAtRevisionToPush = [repo showFile:S7ConfigFileName
                                                    atRevision:localSha1ToPush

@@ -60,6 +60,7 @@ function globalCleanUp {
 trap globalCleanUp EXIT
 
 source assertions
+source utils
 
 ANY_TEST_FAILED=0
 

@@ -144,7 +144,7 @@
         subreposToResetPaths = [lastCommittedConfig.subrepoPathsSet mutableCopy];
 
         if (0 == lastCommittedConfig.subrepoDescriptions.count) {
-            return 0;
+            return S7ExitCodeSuccess;
         }
     }
 
@@ -203,7 +203,7 @@
         return S7ExitCodeFileOperationFailed;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

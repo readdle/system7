@@ -129,7 +129,7 @@
         puts("");
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 + (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> * _Nullable __autoreleasing * _Nonnull)ppStatus {
@@ -149,7 +149,11 @@
             lastCommittedConfigContents = @"";
         }
         else {
-            // todo: log
+            fprintf(stderr,
+                    "failed to retrieve .s7substate config at revision %s.\n"
+                    "Git exit status: %d\n",
+                    [lastCommittedRevision cStringUsingEncoding:NSUTF8StringEncoding],
+                    gitExitStatus);
             return S7ExitCodeGitOperationFailed;
         }
     }
@@ -201,7 +205,6 @@
         NSString *currentBranch = nil;
         int gitExitStatus = [subrepoGit getCurrentBranch:&currentBranch];
         if (0 != gitExitStatus) {
-            // todo: log
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -215,7 +218,6 @@
         NSString *currentRevision = nil;
         gitExitStatus = [subrepoGit getCurrentRevision:&currentRevision];
         if (0 != gitExitStatus) {
-            // todo: log
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -251,7 +253,7 @@
 
     *ppStatus = status;
     
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

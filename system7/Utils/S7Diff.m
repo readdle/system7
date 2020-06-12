@@ -58,5 +58,5 @@ int diffConfigs(S7Config *fromConfig,
     }
     *ppSubreposToAdd = subreposToAdd;
 
-    return 0;
+    return S7ExitCodeSuccess;
 }

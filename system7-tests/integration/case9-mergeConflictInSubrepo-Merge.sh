@@ -21,7 +21,16 @@ assert s7 rebind --stage
 assert git commit -m '"add ReaddleLib subrepo"'
 
 echo
-git checkout -b experiment
+
+# test how s7 works with more modern command 'switch'
+if isGitVersionGreaterThan2_23
+then
+    echo "modern Git"
+    git switch -c experiment
+else
+    echo "old Git"
+    git checkout -b experiment
+fi
 
 pushd Dependencies/ReaddleLib > /dev/null
   echo experiment > RDMath.h
