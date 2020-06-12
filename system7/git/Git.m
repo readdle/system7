@@ -806,39 +806,17 @@ static NSString *gitExecutablePath = nil;
     if ([self isEmptyRepo]) {
         return NO;
     }
+
+    // pastey:
+    // we used to do the following here:
+    //  git update-index -q --refresh
+    //  git diff-index --quiet HEAD
+    // Then, in some time to check for untracked files
+    // I've added `status --porcelain` call, thus
+    // update-index/diff-index became unnecessary. That's two
+    // extra calls to external process.
+    //
     
-    // borrowed from by mercurial/subrepo.py
-    //
-    // """This must be run before git diff-index.
-    //    diff-index only looks at changes to file stat;
-    //    this command looks at file contents and updates the stat."""
-    //
-    // git update-index -q --refresh
-    // git diff-index --quiet HEAD
-    //
-    const int updateIndexStatus = [self.class
-                            runGitInRepoAtPath:self.absolutePath
-                            withArguments:@[ @"update-index", @"-q", @"--refresh" ]
-                            stdOutOutput:NULL
-                            stdErrOutput:NULL];
-    if (0 != updateIndexStatus) {
-        return updateIndexStatus;
-    }
-
-    // should you be curious, yes 'update-index' understands only '-q'
-    // and 'diff-index' understands only '--quiet'.
-    // And yes, 'git status' returns 0 in any case – either there're changes
-    // or not.
-    //
-    const int diffIndexStatus = [self.class
-                            runGitInRepoAtPath:self.absolutePath
-                            withArguments:@[ @"diff-index", @"--quiet", @"HEAD" ]
-                            stdOutOutput:NULL
-                            stdErrOutput:NULL];
-    if (0 != diffIndexStatus) {
-        return YES;
-    }
-
     NSString *statusOutput = nil;
     const int statusExitCode = [self.class
                                 runGitInRepoAtPath:self.absolutePath
@@ -849,15 +827,8 @@ static NSString *gitExecutablePath = nil;
         return NO;
     }
 
-    static NSRegularExpression *unknownFileRegex = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        unknownFileRegex = [NSRegularExpression regularExpressionWithPattern:@"^\?\? " options:0 error:nil];
-        NSCAssert(unknownFileRegex, @"");
-    });
-
-    NSTextCheckingResult *match = [unknownFileRegex firstMatchInString:statusOutput options:0 range:NSMakeRange(0, statusOutput.length)];
-    return (match != nil);
+    statusOutput = [statusOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    return statusOutput.length > 0;
 }
 
 - (int)add:(NSArray<NSString *> *)filePaths {
