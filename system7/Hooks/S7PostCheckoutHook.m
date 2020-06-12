@@ -33,14 +33,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
-    BOOL isDirectory = NO;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
-        || isDirectory)
-    {
-        fprintf(stderr,
-                "abort: not s7 repo root\n");
-        return S7ExitCodeNotS7Repo;
-    }
+    S7_REPO_PRECONDITION_CHECK();
 
     if (arguments.count < 3) {
         return S7ExitCodeMissingRequiredArgument;
@@ -92,41 +85,17 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                   fromRevision:(NSString *)fromRevision
                     toRevision:(NSString *)toRevision
 {
-    int showExitStatus = 0;
-    NSString *fromConfigContents = [repo showFile:S7ConfigFileName atRevision:fromRevision exitStatus:&showExitStatus];
+    S7Config *fromConfig = nil;
+    int showExitStatus = getConfig(repo, fromRevision, &fromConfig);
     if (0 != showExitStatus) {
-        if (128 == showExitStatus) {
-            // s7 config has been removed? Or we are back to revision where there was no s7 yet
-            fromConfigContents = @"";
-        }
-        else {
-            fprintf(stderr,
-                    "failed to retrieve .s7substate config at revision %s.\n"
-                    "Git exit status: %d\n",
-                    [fromRevision cStringUsingEncoding:NSUTF8StringEncoding],
-                    showExitStatus);
-            return S7ExitCodeGitOperationFailed;
-        }
+        return showExitStatus;
     }
 
-    NSString *toConfigContents = [repo showFile:S7ConfigFileName atRevision:toRevision exitStatus:&showExitStatus];
+    S7Config *toConfig = nil;
+    showExitStatus = getConfig(repo, toRevision, &toConfig);
     if (0 != showExitStatus) {
-        if (128 == showExitStatus) {
-            // s7 config has been removed? Or we are back to revision where there was no s7 yet
-            toConfigContents = @"";
-        }
-        else {
-            fprintf(stderr,
-                    "failed to retrieve .s7substate config at revision %s.\n"
-                    "Git exit status: %d\n",
-                    [toRevision cStringUsingEncoding:NSUTF8StringEncoding],
-                    showExitStatus);
-            return S7ExitCodeGitOperationFailed;
-        }
+        return showExitStatus;
     }
-
-    S7Config *fromConfig = [[S7Config alloc] initWithContentsString:fromConfigContents];
-    S7Config *toConfig = [[S7Config alloc] initWithContentsString:toConfigContents];
 
     const int checkoutExitStatus = [self checkoutSubreposForRepo:repo fromConfig:fromConfig toConfig:toConfig];
     if (0 != checkoutExitStatus) {

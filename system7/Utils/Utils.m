@@ -32,7 +32,8 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
     NSString *configContents = [repo showFile:S7ConfigFileName atRevision:revision exitStatus:&showExitStatus];
     if (0 != showExitStatus) {
         if (128 == showExitStatus) {
-            // s7 config has been removed? Or we are back to revision where there was no s7 yet
+            // s7 config has been removed or we are back to revision where there was no s7 yet
+            // this is a valid situation, so we just return an empty config
             configContents = @"";
         }
         else {
