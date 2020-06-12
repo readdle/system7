@@ -185,15 +185,22 @@
         }
 
         NSString *currentBranch = nil;
-        int gitExitStatus = [subrepoGit getCurrentBranch:&currentBranch];
-        if (0 != gitExitStatus) {
+        BOOL isEmptyRepo = NO;
+        BOOL isDetachedHEAD = NO;
+        if (0 != [subrepoGit getCurrentBranch:&currentBranch isDetachedHEAD:&isDetachedHEAD isEmptyRepo:&isEmptyRepo]) {
             return S7ExitCodeGitOperationFailed;
         }
 
         if (nil == currentBranch) {
-            // the only case getCurrentBranch will succeed (return 0), but leave branch name nil
-            // is the detached HEAD
-            [subreposInDetachedHEAD addObject:subrepoPath];
+            if (isDetachedHEAD) {
+                [subreposInDetachedHEAD addObject:subrepoPath];
+            }
+            else {
+                fprintf(stderr,
+                        "unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                        subrepoPath.fileSystemRepresentation);
+                return S7ExitCodeGitOperationFailed;
+            }
             continue;
         }
 

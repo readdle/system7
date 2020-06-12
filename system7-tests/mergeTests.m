@@ -756,7 +756,8 @@
         XCTAssertEqualObjects(readdleLib_pasteys_Revision, readdleLibActualRevision);
 
         NSString *readdleLibActualBranch = nil;
-        [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch];
+        BOOL dummy = NO;
+        [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
         XCTAssertEqualObjects(@"master", readdleLibActualBranch);
 
         int gitExitStatus = 0;
@@ -862,7 +863,8 @@
         XCTAssertEqualObjects(readdleLib_niks_Revision, readdleLibActualRevision);
 
         NSString *readdleLibActualBranch = nil;
-        [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch];
+        BOOL dummy = NO;
+        [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
         XCTAssertEqualObjects(@"master", readdleLibActualBranch);
 
         int gitExitStatus = 0;

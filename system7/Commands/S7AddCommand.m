@@ -209,17 +209,62 @@
         }
     }
     else {
-        if (0 != [gitSubrepo getCurrentBranch:&branch]) {
+        BOOL isEmptyRepo = NO;
+        BOOL isDetachedHEAD = NO;
+        if (0 != [gitSubrepo getCurrentBranch:&branch isDetachedHEAD:&isDetachedHEAD isEmptyRepo:&isEmptyRepo]) {
             return S7ExitCodeGitOperationFailed;
         }
 
 
         if (nil == branch) {
-            if ([gitSubrepo isEmptyRepo]) {
-                branch = @"master"; // ?
+            if (isEmptyRepo) {
+                // if we allowed to add an empty subrepo, then such bad things will be possible:
+                //  1. someone adds an empty subrepo
+                //  2. pushes it (he won't be able to push, for starters,
+                //     but let's imagine, he's a cool hacker and he does push main repo with
+                //     .s7substate pointing to an empty repo)
+                //  3. someone else clones the subrepo as a free-standing repo, and pushes some
+                //     changes to it.
+                //  4. some third innocent developer pulls our main repo, with subrepo pointing
+                //     to an empty subrepo. We would have to clone the subrepo (it would clone
+                //     with the changes from (3) by default). Say, we are smart and we would tell
+                //     git... what? there's no way to force git to checkout NULL revision. We could
+                //     clone with -n, but that's a crap too.
+                //
+                // One more scenario:
+                //  1. someone adds an empty subrepo. Commits.
+                //  2. switches to do some work on a different branch
+                //  3. switches back to the original branch where he added an empty subrepo. How do we checkout NULL?
+                //
+                fprintf(stderr,
+                        "\033[31m"
+                        " Adding empty git repo as a subrepo is not allowed.\n"
+                        "\n"
+                        " There will be no chance for you and your fellow developers\n"
+                        " to checkout this subrepo properly in some situations.\n"
+                        "\n"
+                        " Please add any commit to this subrepo.\n"
+                        " For example, adding .gitignore is always a good idea.\n"
+                        "\033[0m");
+                return S7ExitCodeInvalidArgument;
             }
             else {
-                return S7ExitCodeGitOperationFailed;
+                // detached HEAD is an evil. If someone could share subrepo in a detached HEAD,
+                // then he would share all pleasures of detached HEAD with others.
+                // Besides, I want to see how he pushes the detached HEAD. Like this:
+                //  `git push origin HEAD:master`? Fuck this hacker.
+                //
+                // Branch is required. No discussions.
+                //
+                NSAssert(isDetachedHEAD, @"");
+                fprintf(stderr,
+                        "\033[31m"
+                        " Adding subrepo with a detached HEAD is not allowed.\n"
+                        "\n"
+                        " Please, as the courtesy to fellow developers,\n"
+                        " checkout a named branch in this subrepo.\n"
+                        "\033[0m");
+                return S7ExitCodeInvalidArgument;
             }
         }
     }

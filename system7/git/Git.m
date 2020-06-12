@@ -321,7 +321,10 @@ static NSString *gitExecutablePath = nil;
 }
 
 
-- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch {
+- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch
+         isDetachedHEAD:(BOOL *)isDetachedHEAD
+            isEmptyRepo:(BOOL *)isEmptyRepo
+{
     // pastey:
     // this is an optimized version of this command that doesn't spawn real git process.
     // if we get any trouble with it, we can always return to an old and bullet-proof version,
@@ -340,25 +343,41 @@ static NSString *gitExecutablePath = nil;
 
         bareRepo = YES;
 
+        error = nil;
         HEAD = [[NSString alloc]
                 initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@"HEAD"]
                 encoding:NSUTF8StringEncoding
                 error:&error];
     }
 
-    NSAssert(nil == error, @"");
+    if (error || nil == HEAD) {
+        NSAssert(NO, @"WTF?");
+        return S7ExitCodeGitOperationFailed;
+    }
 
     HEAD = [HEAD stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
 
     if ([HEAD hasPrefix:@"ref: "]) {
         NSArray<NSString *> *components = [HEAD componentsSeparatedByString:@" "];
         NSAssert(2 == components.count, @"");
-        NSString *branchName = [components.lastObject stringByReplacingOccurrencesOfString:@"refs/heads/" withString:@""];
+
+        NSString *ref = components.lastObject;
+
+        NSString *refPath = bareRepo
+            ? [self.absolutePath stringByAppendingPathComponent:ref]
+            : [[self.absolutePath stringByAppendingPathComponent:@".git"] stringByAppendingPathComponent:ref];
+
+        if (NO == [NSFileManager.defaultManager fileExistsAtPath:refPath]) {
+            *isEmptyRepo = YES;
+            return 0;
+        }
+
+        NSString *branchName = [ref stringByReplacingOccurrencesOfString:@"refs/heads/" withString:@""];
         NSAssert(branchName.length > 0, @"");
         *ppBranch = branchName;
     }
     else {
-        // detached HEAD
+        *isDetachedHEAD = YES;
     }
 
     return 0;
@@ -385,15 +404,6 @@ static NSString *gitExecutablePath = nil;
 //    }
 //
 //    return 0;
-}
-
-- (BOOL)isInDetachedHEAD {
-    NSString *branch = nil;
-    if (0 == [self getCurrentBranch:&branch] && nil == branch) {
-        return YES;
-    }
-
-    return NO;
 }
 
 #pragma mark - revisions -
@@ -544,7 +554,10 @@ static NSString *gitExecutablePath = nil;
                 error:&error];
     }
 
-    NSAssert(nil == error, @"");
+    if (error || nil == HEAD) {
+        NSAssert(NO, @"WTF?");
+        return S7ExitCodeGitOperationFailed;
+    }
 
     HEAD = [HEAD stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
 
@@ -737,7 +750,8 @@ static NSString *gitExecutablePath = nil;
 
 - (int)pushCurrentBranch {
     NSString *currentBranchName = nil;
-    const int getBranchExitStatus = [self getCurrentBranch:&currentBranchName];
+    BOOL dummy = NO;
+    const int getBranchExitStatus = [self getCurrentBranch:&currentBranchName isDetachedHEAD:&dummy isEmptyRepo:&dummy];
     if (0 != getBranchExitStatus) {
         return getBranchExitStatus;
     }
