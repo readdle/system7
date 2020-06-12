@@ -38,6 +38,8 @@
 		BE4BB43E246166CE00545358 /* pushHookTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE4BB43D246166CE00545358 /* pushHookTests.m */; };
 		BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */; };
 		BE50AA01246C2CB800DBB618 /* S7PrePushHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */; };
+		BE5B752E248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */; };
+		BE5B752F248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */; };
 		BE8218782452BA7300E878A8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218772452BA7300E878A8 /* main.m */; };
 		BE8218812452C16A00E878A8 /* S7Config.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218802452C16A00E878A8 /* S7Config.m */; };
 		BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218882452C1DE00E878A8 /* configParserTests.m */; };
@@ -115,6 +117,8 @@
 		BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7PrePushHook.m; sourceTree = "<group>"; };
 		BE50A9FF246C2CB800DBB618 /* S7PrePushHook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = S7PrePushHook.h; sourceTree = "<group>"; };
 		BE50AA02246C2CEA00DBB618 /* S7Hook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Hook.h; sourceTree = "<group>"; };
+		BE5B752C248947AD008E7378 /* S7PrepareCommitMsgHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PrepareCommitMsgHook.h; sourceTree = "<group>"; };
+		BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PrepareCommitMsgHook.m; sourceTree = "<group>"; };
 		BE8218742452BA7300E878A8 /* system7 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = system7; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE8218772452BA7300E878A8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		BE82187F2452C16A00E878A8 /* S7Config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Config.h; sourceTree = "<group>"; };
@@ -196,6 +200,8 @@
 				BED36BE5246E809000D6EB1C /* S7PostCommitHook.m */,
 				BED36BE8246E904E00D6EB1C /* S7PostMergeHook.h */,
 				BED36BE9246E904E00D6EB1C /* S7PostMergeHook.m */,
+				BE5B752C248947AD008E7378 /* S7PrepareCommitMsgHook.h */,
+				BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */,
 			);
 			path = Hooks;
 			sourceTree = "<group>";
@@ -414,6 +420,7 @@
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
 				BE172CD224657CA700B57557 /* S7Diff.m in Sources */,
 				BE389214246304F200394CA8 /* S7RemoveCommand.m in Sources */,
+				BE5B752E248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */,
 				BE1079BC2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */,
 				BE28CB322472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */,
 				BED60FBD245AC23E008EA752 /* S7Types.m in Sources */,
@@ -436,6 +443,7 @@
 				BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BE3A29F424607419004A2B31 /* addTests.m in Sources */,
 				BE0173E124864DF300BA4B2F /* resetTests.m in Sources */,
+				BE5B752F248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
 				BED36BED246E908300D6EB1C /* mergeAlgorithmTests.m in Sources */,
 				BEE1CD0A246AEE9E00E2CC3B /* S7Command.m in Sources */,
