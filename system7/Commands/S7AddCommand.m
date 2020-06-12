@@ -97,7 +97,7 @@
             fprintf(stderr, "subrepo at path '%s' already registered in %s.\n",
                     [path cStringUsingEncoding:NSUTF8StringEncoding],
                     [S7ConfigFileName cStringUsingEncoding:NSUTF8StringEncoding]);
-            return 1;
+            return S7ExitCodeSubrepoAlreadyExists;
         }
     }
 
@@ -107,18 +107,18 @@
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]) {
         if (0 == url.length) {
             NSLog(@"ERROR: failed to add subrepo. Non-empty url expected.");
-            return 1;
+            return S7ExitCodeInvalidArgument;
         }
 
         int cloneResult = 0;
         gitSubrepo = [GitRepository cloneRepoAtURL:url destinationPath:path exitStatus:&cloneResult];
         if (0 != cloneResult) {
-            return cloneResult;
+            return S7ExitCodeGitOperationFailed;
         }
     }
     else if (NO == isDirectory) {
         NSLog(@"ERROR: failed to add subrepo at path '%@'. File exists and it's not a directory.", path);
-        return 1;
+        return S7ExitCodeInvalidArgument;
     }
     else {
         // 'add' can work in two modes:
@@ -140,16 +140,9 @@
         gitSubrepo = [[GitRepository alloc] initWithRepoPath:path];
         NSCAssert(gitSubrepo, @"");
 
-        NSString *remote = nil;
-        const int remoteResult = [gitSubrepo getRemote:&remote];
-        if (0 != remoteResult) {
-            return remoteResult;
-        }
-
         NSString *actualRemoteUrl = nil;
-        const int remoteUrlResult = [gitSubrepo getUrl:&actualRemoteUrl forRemote:remote];
-        if (0 != remoteUrlResult) {
-            return remoteUrlResult;
+        if (0 != [gitSubrepo getUrl:&actualRemoteUrl]) {
+            return S7ExitCodeGitOperationFailed;
         }
 
         if (nil == url) {
@@ -182,7 +175,7 @@
                         [path cStringUsingEncoding:NSUTF8StringEncoding],
                         [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
                         [url cStringUsingEncoding:NSUTF8StringEncoding]);
-                return 1;
+                return S7ExitCodeInvalidArgument;
             } while(0);
         }
     }
@@ -195,15 +188,12 @@
     }
 
     if (branch) {
-        const int checkoutResult = [gitSubrepo checkoutRemoteTrackingBranch:branch];
-        if (0 != checkoutResult) {
-            return checkoutResult;
+        if (0 != [gitSubrepo checkoutRemoteTrackingBranch:branch]) {
+            return S7ExitCodeGitOperationFailed;
         }
     }
     else {
-        const int gitExitStatus = [gitSubrepo getCurrentBranch:&branch];
-        if (0 != gitExitStatus) {
-            // todo: log
+        if (0 != [gitSubrepo getCurrentBranch:&branch]) {
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -213,16 +203,14 @@
                 branch = @"master"; // ?
             }
             else {
-                // todo: log
                 return S7ExitCodeGitOperationFailed;
             }
         }
     }
 
     NSString *revision = nil;
-    const int getRevisionResult = [gitSubrepo getCurrentRevision:&revision];
-    if (0 != getRevisionResult) {
-        return getRevisionResult;
+    if (0 != [gitSubrepo getCurrentRevision:&revision]) {
+        return S7ExitCodeGitOperationFailed;
     }
 
     NSCAssert(parsedConfig && parsedConfig.subrepoDescriptions, @"");
@@ -290,7 +278,9 @@
     }
 
     if (stageConfig) {
-        return [repo add:@[ S7ConfigFileName, @".gitignore" ]];
+        if (0 != [repo add:@[ S7ConfigFileName, @".gitignore" ]]) {
+            return S7ExitCodeGitOperationFailed;
+        }
     }
     else {
         fprintf(stdout,
@@ -298,7 +288,7 @@
                 S7ConfigFileName.fileSystemRepresentation);
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

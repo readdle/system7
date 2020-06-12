@@ -69,7 +69,7 @@
         return S7ExitCodeFileOperationFailed;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 

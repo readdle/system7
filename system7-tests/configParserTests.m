@@ -1,5 +1,5 @@
 //
-//  system7_tests.m
+//  configParserTests.m
 //  system7-tests
 //
 //  Created by Pavlo Shkrabliuk on 24.04.2020.
@@ -11,11 +11,11 @@
 #import "S7Config.h"
 #import "S7SubrepoDescriptionConflict.h"
 
-@interface system7_tests : XCTestCase
+@interface configParserTests : XCTestCase
 
 @end
 
-@implementation system7_tests
+@implementation configParserTests
 
 - (void)testValidConfig {
     NSString *config =

@@ -361,7 +361,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         NSString *currentBranch = nil;
         int gitExitStatus = [subrepoGit getCurrentBranch:&currentBranch];
         if (0 != gitExitStatus) {
-            // todo: log
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -380,7 +379,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         NSString *currentRevision = nil;
         gitExitStatus = [subrepoGit getCurrentRevision:&currentRevision];
         if (0 != gitExitStatus) {
-            // todo: log
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -413,13 +411,11 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch]) {
-            // todo: log
             return S7ExitCodeGitOperationFailed;
         }
 
         NSString *currentBranchHeadRevision = nil;
         if (0 != [subrepoGit getCurrentRevision:&currentBranchHeadRevision]) {
-            // todo: log
             return S7ExitCodeGitOperationFailed;
         }
 
