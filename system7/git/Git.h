@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)isEmptyRepo;
 - (BOOL)isBareRepo;
+- (void)printStatus;
 
 - (int)fetch;
 - (int)pull;

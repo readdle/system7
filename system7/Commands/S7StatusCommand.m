@@ -31,7 +31,35 @@
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     S7_REPO_PRECONDITION_CHECK();
 
+    BOOL showMainRepoStatus = YES;
+    for (NSString *argument in arguments) {
+        if ([argument hasPrefix:@"-"]) {
+            if ([argument isEqualToString:@"-n"]) {
+                showMainRepoStatus = NO;
+            }
+            else {
+                fprintf(stderr,
+                        "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                [[self class] printCommandHelp];
+                return S7ExitCodeUnrecognizedOption;
+            }
+        }
+        else {
+            fprintf(stderr,
+                    "redundant argument %s\n",
+                    [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+            [[self class] printCommandHelp];
+            return S7ExitCodeInvalidArgument;
+        }
+    }
+
     GitRepository *repo = [GitRepository repoAtPath:@"."];
+
+    if (showMainRepoStatus) {
+        [repo printStatus];
+        puts("");
+        puts("Subrepos status:");
+    }
 
     NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
     const int exitStatus = [S7StatusCommand repo:repo calculateStatus:&status];

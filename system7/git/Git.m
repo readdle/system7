@@ -261,6 +261,12 @@ static NSString *gitExecutablePath = nil;
     return YES;
 }
 
+- (void)printStatus {
+    [self runGitCommand:@"status"
+           stdOutOutput:NULL
+           stdErrOutput:NULL];
+}
+
 #pragma mark - branches -
 
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName {
