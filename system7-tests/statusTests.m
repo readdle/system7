@@ -308,7 +308,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        [repo resetToRevision:initialRevision];
+        [repo resetHardToRevision:initialRevision];
 
         XCTAssertFalse([NSFileManager.defaultManager contentsEqualAtPath:S7ConfigFileName andPath:S7ControlFileName]);
 

@@ -782,7 +782,7 @@ static NSString *gitExecutablePath = nil;
     return [self runGitCommand:@"reset --hard HEAD" stdOutOutput:NULL stdErrOutput:NULL];
 }
 
-- (int)resetToRevision:(NSString *)revision {
+- (int)resetHardToRevision:(NSString *)revision {
     const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"reset --hard %@", revision]
                                   stdOutOutput:NULL
                                   stdErrOutput:NULL];

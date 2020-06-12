@@ -1160,7 +1160,7 @@
 
         [repo checkoutExistingLocalBranch:@"master"];
 
-        [repo resetToRevision:rd2BaseRevision];
+        [repo resetHardToRevision:rd2BaseRevision];
 
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertTrue([controlConfig.subrepoPathsSet containsObject:@"Dependencies/RDPDFKit"]);

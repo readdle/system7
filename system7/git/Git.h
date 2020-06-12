@@ -65,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)commitWithMessage:(NSString *)message;
 
 - (int)resetLocalChanges;
-- (int)resetToRevision:(NSString *)revision;
+- (int)resetHardToRevision:(NSString *)revision;
 
 - (int)getRemote:(NSString * _Nullable __autoreleasing * _Nonnull)ppRemote;
 - (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl;
