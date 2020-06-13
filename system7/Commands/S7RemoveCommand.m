@@ -22,6 +22,8 @@
     puts("s7 remove [OPTION] PATH...");
     printCommandAliases(self);
     puts("");
+    puts("Remove a subrepo(s) at PATH...");
+    puts("");
     puts("options:");
     puts("");
     puts(" -f --force  remove subrepo directory even if it contain uncommited/not pushed");

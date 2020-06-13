@@ -103,13 +103,19 @@ void printHelp() {
     puts("FAQ.");
     puts("");
     puts(" Q: how to push changes to subrepos together with the main repo?");
-    puts(" A: just `git push [OPTIONS]` on the main repo. S7 git-hooks will push\n");
+    puts(" A: just `git push [OPTIONS]` on the main repo. S7 git-hooks will push");
     puts("    necessary subrepos automatically.");
     puts("");
     puts(" Q: how to checkout subrepos after I pull or checkout a different");
     puts("    branch/revision?");
     puts(" A: just `git pull`/`git checkout` as you normally do.");
     puts("    S7 git-hooks will update subrepos as necessary.");
+    puts("");
+    puts(" Q: I ran `git reset` or `git stash` and now s7 complains that it's");
+    puts("    not in sync.");
+    puts(" A: git doesn't run any hooks for these commands, so you would have");
+    puts("    to updates subrepos using `s7 checkout` (see `s7 help checkout`");
+    puts("    for more info).");
 }
 
 Class commandClassByName(NSString *commandName) {

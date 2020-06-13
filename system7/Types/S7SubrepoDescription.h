@@ -20,10 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSString *revision;
 @property (nonatomic, readonly) NSString *branch;
 
+- (instancetype)initWithConfigLine:(NSString *)trimmedLine;
+
 - (instancetype)initWithPath:(NSString *)path
                          url:(NSString *)url
                     revision:(NSString *)revision
-                      branch:(NSString *)branch;
+                      branch:(NSString *)branch NS_DESIGNATED_INITIALIZER;
 
 - (NSString *)stringRepresentation;
 - (NSString *)humanReadableRevisionAndBranchState;

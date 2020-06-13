@@ -8,6 +8,8 @@
 
 #import "S7PrepareCommitMsgHook.h"
 
+#import "S7PostCheckoutHook.h"
+
 // You may wonder why don't I use `pre-merge-commit`. The answer is –
 // this crap "can be bypassed with the --no-verify option". This is for
 // starters.
@@ -46,6 +48,41 @@
     if (nil == repo) {
         fprintf(stderr, "s7: hook – ran in not git repo root!\n");
         return S7ExitCodeNotGitRepository;
+    }
+
+    const char *GIT_REFLOG_ACTION = getenv("GIT_REFLOG_ACTION");
+    if (GIT_REFLOG_ACTION &&
+        (0 == strcmp(GIT_REFLOG_ACTION, "revert") ||
+         0 == strcmp(GIT_REFLOG_ACTION, "cherry-pick")))
+    {
+        //
+        // `git revert` seems to revert changes in the working dir and then "merge" them in.
+        //
+        // Depending on '--no-edit' option I observe different behaviour:
+        //  - with '--no-edit'    : "message" argument. 'post-commit' hook NOT called.
+        //  - without '--no-edit' : "merge" argument. 'post-commit' hook is called
+        //                          (but the commit is not a merge commit actually).
+        //
+        // Taking this all into account, the only place where we can handle `git revert` properly,
+        // is here. I see no other way, but blindly checkout from .s7control to .s7substate.
+        // There is a risk that user did `git reset` before this, and .s7control points to
+        // some crap, but what can I do?
+        //
+        //
+        // `git cherry-pick`. This is the only hook it calls. No `post-commit`. Depending on
+        // the commit beeing picked, it _sometimes_ calls merge-driver. So, this is the only
+        // reliable place to handle cherry-pick
+        //
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        S7Config *postRevertConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        const int checkoutExitStatus = [S7PostCheckoutHook checkoutSubreposForRepo:repo fromConfig:controlConfig toConfig:postRevertConfig];
+        if (0 != checkoutExitStatus) {
+            return checkoutExitStatus;
+        }
+
+        return [postRevertConfig saveToFileAtPath:S7ControlFileName];
+
     }
 
     const BOOL isMergeCommit = [arguments containsObject:@"merge"];

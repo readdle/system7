@@ -25,15 +25,11 @@
     puts("s7 status");
     printCommandAliases(self);
     puts("");
-    puts("TODO");
+    puts("show changed subrepos");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    BOOL isDirectory = NO;
-    const BOOL configFileExists = [[NSFileManager defaultManager] fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory];
-    if (NO == configFileExists || isDirectory) {
-        return S7ExitCodeNotS7Repo;
-    }
+    S7_REPO_PRECONDITION_CHECK();
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
 
@@ -87,8 +83,8 @@
     for (S7SubrepoDescription *subrepoDesc in actualConfig.subrepoDescriptions) {
         NSString *subrepoPath = subrepoDesc.path;
 
-        const BOOL hasUncommitedChanges = [notStagedCommittedSubrepos containsObject:subrepoPath];
-        const BOOL hasCommittedChangesNotReboundInMainRepo = [notStagedUncommittedChangesSubrepos containsObject:subrepoPath];
+        const BOOL hasUncommitedChanges = [notStagedUncommittedChangesSubrepos containsObject:subrepoPath];
+        const BOOL hasCommittedChangesNotReboundInMainRepo = [notStagedCommittedSubrepos containsObject:subrepoPath];
         const BOOL detachedHEAD = [subreposInDetachedHEAD containsObject:subrepoPath];
 
         if (NO == hasUncommitedChanges && NO == hasCommittedChangesNotReboundInMainRepo && NO == detachedHEAD) {

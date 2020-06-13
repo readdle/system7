@@ -8,8 +8,6 @@
 
 #import "S7ConfigMergeDriver.h"
 
-#include <unistd.h>
-
 #import "S7Diff.h"
 #import "Utils.h"
 #import "S7PostCheckoutHook.h"
@@ -30,14 +28,15 @@
      {
         void *self __attribute((unused)) __attribute((unavailable));
 
-//        if (!istty(stdin)) {
-//            @throw error
-//        }
-
         const int BUF_LEN = 20;
         char buf[BUF_LEN];
 
         if (ourVersion && theirVersion) {
+            NSCAssert(possibleOptions == (S7ConflictResolutionOptionKeepLocal |
+                                          S7ConflictResolutionOptionKeepRemote |
+                                          S7ConflictResolutionOptionMerge),
+                      @"");
+
             // should write this to stdout or stderr?
             fprintf(stdout,
                     " subrepo '%s' diverged\n"
@@ -73,6 +72,10 @@
         }
         else {
             NSCAssert(ourVersion || theirVersion, @"");
+            NSCAssert(possibleOptions == (S7ConflictResolutionOptionKeepChanged |
+                                          S7ConflictResolutionOptionDelete),
+                      @"");
+
             if (ourVersion) {
                 fprintf(stdout,
                         "  local changed subrepository '%s' which remote removed\n"
