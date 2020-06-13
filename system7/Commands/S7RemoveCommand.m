@@ -29,14 +29,7 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    BOOL isDirectory = NO;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
-        || isDirectory)
-    {
-        fprintf(stderr,
-                "abort: not s7 repo root\n");
-        return S7ExitCodeNotS7Repo;
-    }
+    S7_REPO_PRECONDITION_CHECK();
 
     if (arguments.count < 1) {
         [[self class] printCommandHelp];
@@ -128,18 +121,8 @@
     }
 
     S7Config *newConfig = [[S7Config alloc] initWithSubrepoDescriptions:newDescriptionsArray];
-    const int configSaveResult = [newConfig saveToFileAtPath:S7ConfigFileName];
-    if (0 != configSaveResult) {
-        return configSaveResult;
-    }
 
-    if (0 != [newConfig saveToFileAtPath:S7ControlFileName]) {
-        fprintf(stderr,
-                "failed to save %s to disk.\n",
-                S7ControlFileName.fileSystemRepresentation);
-
-        return S7ExitCodeFileOperationFailed;
-    }
+    SAVE_UPDATED_CONFIG_TO_MAIN_AND_CONTROL_FILE(newConfig);
 
     if (anySubrepoHadLocalChanges) {
         return S7ExitCodeSubrepoHasLocalChanges;

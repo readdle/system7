@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath;
+- (nullable instancetype)initWithRepoPath:(NSString *)repoPath bare:(BOOL)bare NS_DESIGNATED_INITIALIZER;
 
 + (nullable instancetype)repoAtPath:(NSString *)repoPath;
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url destinationPath:(NSString *)destinationPath exitStatus:(int *)exitStatus;

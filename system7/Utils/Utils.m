@@ -32,7 +32,8 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
     NSString *configContents = [repo showFile:S7ConfigFileName atRevision:revision exitStatus:&showExitStatus];
     if (0 != showExitStatus) {
         if (128 == showExitStatus) {
-            // s7 config has been removed? Or we are back to revision where there was no s7 yet
+            // s7 config has been removed or we are back to revision where there was no s7 yet
+            // this is a valid situation, so we just return an empty config
             configContents = @"";
         }
         else {
@@ -107,4 +108,31 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     }
 
     return 0;
+}
+
+int s7RepoPreconditionCheck(void) {
+    BOOL isDirectory = NO;
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
+        || isDirectory)
+    {
+        fprintf(stderr,
+                "abort: not s7 repo root\n");
+        return S7ExitCodeNotS7Repo;
+    }
+
+    return S7ExitCodeSuccess;
+}
+
+int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig) {
+    int configSaveResult = [updatedConfig saveToFileAtPath:S7ConfigFileName];
+    if (0 != configSaveResult) {
+        return configSaveResult;
+    }
+
+    configSaveResult = [updatedConfig saveToFileAtPath:S7ControlFileName];
+    if (0 != configSaveResult) {
+        return configSaveResult;
+    }
+
+    return S7ExitCodeSuccess;
 }

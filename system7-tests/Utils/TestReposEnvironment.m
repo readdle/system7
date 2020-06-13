@@ -54,6 +54,16 @@
         return nil;
     }
 
+    if (NO == [NSFileManager.defaultManager
+               createDirectoryAtPath:[self.root stringByAppendingPathComponent:@"github"]
+               withIntermediateDirectories:NO
+               attributes:nil
+               error:nil])
+    {
+        NSParameterAssert(NO);
+        return nil;
+    }
+
     return self;
 }
 
@@ -91,28 +101,51 @@
 
 - (GitRepository *)initializeRemoteRepoAtRelativePath:(NSString *)relativePath {
     NSString *absoluteFilePath = [self.root stringByAppendingPathComponent:relativePath];
-    int exitStatus = 0;
-    GitRepository *repo = [GitRepository initializeRepositoryAtPath:absoluteFilePath bare:YES exitStatus:&exitStatus];
-    NSAssert(0 == exitStatus, @"");
 
-    executeInDirectory(self.root, ^int {
-        // make repo non-empty by default
-        int gitCloneExitStatus = 0;
-        GitRepository *tmpRepo = [GitRepository cloneRepoAtURL:relativePath destinationPath:@"tmp" exitStatus:&gitCloneExitStatus];
-        NSParameterAssert(tmpRepo);
-        NSParameterAssert(0 == gitCloneExitStatus);
+    static NSString *templateRepoPath = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        templateRepoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template"];
 
-        [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
-        [tmpRepo add:@[@".gitignore"]];
-        [tmpRepo commitWithMessage:@"add .gitignore"];
-        [tmpRepo pushAllBranchesNeedingPush];
-
-        if (NO == [NSFileManager.defaultManager removeItemAtPath:@"tmp" error:nil]) {
-            NSParameterAssert(NO);
+        if ([[NSFileManager defaultManager] fileExistsAtPath:templateRepoPath]) {
+            NSError *error = nil;
+            if (NO == [[NSFileManager defaultManager] removeItemAtPath:templateRepoPath error:&error]) {
+                NSCParameterAssert(NO);
+            }
         }
 
-        return 0;
+        int exitStatus = 0;
+        __unused GitRepository *repo = [GitRepository initializeRepositoryAtPath:templateRepoPath bare:YES exitStatus:&exitStatus];
+        NSCAssert(repo, @"");
+        NSCAssert(0 == exitStatus, @"");
+
+        executeInDirectory(self.root, ^int {
+            // make repo non-empty by default
+            int gitCloneExitStatus = 0;
+            GitRepository *tmpRepo = [GitRepository cloneRepoAtURL:templateRepoPath destinationPath:@"tmp" exitStatus:&gitCloneExitStatus];
+            NSCParameterAssert(tmpRepo);
+            NSCParameterAssert(0 == gitCloneExitStatus);
+
+            [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
+            [tmpRepo add:@[@".gitignore"]];
+            [tmpRepo commitWithMessage:@"add .gitignore"];
+            [tmpRepo pushAllBranchesNeedingPush];
+
+            if (NO == [NSFileManager.defaultManager removeItemAtPath:@"tmp" error:nil]) {
+                NSCParameterAssert(NO);
+            }
+
+            return 0;
+        });
     });
+
+    NSError *error = nil;
+    if (NO == [NSFileManager.defaultManager copyItemAtPath:templateRepoPath toPath:absoluteFilePath error:&error]) {
+        NSAssert(NO, @"");
+    }
+
+    GitRepository *repo = [[GitRepository alloc] initWithRepoPath:absoluteFilePath bare:YES];
+    NSAssert(repo, @"");
 
     return repo;
 }

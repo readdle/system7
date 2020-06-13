@@ -268,12 +268,12 @@ NS_ASSUME_NONNULL_BEGIN
         || error)
     {
         fprintf(stderr, "failed to save %s to disk. Error: %s\n",
-                [S7ConfigFileName cStringUsingEncoding:NSUTF8StringEncoding],
+                filePath.fileSystemRepresentation,
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (BOOL)isEqual:(id)object {

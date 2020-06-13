@@ -116,14 +116,9 @@
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
-    BOOL isDirectory = NO;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
-        || isDirectory)
-    {
-        fprintf(stderr,
-                "abort: not s7 repo root\n");
-        return S7ExitCodeNotS7Repo;
-    }
+    // do not check for S7ConfigFileName existance. It's OK for one side not to have
+    // it. Also, if we merge two sides that add S7 independently, then for some
+    // reason, on merge there's not .s7substate in the working dir
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {

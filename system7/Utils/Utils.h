@@ -20,4 +20,23 @@ int addLineToGitIgnore(NSString *lineToAppend);
 
 BOOL isExactlyOneBitSetInNumber(uint32_t bits);
 
+int s7RepoPreconditionCheck(void);
+int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
+
+#define S7_REPO_PRECONDITION_CHECK()                    \
+    do {                                                \
+        const int result = s7RepoPreconditionCheck();   \
+        if (S7ExitCodeSuccess != result) {              \
+            return result;                              \
+        }                                               \
+    } while (0);
+
+#define SAVE_UPDATED_CONFIG_TO_MAIN_AND_CONTROL_FILE(updatedConfig)                 \
+    do {                                                                            \
+        const int result = saveUpdatedConfigToMainAndControlFile(updatedConfig);    \
+        if (S7ExitCodeSuccess != result) {                                          \
+            return result;                                                          \
+        }                                                                           \
+    } while (0);
+
 NS_ASSUME_NONNULL_END

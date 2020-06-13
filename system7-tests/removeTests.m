@@ -56,6 +56,8 @@
 
 - (void)testRemoveValidSubrepo {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
         NSString *typicalGitIgnoreContent =
             @".DS_Store\n"
              "*.pbxuser\n"
@@ -90,6 +92,8 @@
 
 - (void)testRemoveWithUncommittedLocalChanges {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
         NSString *typicalGitIgnoreContent =
         @".DS_Store\n"
         "*.pbxuser\n"
@@ -133,6 +137,8 @@
 
 - (void)testRemoveWithUncommittedLocalChangesForce {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
         NSString *typicalGitIgnoreContent =
         @".DS_Store\n"
         "*.pbxuser\n"
@@ -170,6 +176,8 @@
 
 - (void)testRemoveWithNotPushedLocalChanges {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
         NSString *typicalGitIgnoreContent =
         @".DS_Store\n"
         "*.pbxuser\n"
@@ -211,6 +219,8 @@
 
 - (void)testRemoveWithNotPushedLocalChangesForce {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+        
         NSString *typicalGitIgnoreContent =
         @".DS_Store\n"
         "*.pbxuser\n"

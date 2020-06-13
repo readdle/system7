@@ -8,6 +8,7 @@
 
 #import "S7StatusCommand.h"
 
+#import "Utils.h"
 #import "S7Diff.h"
 
 @implementation S7StatusCommand
@@ -140,27 +141,12 @@
     NSString *lastCommittedRevision = nil;
     [repo getCurrentRevision:&lastCommittedRevision];
 
-    int gitExitStatus = 0;
-    NSString *lastCommittedConfigContents = [repo showFile:S7ConfigFileName
-                                                atRevision:lastCommittedRevision
-                                                exitStatus:&gitExitStatus];
+    S7Config *lastCommittedConfig = nil;
+    int gitExitStatus = getConfig(repo, lastCommittedRevision, &lastCommittedConfig);
     if (0 != gitExitStatus) {
-        if (128 == gitExitStatus) {
-            lastCommittedConfigContents = @"";
-        }
-        else {
-            fprintf(stderr,
-                    "failed to retrieve .s7substate config at revision %s.\n"
-                    "Git exit status: %d\n",
-                    [lastCommittedRevision cStringUsingEncoding:NSUTF8StringEncoding],
-                    gitExitStatus);
-            return S7ExitCodeGitOperationFailed;
-        }
+        return gitExitStatus;
     }
 
-    NSAssert(lastCommittedConfigContents, @"");
-
-    S7Config *lastCommittedConfig = [[S7Config alloc] initWithContentsString:lastCommittedConfigContents];
     S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *stagedAddedSubrepos = nil;
