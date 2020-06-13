@@ -114,7 +114,7 @@ void printHelp() {
     puts(" Q: I ran `git reset` or `git stash` and now s7 complains that it's");
     puts("    not in sync.");
     puts(" A: git doesn't run any hooks for these commands, so you would have");
-    puts("    to updates subrepos using `s7 checkout` (see `s7 help checkout`");
+    puts("    to update subrepos using `s7 checkout` (see `s7 help checkout`");
     puts("    for more info).");
 }
 
