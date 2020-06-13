@@ -109,3 +109,30 @@ int addLineToGitIgnore(NSString *lineToAppend) {
 
     return 0;
 }
+
+int s7RepoPreconditionCheck(void) {
+    BOOL isDirectory = NO;
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
+        || isDirectory)
+    {
+        fprintf(stderr,
+                "abort: not s7 repo root\n");
+        return S7ExitCodeNotS7Repo;
+    }
+
+    return S7ExitCodeSuccess;
+}
+
+int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig) {
+    int configSaveResult = [updatedConfig saveToFileAtPath:S7ConfigFileName];
+    if (0 != configSaveResult) {
+        return configSaveResult;
+    }
+
+    configSaveResult = [updatedConfig saveToFileAtPath:S7ControlFileName];
+    if (0 != configSaveResult) {
+        return configSaveResult;
+    }
+
+    return S7ExitCodeSuccess;
+}

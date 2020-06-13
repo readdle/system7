@@ -273,7 +273,7 @@ NS_ASSUME_NONNULL_BEGIN
         return S7ExitCodeFileOperationFailed;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (BOOL)isEqual:(id)object {
