@@ -42,13 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
 
     NSArray *lines = [fileContents componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
 
-    NSError *error = nil;
-    NSRegularExpression *regex = [NSRegularExpression
-                                  regularExpressionWithPattern:@"(.*)\\s*=\\s*\\{(.*?)\\}\\s*(#.*)?\\s*"
-                                  options:0
-                                  error:&error];
-    NSCAssert(regex && nil == error, @"");
-
     BOOL inConflict = NO;
     BOOL collectingOurSideConflict = NO;
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *conflictOurSideSubrepoDescriptions = nil;
@@ -139,61 +132,11 @@ NS_ASSUME_NONNULL_BEGIN
             continue;
         }
 
-        NSArray<NSTextCheckingResult *> *matches = [regex matchesInString:trimmedLine
-                                                                  options:0
-                                                                    range:NSMakeRange(0, trimmedLine.length)];
-        if (1 != matches.count) {
-            NSLog(@"ERROR: failed to parse config (1). Invalid line '%@'", line);
+        S7SubrepoDescription *subrepoDesc = [[S7SubrepoDescription alloc] initWithConfigLine:trimmedLine];
+        if (nil == subrepoDesc) {
+            NSLog(@"ERROR: failed to parse config. Invalid line '%@'", line);
             return nil;
         }
-
-        NSTextCheckingResult *match = matches.firstObject;
-        if (4 != match.numberOfRanges) {
-            NSLog(@"ERROR: failed to parse config (2). Invalid line '%@'", line);
-            return nil;
-        }
-
-        const NSRange pathRange = [match rangeAtIndex:1];
-        NSString *path = [trimmedLine substringWithRange:pathRange];
-        path = [path stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-        if (0 == path.length) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'. Empty path.", line);
-            return nil;
-        }
-
-        const NSRange propertiesRange = [match rangeAtIndex:2];
-        NSString *properties = [trimmedLine substringWithRange:propertiesRange];
-        properties = [properties stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-        if (0 == properties.length) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'. Empty properties.", line);
-            return nil;
-        }
-
-        NSArray<NSString *> *propertiesComponents = [properties componentsSeparatedByString:@","];
-        if (propertiesComponents.count < 2 || propertiesComponents.count > 3) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'. Invalid preporties value", line);
-            return nil;
-        }
-
-        NSString *url = [[propertiesComponents objectAtIndex:0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-        if (0 == url.length) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'. Invalid url", line);
-            return nil;
-        }
-
-        NSString *revision = [[propertiesComponents objectAtIndex:1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-        if (NO == self.class.allowNon40DigitRevisions && 40 != revision.length) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'. We expect full 40-symbol revisions.", line);
-            return nil;
-        }
-
-        NSString *branch = [[propertiesComponents objectAtIndex:2] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-        if (0 == branch.length) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'. Invalid branch", line);
-            return nil;
-        }
-
-        S7SubrepoDescription *subrepoDesc = [[S7SubrepoDescription alloc] initWithPath:path url:url revision:revision branch:branch];
 
         if (inConflict) {
             if (collectingOurSideConflict) {

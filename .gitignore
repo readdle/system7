@@ -4,6 +4,7 @@
 *.orig
 *.perspectivev3
 build
+usr
 /build/
 *.orig
 **/xcuserdata/

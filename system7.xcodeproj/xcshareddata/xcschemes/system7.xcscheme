@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "BE8218732452BA7300E878A8"
-               BuildableName = "system7"
+               BuildableName = "s7"
                BlueprintName = "system7"
                ReferencedContainer = "container:system7.xcodeproj">
             </BuildableReference>
@@ -46,7 +46,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BE8218732452BA7300E878A8"
-            BuildableName = "system7"
+            BuildableName = "s7"
             BlueprintName = "system7"
             ReferencedContainer = "container:system7.xcodeproj">
          </BuildableReference>
@@ -63,7 +63,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BE8218732452BA7300E878A8"
-            BuildableName = "system7"
+            BuildableName = "s7"
             BlueprintName = "system7"
             ReferencedContainer = "container:system7.xcodeproj">
          </BuildableReference>

@@ -8,6 +8,18 @@
 
 #import "S7Diff.h"
 
+NSSet *intersectSets(NSSet *yellow, NSSet *blue) {
+    NSMutableSet *result = [yellow mutableCopy];
+    [result intersectSet:blue];
+    return result;
+}
+
+NSSet *minusSets(NSSet *minuend, NSSet *subtrahend) {
+    NSMutableSet *result = [minuend mutableCopy];
+    [result minusSet:subtrahend];
+    return result;
+}
+
 int diffConfigs(S7Config *fromConfig,
                 S7Config *toConfig,
                 NSMutableDictionary<NSString *, S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToDelete,
@@ -15,14 +27,13 @@ int diffConfigs(S7Config *fromConfig,
                 NSMutableDictionary<NSString *, S7SubrepoDescription *> * _Nullable __autoreleasing * _Nonnull ppSubreposToAdd)
 {
     NSDictionary<NSString *, S7SubrepoDescription *> *fromConfigMap = fromConfig.pathToDescriptionMap;
-    NSMutableSet<NSString *> *fromSubrepoPathsSet = [fromConfig.subrepoPathsSet mutableCopy];
+    NSSet<NSString *> *fromSubrepoPathsSet = fromConfig.subrepoPathsSet;
 
     NSDictionary<NSString *, S7SubrepoDescription *> *toConfigMap = toConfig.pathToDescriptionMap;
-    NSMutableSet<NSString *> *toSubrepoPathsSet = [toConfig.subrepoPathsSet mutableCopy];
+    NSSet<NSString *> *toSubrepoPathsSet = toConfig.subrepoPathsSet;
 
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = [NSMutableDictionary new];
-    NSMutableSet<NSString *> *subreposToCompare = [fromSubrepoPathsSet mutableCopy];
-    [subreposToCompare intersectSet:toSubrepoPathsSet];
+    NSSet<NSString *> *subreposToCompare = intersectSets(fromSubrepoPathsSet, toSubrepoPathsSet);
     for (NSString *path in subreposToCompare) {
         S7SubrepoDescription *fromDescription = fromConfigMap[path];
         NSCAssert(fromDescription, @"");
@@ -36,8 +47,7 @@ int diffConfigs(S7Config *fromConfig,
     *ppSubreposToUpdate = subreposToUpdate;
 
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = [NSMutableDictionary new];
-    [fromSubrepoPathsSet minusSet:toSubrepoPathsSet];
-    for (NSString *path in fromSubrepoPathsSet) {
+    for (NSString *path in minusSets(fromSubrepoPathsSet, toSubrepoPathsSet)) {
         NSCAssert(nil == toConfigMap[path], @"");
         S7SubrepoDescription *fromDescription = fromConfigMap[path];
         NSCAssert(fromDescription, @"");
@@ -47,9 +57,7 @@ int diffConfigs(S7Config *fromConfig,
     *ppSubreposToDelete = subreposToDelete;
 
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = [NSMutableDictionary new];
-    [toSubrepoPathsSet minusSet:fromSubrepoPathsSet];
-    [toSubrepoPathsSet minusSet:subreposToCompare];
-    for (NSString *path in toSubrepoPathsSet) {
+    for (NSString *path in minusSets(toSubrepoPathsSet, fromSubrepoPathsSet)) {
         NSCAssert(nil == fromConfigMap[path], @"");
         S7SubrepoDescription *toDescription = toConfigMap[path];
         NSCAssert(toDescription, @"");
