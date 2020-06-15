@@ -90,7 +90,7 @@ void printHelp() {
     puts("  init      create all necessary config files/hooks in the git repo");
     puts("");
     puts("  add       add a new subrepo");
-    puts("  remove    remove a subrepo(s)");
+    puts("  remove    remove the specified subrepos");
     puts("");
     puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
     puts("");
