@@ -255,7 +255,6 @@
         XCTAssertNotNil(status);
         NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
             @"Dependencies/ReaddleLib" : @(S7StatusUpdatedAndRebound | S7StatusHasNotReboundCommittedChanges),
-//            @"Dependencies/ReaddleLib" : @()
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];

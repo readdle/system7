@@ -22,10 +22,17 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 status");
+    puts("s7 status [-n]");
     printCommandAliases(self);
     puts("");
-    puts("show changed subrepos");
+    puts("show changed subrepos. By default, also prints main repo `git status`;");
+    puts("");
+    puts("  By default, also prints main repo `git status` (unless -n is passed).");
+    puts("");
+    puts("options:");
+    puts("");
+    puts(" -n    do not print main repo status along with subrepos' status");
+
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
@@ -202,10 +209,6 @@
 
         if (stagedAddedSubrepos[subrepoPath]) {
             status |= S7StatusAdded;
-        }
-
-        if (stagedDeletedSubrepos[subrepoPath]) {
-            status |= S7StatusRemoved;
         }
 
         if (stagedUpdatedSubrepos[subrepoPath]) {
