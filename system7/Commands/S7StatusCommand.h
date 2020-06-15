@@ -8,21 +8,21 @@
 
 #import "S7Command.h"
 
-typedef NS_ENUM(NSInteger, S7Status) {
-    S7StatusUnchanged,
-    S7StatusAdded,
-    S7StatusRemoved,
-    S7StatusUpdatedAndRebound,
-    S7StatusDetachedHead,
-    S7StatusHasNotReboundCommittedChanges,
-    S7StatusHasUncommittedChanges,
+typedef NS_OPTIONS(NSUInteger, S7Status) {
+    S7StatusUnchanged = 0,
+    S7StatusAdded = (1 << 1),
+    S7StatusRemoved = (1 << 2),
+    S7StatusUpdatedAndRebound = (1 << 3),
+    S7StatusDetachedHead = (1 << 4),
+    S7StatusHasNotReboundCommittedChanges = (1 << 5),
+    S7StatusHasUncommittedChanges = (1 << 6),
 };
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface S7StatusCommand : NSObject <S7Command>
 
-+ (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> * _Nullable __autoreleasing * _Nonnull)ppStatus;
++ (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSString *, NSNumber * /* S7Status */> * _Nullable __autoreleasing * _Nonnull)ppStatus;
 
 @end
 

@@ -92,7 +92,8 @@ void s7rebind_specific(NSString *subrepoPath) {
 
 int s7push_currentBranch(GitRepository *repo) {
     NSString *currentBranchName = nil;
-    if (0 != [repo getCurrentBranch:&currentBranchName]) {
+    BOOL dummy = NO;
+    if (0 != [repo getCurrentBranch:&currentBranchName isDetachedHEAD:&dummy isEmptyRepo:&dummy]) {
         return 1;
     }
 
