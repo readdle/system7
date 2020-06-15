@@ -37,6 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)pushAllBranchesNeedingPush;
 - (int)pushCurrentBranch;
 - (int)pushBranch:(NSString *)branchName;
+- (int)pushAll;
 
 - (int)checkoutNewLocalBranch:(NSString *)branchName;
 - (int)checkoutExistingLocalBranch:(NSString *)branchName;

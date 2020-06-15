@@ -191,16 +191,11 @@
                                                    atRevision:localSha1ToPush
                                                    exitStatus:&gitExitStatus];
     if (nil == configContentsAtRevisionToPush || 0 != gitExitStatus) {
-        // there's .s7substate locally, but it's not in the commit we are trying to push,
-        // so... we are confused. If s7 is "de-initialized", then it's OK, but then
-        // this hook should have been removed too.
+        // there's .s7substate in the commit we are trying to push,
+        // this means there's no s7 at this branch, so we shouldn't do
+        // anything here
         //
-        fprintf(stderr,
-                "failed to retrieve latest committed .s7substate config at %s.\n"
-                "Git exit status: %d\n",
-                localSha1ToPush.fileSystemRepresentation,
-                gitExitStatus);
-        return S7ExitCodeNoCommittedS7Config;
+        return S7ExitCodeSuccess;
     }
 
     S7Config *lastCommittedConfig = [[S7Config alloc] initWithContentsString:configContentsAtRevisionToPush];
