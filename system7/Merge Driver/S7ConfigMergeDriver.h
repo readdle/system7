@@ -25,8 +25,8 @@ typedef NS_OPTIONS(uint32_t, S7ConflictResolutionOption) {
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments;
 
-@property (nonatomic) S7ConflictResolutionOption (^resolveConflictBlock)(S7SubrepoDescription *ourVersion,
-                                                                         S7SubrepoDescription *theirVersion,
+@property (nonatomic) S7ConflictResolutionOption (^resolveConflictBlock)(S7SubrepoDescription * _Nullable ourVersion,
+                                                                         S7SubrepoDescription * _Nullable theirVersion,
                                                                          S7ConflictResolutionOption possibleOptions);
 
 + (S7Config *)mergeOurConfig:(S7Config *)ourLines

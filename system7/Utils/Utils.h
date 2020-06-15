@@ -20,29 +20,23 @@ int addLineToGitIgnore(NSString *lineToAppend);
 
 BOOL isExactlyOneBitSetInNumber(uint32_t bits);
 
-#define S7_REPO_PRECONDITION_CHECK()                \
-    do {                                            \
-        BOOL isDirectory = NO;                      \
-        if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory] \
-            || isDirectory)                         \
-        {                                           \
-            fprintf(stderr,                         \
-                    "abort: not s7 repo root\n");   \
-            return S7ExitCodeNotS7Repo;             \
-        }                                           \
+int s7RepoPreconditionCheck(void);
+int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
+
+#define S7_REPO_PRECONDITION_CHECK()                    \
+    do {                                                \
+        const int result = s7RepoPreconditionCheck();   \
+        if (S7ExitCodeSuccess != result) {              \
+            return result;                              \
+        }                                               \
     } while (0);
 
 #define SAVE_UPDATED_CONFIG_TO_MAIN_AND_CONTROL_FILE(updatedConfig)                 \
     do {                                                                            \
-        int configSaveResult = [updatedConfig saveToFileAtPath:S7ConfigFileName];   \
-        if (0 != configSaveResult) {                                                \
-            return configSaveResult;                                                \
+        const int result = saveUpdatedConfigToMainAndControlFile(updatedConfig);    \
+        if (S7ExitCodeSuccess != result) {                                          \
+            return result;                                                          \
         }                                                                           \
-                                                                                    \
-        configSaveResult = [updatedConfig saveToFileAtPath:S7ControlFileName];      \
-        if (0 != configSaveResult) {                                                \
-            return configSaveResult;                                                \
-        }                                                                           \
-    } while(0);
+    } while (0);
 
 NS_ASSUME_NONNULL_END

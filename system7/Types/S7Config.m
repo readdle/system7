@@ -106,15 +106,16 @@ NS_ASSUME_NONNULL_BEGIN
             NSArray<NSString *> *ourSideConflictPaths = [conflictOurSideSubrepoDescriptions.allKeys copy];
             for (NSString *subrepoPath in ourSideConflictPaths) {
                 S7SubrepoDescription *ourDesc = conflictOurSideSubrepoDescriptions[subrepoPath];
-                conflictOurSideSubrepoDescriptions[subrepoPath] = nil;
                 S7SubrepoDescription *theirDesc = conflictTheirSideSubrepoDescriptions[subrepoPath];
-                conflictTheirSideSubrepoDescriptions[subrepoPath] = nil;
 
                 S7SubrepoDescriptionConflict *conflict = [[S7SubrepoDescriptionConflict alloc]
                                                           initWithOurVersion:ourDesc
                                                           theirVersion:theirDesc];
                 [subrepoDescriptions addObject:conflict];
             }
+
+            [conflictOurSideSubrepoDescriptions removeObjectsForKeys:ourSideConflictPaths];
+            [conflictTheirSideSubrepoDescriptions removeObjectsForKeys:ourSideConflictPaths];
 
             for (NSString *subrepoPath in conflictTheirSideSubrepoDescriptions.allKeys) {
                 S7SubrepoDescription *theirDesc = conflictTheirSideSubrepoDescriptions[subrepoPath];
@@ -215,7 +216,7 @@ NS_ASSUME_NONNULL_BEGIN
         return S7ExitCodeFileOperationFailed;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (BOOL)isEqual:(id)object {

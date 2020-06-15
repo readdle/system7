@@ -22,8 +22,8 @@
         return nil;
     }
 
-    [self setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
-                                                              S7SubrepoDescription * _Nonnull theirVersion,
+    [self setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nullable ourVersion,
+                                                              S7SubrepoDescription * _Nullable theirVersion,
                                                               S7ConflictResolutionOption possibleOptions)
      {
         void *self __attribute((unused)) __attribute((unavailable));

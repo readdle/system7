@@ -123,6 +123,82 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                                    clean:NO];
 }
 
++ (void)warnAboutDetachingIfNeeded:(NSString *)currentRevision
+                       subrepoDesc:(S7SubrepoDescription *)subrepoDesc
+                        subrepoGit:(GitRepository *)subrepoGit
+{
+    int numberOfOrphanedCommits = 0;
+    if (NO == [subrepoGit isRevisionDetached:currentRevision
+                     numberOfOrphanedCommits:&numberOfOrphanedCommits])
+    {
+        return;
+    }
+
+    // say you've been working on master branch in subrepo. You've created commits 4–6.
+    // someone else had been working on this subrepo, and created commit 7. They rebound
+    // the subrepo and pushed.
+    // Looks like this:
+    //
+    //    * 7 origin/master
+    //    | * 6 master
+    //    | * 5
+    //    | * 4
+    //     /
+    //    * 3
+    //    * 2
+    //    * 1
+    //
+    // You pulled in main repo and now, your local master would be forced to revision 7
+    //
+    //    * 7  master -> origin/master
+    //    | * 6  [nothing is pointing here]
+    //    | * 5
+    //    | * 4
+    //     /
+    //    * 3
+    //    * 2
+    //    * 1
+    //
+    // As no other branch is pointing to 6, then it will be "lost" somewhere in the guts
+    // of git ref-log
+    //
+    // We warn user about this situation
+    //
+
+    fprintf(stdout,
+            "\033[33m"
+            "Warning: you are leaving %2$d commit(s) behind, not connected to\n"
+            "any of your branches:\n"
+            "\n"
+            "  %1$s detached\n"
+            "\n"
+            "If you want to keep it by creating a new branch, this may be a good time\n"
+            "to do so with:\n"
+            "\n"
+            " git branch <new-branch-name> %1$s\n"
+            "\n"
+            "Detached commit hash was also saved to %3$s\n"
+            "\033[0m",
+            [currentRevision cStringUsingEncoding:NSUTF8StringEncoding],
+            numberOfOrphanedCommits,
+            S7BakFileName.fileSystemRepresentation);
+
+    if (_warnAboutDetachingCommitsHook) {
+        _warnAboutDetachingCommitsHook(currentRevision, numberOfOrphanedCommits);
+    }
+
+    FILE *backupFile = fopen(S7BakFileName.fileSystemRepresentation, "a+");
+    if (backupFile) {
+        fprintf(backupFile,
+                "%s %s detached commit %s\n",
+                [[NSDate.now description] cStringUsingEncoding:NSUTF8StringEncoding],
+                subrepoDesc.path.fileSystemRepresentation,
+                [currentRevision cStringUsingEncoding:NSUTF8StringEncoding]);
+
+        fclose(backupFile);
+    }
+}
+
 + (int)checkoutSubreposForRepo:(GitRepository *)repo
                     fromConfig:(S7Config *)fromConfig
                       toConfig:(S7Config *)toConfig
@@ -324,74 +400,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             [subrepoGit forceCheckoutExistingLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision];
         }
 
-        int numberOfOrphanedCommits = 0;
-        if (NO == [subrepoGit isRevisionReachableFromAnyBranch:currentRevision
-                                       numberOfOrphanedCommits:&numberOfOrphanedCommits])
-        {
-            // say you've been working on master branch in subrepo. You've created commits 4–6.
-            // someone else had been working on this subrepo, and created commit 7. They rebound
-            // the subrepo and pushed.
-            // Looks like this:
-            //
-            //    * 7 origin/master
-            //    | * 6 master
-            //    | * 5
-            //    | * 4
-            //     /
-            //    * 3
-            //    * 2
-            //    * 1
-            //
-            // You pulled in main repo and now, your local master would be forced to revision 7
-            //
-            //    * 7  master -> origin/master
-            //    | * 6  [nothing is pointing here]
-            //    | * 5
-            //    | * 4
-            //     /
-            //    * 3
-            //    * 2
-            //    * 1
-            //
-            // As no other branch is pointing to 6, then it will be "lost" somewhere in the guts
-            // of git ref-log
-            //
-            // We warn user about this situation
-            //
-
-            fprintf(stdout,
-                    "\033[33m"
-                    "Warning: you are leaving %2$d commit(s) behind, not connected to\n"
-                    "any of your branches:\n"
-                    "\n"
-                    "  %1$s detached\n"
-                    "\n"
-                    "If you want to keep it by creating a new branch, this may be a good time\n"
-                    "to do so with:\n"
-                    "\n"
-                    " git branch <new-branch-name> %1$s\n"
-                    "\n"
-                    "Detached commit hash was also saved to %3$s\n"
-                    "\033[0m",
-                    [currentRevision cStringUsingEncoding:NSUTF8StringEncoding],
-                    numberOfOrphanedCommits,
-                    S7BakFileName.fileSystemRepresentation);
-
-            if (_warnAboutDetachingCommitsHook) {
-                _warnAboutDetachingCommitsHook(currentRevision, numberOfOrphanedCommits);
-            }
-
-            FILE *backupFile = fopen(S7BakFileName.fileSystemRepresentation, "a+");
-            if (backupFile) {
-                fprintf(backupFile,
-                        "%s %s detached commit %s\n",
-                        [NSDate.now description].fileSystemRepresentation,
-                        subrepoDesc.path.fileSystemRepresentation,
-                        currentRevision.fileSystemRepresentation);
-
-                fclose(backupFile);
-            }
-        }
+        [self warnAboutDetachingIfNeeded:currentRevision subrepoDesc:subrepoDesc subrepoGit:subrepoGit];
     }
 
     if (anySubrepoContainedUncommittedChanges) {
