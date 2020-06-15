@@ -770,6 +770,13 @@ static NSString *gitExecutablePath = nil;
     return exitStatus;
 }
 
+- (int)pushAll {
+    const int exitStatus = [self runGitCommand:@"push --all"
+                                  stdOutOutput:NULL
+                                  stdErrOutput:NULL];
+    return exitStatus;
+}
+
 #pragma mark - reset -
 
 - (int)resetLocalChanges {
