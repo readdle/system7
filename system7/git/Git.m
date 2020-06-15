@@ -261,6 +261,12 @@ static NSString *gitExecutablePath = nil;
     return YES;
 }
 
+- (void)printStatus {
+    [self runGitCommand:@"status"
+           stdOutOutput:NULL
+           stdErrOutput:NULL];
+}
+
 #pragma mark - branches -
 
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName {
@@ -321,7 +327,10 @@ static NSString *gitExecutablePath = nil;
 }
 
 
-- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch {
+- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch
+         isDetachedHEAD:(BOOL *)isDetachedHEAD
+            isEmptyRepo:(BOOL *)isEmptyRepo
+{
     // pastey:
     // this is an optimized version of this command that doesn't spawn real git process.
     // if we get any trouble with it, we can always return to an old and bullet-proof version,
@@ -340,25 +349,41 @@ static NSString *gitExecutablePath = nil;
 
         bareRepo = YES;
 
+        error = nil;
         HEAD = [[NSString alloc]
                 initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@"HEAD"]
                 encoding:NSUTF8StringEncoding
                 error:&error];
     }
 
-    NSAssert(nil == error, @"");
+    if (error || nil == HEAD) {
+        NSAssert(NO, @"WTF?");
+        return S7ExitCodeGitOperationFailed;
+    }
 
     HEAD = [HEAD stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
 
     if ([HEAD hasPrefix:@"ref: "]) {
         NSArray<NSString *> *components = [HEAD componentsSeparatedByString:@" "];
         NSAssert(2 == components.count, @"");
-        NSString *branchName = [components.lastObject stringByReplacingOccurrencesOfString:@"refs/heads/" withString:@""];
+
+        NSString *ref = components.lastObject;
+
+        NSString *refPath = bareRepo
+            ? [self.absolutePath stringByAppendingPathComponent:ref]
+            : [[self.absolutePath stringByAppendingPathComponent:@".git"] stringByAppendingPathComponent:ref];
+
+        if (NO == [NSFileManager.defaultManager fileExistsAtPath:refPath]) {
+            *isEmptyRepo = YES;
+            return 0;
+        }
+
+        NSString *branchName = [ref stringByReplacingOccurrencesOfString:@"refs/heads/" withString:@""];
         NSAssert(branchName.length > 0, @"");
         *ppBranch = branchName;
     }
     else {
-        // detached HEAD
+        *isDetachedHEAD = YES;
     }
 
     return 0;
@@ -385,15 +410,6 @@ static NSString *gitExecutablePath = nil;
 //    }
 //
 //    return 0;
-}
-
-- (BOOL)isInDetachedHEAD {
-    NSString *branch = nil;
-    if (0 == [self getCurrentBranch:&branch] && nil == branch) {
-        return YES;
-    }
-
-    return NO;
 }
 
 #pragma mark - revisions -
@@ -544,7 +560,10 @@ static NSString *gitExecutablePath = nil;
                 error:&error];
     }
 
-    NSAssert(nil == error, @"");
+    if (error || nil == HEAD) {
+        NSAssert(NO, @"WTF?");
+        return S7ExitCodeGitOperationFailed;
+    }
 
     HEAD = [HEAD stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
 
@@ -737,7 +756,8 @@ static NSString *gitExecutablePath = nil;
 
 - (int)pushCurrentBranch {
     NSString *currentBranchName = nil;
-    const int getBranchExitStatus = [self getCurrentBranch:&currentBranchName];
+    BOOL dummy = NO;
+    const int getBranchExitStatus = [self getCurrentBranch:&currentBranchName isDetachedHEAD:&dummy isEmptyRepo:&dummy];
     if (0 != getBranchExitStatus) {
         return getBranchExitStatus;
     }
@@ -768,7 +788,7 @@ static NSString *gitExecutablePath = nil;
     return [self runGitCommand:@"reset --hard HEAD" stdOutOutput:NULL stdErrOutput:NULL];
 }
 
-- (int)resetToRevision:(NSString *)revision {
+- (int)resetHardToRevision:(NSString *)revision {
     const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"reset --hard %@", revision]
                                   stdOutOutput:NULL
                                   stdErrOutput:NULL];
@@ -792,39 +812,17 @@ static NSString *gitExecutablePath = nil;
     if ([self isEmptyRepo]) {
         return NO;
     }
+
+    // pastey:
+    // we used to do the following here:
+    //  git update-index -q --refresh
+    //  git diff-index --quiet HEAD
+    // Then, in some time to check for untracked files
+    // I've added `status --porcelain` call, thus
+    // update-index/diff-index became unnecessary. That's two
+    // extra calls to external process.
+    //
     
-    // borrowed from by mercurial/subrepo.py
-    //
-    // """This must be run before git diff-index.
-    //    diff-index only looks at changes to file stat;
-    //    this command looks at file contents and updates the stat."""
-    //
-    // git update-index -q --refresh
-    // git diff-index --quiet HEAD
-    //
-    const int updateIndexStatus = [self.class
-                            runGitInRepoAtPath:self.absolutePath
-                            withArguments:@[ @"update-index", @"-q", @"--refresh" ]
-                            stdOutOutput:NULL
-                            stdErrOutput:NULL];
-    if (0 != updateIndexStatus) {
-        return updateIndexStatus;
-    }
-
-    // should you be curious, yes 'update-index' understands only '-q'
-    // and 'diff-index' understands only '--quiet'.
-    // And yes, 'git status' returns 0 in any case – either there're changes
-    // or not.
-    //
-    const int diffIndexStatus = [self.class
-                            runGitInRepoAtPath:self.absolutePath
-                            withArguments:@[ @"diff-index", @"--quiet", @"HEAD" ]
-                            stdOutOutput:NULL
-                            stdErrOutput:NULL];
-    if (0 != diffIndexStatus) {
-        return YES;
-    }
-
     NSString *statusOutput = nil;
     const int statusExitCode = [self.class
                                 runGitInRepoAtPath:self.absolutePath
@@ -835,15 +833,8 @@ static NSString *gitExecutablePath = nil;
         return NO;
     }
 
-    static NSRegularExpression *unknownFileRegex = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        unknownFileRegex = [NSRegularExpression regularExpressionWithPattern:@"^\?\? " options:0 error:nil];
-        NSCAssert(unknownFileRegex, @"");
-    });
-
-    NSTextCheckingResult *match = [unknownFileRegex firstMatchInString:statusOutput options:0 range:NSMakeRange(0, statusOutput.length)];
-    return (match != nil);
+    statusOutput = [statusOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    return statusOutput.length > 0;
 }
 
 - (int)add:(NSArray<NSString *> *)filePaths {

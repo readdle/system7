@@ -52,7 +52,7 @@
         S7Config *secondConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
         // say a naïve user 'switched' to an old rd2 revision using `git reset --hard REV`
-        XCTAssertEqual(0, [repo resetToRevision:firstRevision]);
+        XCTAssertEqual(0, [repo resetHardToRevision:firstRevision]);
 
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 

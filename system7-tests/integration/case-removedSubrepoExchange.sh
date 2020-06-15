@@ -1,7 +1,5 @@
 #!/bin/sh
 
-assert git init -q --bare "$S7_ROOT/github/RDPDFKit"
-
 git clone github/rd2 pastey/rd2
 
 cd "$S7_ROOT/pastey/rd2"

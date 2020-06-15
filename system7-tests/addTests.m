@@ -170,7 +170,7 @@
     });
 }
 
-- (void)testAddBareRepoWithUrlAndPath {
+- (void)testAddEmptyRepoWithUrlAndPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
         s7init_deactivateHooks();
 
@@ -179,27 +179,50 @@
 
         S7AddCommand *command = [S7AddCommand new];
         const int addResult = [command runWithArguments:@[ @"Dependencies/Bare", self.env.githubTestBareRepo.absolutePath ]];
-        XCTAssertEqual(0, addResult);
+        XCTAssertEqual(S7ExitCodeInvalidArgument, addResult);
 
         S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertEqual(0, newConfig.subrepoDescriptions.count);
+    });
+}
+
+- (void)testAddRepoWithDetachedHEAD {
+    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
+        int cloneExitStatus = 0;
+        GitRepository *readdleLibSubrepoGit = [GitRepository
+                                             cloneRepoAtURL:self.env.githubReaddleLibRepo.absolutePath
+                                             destinationPath:@"Dependencies/ReaddleLib"
+                                             exitStatus:&cloneExitStatus];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        XCTAssertEqual(0, cloneExitStatus);
+
+        NSString *initalRevisionInReaddleLib = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&initalRevisionInReaddleLib];
+
+        commit(readdleLibSubrepoGit, @"RDGeomtry.h", @"RDRectArea", @"WIP");
+
+        [readdleLibSubrepoGit checkoutRevision:initalRevisionInReaddleLib];
+
+
+
+        S7AddCommand *command = [S7AddCommand new];
+        int addResult = [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]];
+        XCTAssertEqual(S7ExitCodeInvalidArgument, addResult);
+
+        S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        XCTAssertEqual(0, newConfig.subrepoDescriptions.count);
+
+
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+
+        command = [S7AddCommand new];
+        addResult = [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]];
+        XCTAssertEqual(S7ExitCodeSuccess, addResult);
+
+        newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
-
-        NSString *expectedInitialRevision = nil;
-        [self.env.githubTestBareRepo getCurrentRevision:&expectedInitialRevision];
-        S7SubrepoDescription *expectedDescription = [[S7SubrepoDescription alloc]
-                                                     initWithPath:@"Dependencies/Bare"
-                                                     url:self.env.githubTestBareRepo.absolutePath
-                                                     revision:expectedInitialRevision
-                                                     branch:@"master"];
-        XCTAssertEqualObjects(expectedDescription,
-                              newConfig.subrepoDescriptions.firstObject);
-
-        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
-        XCTAssertTrue(gitignoreContents.length > 0);
-        XCTAssertNotEqual([gitignoreContents rangeOfString:@"Dependencies/Bare"].location, NSNotFound);
-        XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/Bare" options:NSBackwardsSearch].location,
-                       [gitignoreContents rangeOfString:@"Dependencies/Bare"].location,
-                       @"must be added to .gitignore just once");
     });
 }
 

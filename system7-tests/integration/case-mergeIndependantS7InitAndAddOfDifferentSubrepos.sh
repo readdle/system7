@@ -1,7 +1,5 @@
 #!/bin/sh
 
-assert git init -q --bare "$S7_ROOT/github/RDPDFKit"
-
 cd "$S7_ROOT/nik"
 
 assert git clone "$S7_ROOT/github/rd2"
