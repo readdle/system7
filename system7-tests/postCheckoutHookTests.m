@@ -158,7 +158,8 @@
         XCTAssertEqualObjects(nikCreatedReaddleLibRevision, actualReaddleLibRevision);
 
         NSString *branchName = nil;
-        [pasteysReaddleLibSubrepo getCurrentBranch:&branchName];
+        BOOL dummy = NO;
+        [pasteysReaddleLibSubrepo getCurrentBranch:&branchName isDetachedHEAD:&dummy isEmptyRepo:&dummy];
         XCTAssertEqualObjects(branchName, @"master");
     }];
 }
@@ -226,7 +227,8 @@
         XCTAssertEqualObjects(nikCreatedReaddleLibRevision, actualReaddleLibRevision);
 
         NSString *branchName = nil;
-        [pasteysReaddleLibSubrepo getCurrentBranch:&branchName];
+        BOOL dummy = NO;
+        [pasteysReaddleLibSubrepo getCurrentBranch:&branchName isDetachedHEAD:&dummy isEmptyRepo:&dummy];
         XCTAssertEqualObjects(branchName, customBranchName);
     }];
 }
@@ -295,7 +297,8 @@
         XCTAssertEqualObjects(readdleLibRevisionThatWeShouldCheckoutInRD2, actualReaddleLibRevision);
 
         NSString *branchName = nil;
-        [pasteysReaddleLibSubrepo getCurrentBranch:&branchName];
+        BOOL dummy = NO;
+        [pasteysReaddleLibSubrepo getCurrentBranch:&branchName isDetachedHEAD:&dummy isEmptyRepo:&dummy];
         XCTAssertEqualObjects(branchName, @"master");
 
         XCTAssertTrue([pasteysReaddleLibSubrepo isRevisionAvailableLocally:readdleLibRevisionOnMasterPushedSeparately]);

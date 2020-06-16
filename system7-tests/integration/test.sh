@@ -7,6 +7,7 @@ export S7_TESTS_DIR=$ORIGINAL_PWD
 
 #set -x
 
+ANY_TEST_FAILED=0
 LEAVE_TEST_REPOS_AFTER_FAIL=0
 if [ ! -z $1 ]
 then
@@ -23,6 +24,22 @@ then
     TESTS_TO_RUN=`ls case*.sh`
 fi
 
+git init -q --bare templates/rd2
+git init -q --bare templates/ReaddleLib
+git init -q --bare templates/RDPDFKit
+
+for d in templates/*
+do
+    git clone -q $d tmp
+    pushd tmp
+        touch .gitignore
+        git add .gitignore
+        git commit -m"add .gitignore to make repo non-empty"
+        git push
+    popd
+    rm -rf tmp
+done > /dev/null 2>&1
+
 function setUp {
     cd "$ORIGINAL_PWD"
 
@@ -31,10 +48,11 @@ function setUp {
         rm -rf root
     fi
 
-    mkdir root
+    mkdir -p root/github
 
-    git init -q --bare root/github/rd2
-    git init -q --bare root/github/ReaddleLib
+    cp -R templates/rd2 root/github/
+    cp -R templates/ReaddleLib root/github/
+    cp -R templates/RDPDFKit root/github/
 
     mkdir -p root/pastey
     mkdir -p root/nik
@@ -54,6 +72,8 @@ function tearDown {
 
 function globalCleanUp {
     rm "${ORIGINAL_PWD}/failed-cases" 2>/dev/null
+    rm -rf "${ORIGINAL_PWD}/templates"
+
     tearDown
 }
 
@@ -61,8 +81,6 @@ trap globalCleanUp EXIT
 
 source assertions
 source utils
-
-ANY_TEST_FAILED=0
 
 for CASE in $TESTS_TO_RUN
 do

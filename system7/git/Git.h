@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)isEmptyRepo;
 - (BOOL)isBareRepo;
+- (void)printStatus;
 
 - (int)fetch;
 - (int)pull;
@@ -36,6 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)pushAllBranchesNeedingPush;
 - (int)pushCurrentBranch;
 - (int)pushBranch:(NSString *)branchName;
+- (int)pushAll;
 
 - (int)checkoutNewLocalBranch:(NSString *)branchName;
 - (int)checkoutExistingLocalBranch:(NSString *)branchName;
@@ -43,8 +45,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)deleteRemoteBranch:(NSString *)branchName;
 - (int)forceCheckoutExistingLocalBranch:(NSString *)branchName revision:(NSString *)revisions;
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName;
-- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch;
-- (BOOL)isInDetachedHEAD;
+- (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch
+         isDetachedHEAD:(BOOL *)isDetachedHEAD
+            isEmptyRepo:(BOOL *)isEmptyRepo;
 
 + (NSString *)nullRevision;
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision;
@@ -64,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)commitWithMessage:(NSString *)message;
 
 - (int)resetLocalChanges;
-- (int)resetToRevision:(NSString *)revision;
+- (int)resetHardToRevision:(NSString *)revision;
 
 - (int)getRemote:(NSString * _Nullable __autoreleasing * _Nonnull)ppRemote;
 - (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl;

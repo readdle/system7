@@ -328,26 +328,27 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         NSString *currentBranch = nil;
-        int gitExitStatus = [subrepoGit getCurrentBranch:&currentBranch];
-        if (0 != gitExitStatus) {
+        BOOL isEmptyRepo = NO;
+        BOOL isDetachedHEAD = NO;
+        if (0 != [subrepoGit getCurrentBranch:&currentBranch isDetachedHEAD:&isDetachedHEAD isEmptyRepo:&isEmptyRepo]) {
             return S7ExitCodeGitOperationFailed;
         }
 
         if (nil == currentBranch) {
-            // the only case getCurrentBranch will succeed (return 0), but leave branch name nil
-            // is the detached HEAD, but let's make it clear
-            if ([subrepoGit isInDetachedHEAD]) {
+            if (isDetachedHEAD) {
                 currentBranch = @"HEAD";
             }
             else {
                 NSAssert(NO, @"");
+                fprintf(stderr,
+                        "unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                        subrepoDesc.path.fileSystemRepresentation);
                 return S7ExitCodeGitOperationFailed;
             }
         }
 
         NSString *currentRevision = nil;
-        gitExitStatus = [subrepoGit getCurrentRevision:&currentRevision];
-        if (0 != gitExitStatus) {
+        if (0 != [subrepoGit getCurrentRevision:&currentRevision]) {
             return S7ExitCodeGitOperationFailed;
         }
 

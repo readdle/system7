@@ -98,7 +98,7 @@
     // diff between .s7control and .s7substate.
     //
     // If control is not in sync with the main config, then the result of subrepos checkout would be
-    // unpredictable one possible scenario:
+    // unpredictable. One possible scenario:
     //
     //   git checkout REV_20            # .s7control and .s7substate would be in sync
     //   git reset --hard REV_100500    # .s7control left from REV_20

@@ -81,7 +81,7 @@
                                      revision,
                                      [GitRepository nullRevision]];
 
-        XCTAssertEqual(S7ExitCodeNoCommittedS7Config, [command runWithArguments:@[]]);
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
     }];
 }
 
@@ -103,7 +103,7 @@
                                      currentRevision,
                                      [GitRepository nullRevision]];
 
-        XCTAssertEqual(S7ExitCodeNoCommittedS7Config, [command runWithArguments:@[]]);
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
 
         const BOOL isReaddleLibPushed = [self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibRevision];
         XCTAssertFalse(isReaddleLibPushed, @"s7 push must push only rebound (and .s7substate committed) subrepos");
@@ -717,6 +717,30 @@
         XCTAssertTrue([self.env.githubReaddleLibRepo isRevisionAvailableLocally:lastPushedReaddleLibCommit]);
         XCTAssertFalse([self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibCommitNotToBePushed]);
         XCTAssertFalse([self.env.githubRDPDFKitRepo isRevisionAvailableLocally:pdfKitCommitNotToBePushed]);
+    }];
+}
+
+- (void)testPushAllDoesntFailOnBranchesThatDontHaveS7 {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *initialRevision = nil;
+        [repo getCurrentRevision:&initialRevision];
+
+        NSString *masterRevision = commit(repo, @"test", @"test", @"test");
+
+
+        [repo checkoutNewLocalBranch:@"s7"];
+
+        s7init_deactivateHooks();
+
+        [repo add:@[@"."]];
+        [repo commitWithMessage:@"init s7"];
+
+
+        S7PrePushHook *command = [S7PrePushHook new];
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+                                     initialRevision,
+                                     masterRevision];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
     }];
 }
 

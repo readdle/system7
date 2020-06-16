@@ -58,7 +58,7 @@
         [repo createFile:@"file" withContents:nil];
         [repo add:@[@"file"]];
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         const int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
 
@@ -73,13 +73,13 @@
 
         s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         const int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
 
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusAdded) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]]
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusAdded)
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];
@@ -94,12 +94,11 @@
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add ReaddleLib"];
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
 
-        XCTAssertNotNil(status);
-        XCTAssertEqual(0, status.count);
+        XCTAssertEqualObjects(status, @{ @"Dependencies/ReaddleLib" : @(S7StatusUnchanged) });
 
         commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
 
@@ -109,8 +108,8 @@
         XCTAssertEqual(0, exitCode);
 
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusUpdatedAndRebound) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]]
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusUpdatedAndRebound)
         };
         XCTAssertEqualObjects(status, expectedStatus);
 
@@ -119,8 +118,7 @@
         exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
 
-        XCTAssertNotNil(status);
-        XCTAssertEqual(0, status.count);
+        XCTAssertEqualObjects(status, @{ @"Dependencies/ReaddleLib" : @(S7StatusUnchanged) });
     }];
 }
 
@@ -135,13 +133,13 @@
 
         s7remove(@"Dependencies/ReaddleLib");
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
 
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusRemoved) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]]
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusRemoved)
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];
@@ -159,19 +157,19 @@
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add ReaddleLib"];
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        XCTAssertEqualObjects(@{}, status);
+        XCTAssertEqualObjects(status, @{ @"Dependencies/ReaddleLib" : @(S7StatusUnchanged) });
 
         [readdleLibSubrepoGit createFile:@"RDGeometry.h" withContents:@"let π=3.14;"];
 
         exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusHasUncommittedChanges) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]]
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusHasUncommittedChanges)
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];
@@ -186,19 +184,19 @@
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add ReaddleLib"];
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        XCTAssertEqualObjects(@{}, status);
+        XCTAssertEqualObjects(status, @{ @"Dependencies/ReaddleLib" : @(S7StatusUnchanged) });
 
         [readdleLibSubrepoGit createFile:@"RDGeometry.h" withContents:@"let π=3.14;"];
 
         exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusHasUncommittedChanges) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]]
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusHasUncommittedChanges)
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];
@@ -213,19 +211,19 @@
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add ReaddleLib"];
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        XCTAssertEqualObjects(@{}, status);
+        XCTAssertEqualObjects(status, @{ @"Dependencies/ReaddleLib" : @(S7StatusUnchanged) });
 
         commit(readdleLibSubrepoGit, @"RDGeometry.h", @"π^e", @"Pi^e!");
 
         exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusHasNotReboundCommittedChanges) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]]
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusHasNotReboundCommittedChanges)
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];
@@ -240,11 +238,11 @@
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add ReaddleLib"];
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        XCTAssertEqualObjects(@{}, status);
+        XCTAssertEqualObjects(status, @{ @"Dependencies/ReaddleLib" : @(S7StatusUnchanged) });
 
         commit(readdleLibSubrepoGit, @"RDGeometry.h", @"π", @"Pi!");
 
@@ -255,9 +253,8 @@
         exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusUpdatedAndRebound) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]],
-            @(S7StatusHasNotReboundCommittedChanges) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]]
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusUpdatedAndRebound | S7StatusHasNotReboundCommittedChanges),
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];
@@ -276,19 +273,19 @@
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add ReaddleLib"];
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        XCTAssertEqualObjects(@{}, status);
+        XCTAssertEqualObjects(status, @{ @"Dependencies/ReaddleLib" : @(S7StatusUnchanged) });
 
         [readdleLibSubrepoGit checkoutRevision:commit1];
 
         exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(0, exitCode);
         XCTAssertNotNil(status);
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *expectedStatus = @{
-            @(S7StatusDetachedHead) : [NSSet setWithArray:@[ @"Dependencies/ReaddleLib" ]],
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/ReaddleLib" : @(S7StatusDetachedHead)
         };
         XCTAssertEqualObjects(status, expectedStatus);
     }];
@@ -308,15 +305,15 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        [repo resetToRevision:initialRevision];
+        [repo resetHardToRevision:initialRevision];
 
         XCTAssertFalse([NSFileManager.defaultManager contentsEqualAtPath:S7ConfigFileName andPath:S7ControlFileName]);
 
-        NSDictionary<NSNumber * /* S7Status */, NSSet<NSString *> *> *status = nil;
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
         int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
         XCTAssertEqual(S7ExitCodeSubreposNotInSync, exitCode);
+        XCTAssertNil(status);
     }];
 }
-
 
 @end

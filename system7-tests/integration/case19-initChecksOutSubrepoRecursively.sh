@@ -1,7 +1,15 @@
 #!/bin/sh
 
 assert git init -q --bare "$S7_ROOT/github/FormCalc"
-assert git init -q --bare "$S7_ROOT/github/RDPDFKit"
+git clone -q "$S7_ROOT/github/FormCalc" tmp
+pushd tmp
+    touch .gitignore
+    git add .gitignore
+    git commit -m"add .gitignore to make repo non-empty"
+    git push
+popd
+rm -rf tmp
+
 
 assert git clone github/rdpdfkit pastey/rdpdfkit
 

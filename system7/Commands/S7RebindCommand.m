@@ -104,21 +104,32 @@
         }
 
         NSString *branch = nil;
-        if (0 != [gitSubrepo getCurrentBranch:&branch]) {
+        BOOL isEmptyRepo = NO;
+        BOOL isDetachedHEAD = NO;
+        if (0 != [gitSubrepo getCurrentBranch:&branch isDetachedHEAD:&isDetachedHEAD isEmptyRepo:&isEmptyRepo]) {
             return S7ExitCodeGitOperationFailed;
         }
 
         if (nil == branch) {
-            fprintf(stderr,
-                    " ⚠️ '%s' is in 'detached HEAD' state\n"
-                    "     1. you won't be able to push changes in this repo.\n"
-                    "        (at least using s7)\n"
-                    "     2. even if you do push, as the courtesy to fellow developers,\n"
-                    "        s7 won't allow you to rebind subrepo with the detached HEAD\n"
-                    "        as this will cause too much trouble to others\n\n"
-                    "     So, please, checkout a named branch in this subrepo.\n",
-                    [subrepoPath fileSystemRepresentation]);
-            return S7ExitCodeDetachedHEAD;
+            if (isDetachedHEAD) {
+                fprintf(stderr,
+                        " ⚠️ '%s' is in 'detached HEAD' state\n"
+                        "     1. you won't be able to push changes in this repo.\n"
+                        "        (at least using s7)\n"
+                        "     2. even if you do push, as the courtesy to fellow developers,\n"
+                        "        s7 won't allow you to rebind subrepo with the detached HEAD\n"
+                        "        as this will cause too much trouble to others\n\n"
+                        "     So, please, checkout a named branch in this subrepo.\n",
+                        [subrepoPath fileSystemRepresentation]);
+                return S7ExitCodeDetachedHEAD;
+            }
+            else {
+                NSAssert(NO, @"WTF?");
+                fprintf(stderr,
+                        "unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                        subrepoPath.fileSystemRepresentation);
+                return S7ExitCodeGitOperationFailed;
+            }
         }
 
         S7SubrepoDescription *updatedSubrepoDescription = [[S7SubrepoDescription alloc]
