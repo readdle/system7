@@ -369,19 +369,19 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             if (0 != [subrepoGit fetch]) {
                 return S7ExitCodeGitOperationFailed;
             }
-        }
 
-        if (NO == [subrepoGit isRevisionAvailableLocally:subrepoDesc.revision]) {
-            fprintf(stderr,
-                    " revision '%s' does not exist in '%s'\n",
-                    [subrepoDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
-                    [subrepoDesc.path fileSystemRepresentation]);
+            if (NO == [subrepoGit isRevisionAvailableLocally:subrepoDesc.revision]) {
+                fprintf(stderr,
+                        " revision '%s' does not exist in '%s'\n",
+                        [subrepoDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
+                        [subrepoDesc.path fileSystemRepresentation]);
 
-            return S7ExitCodeInvalidSubrepoRevision;
+                return S7ExitCodeInvalidSubrepoRevision;
+            }
         }
 
         BOOL shouldCheckout = NO;
-        if ([subrepoGit doesRemoteBranchExist:subrepoDesc.branch]) {
+        if ([subrepoGit doesBranchExist:[@"origin/" stringByAppendingString:subrepoDesc.branch]]) {
             if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch]) {
                 return S7ExitCodeGitOperationFailed;
             }

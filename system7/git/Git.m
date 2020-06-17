@@ -282,13 +282,13 @@ static NSString *gitExecutablePath = nil;
     return NO;
 }
 
-- (BOOL)doesRemoteBranchExist:(NSString *)branchName {
-    NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
-    NSAssert(NO == [self isBareRepo], @"not implemented for bare repos");
-    NSString *expectedRemoteRefPath = [[self.absolutePath
-                                        stringByAppendingPathComponent:@".git/refs/remotes/origin/"]
-                                        stringByAppendingPathComponent:branchName];
-    return [NSFileManager.defaultManager fileExistsAtPath:expectedRemoteRefPath];
+- (BOOL)doesBranchExist:(NSString *)branchName {
+    NSString *devNull = nil;
+    const int revParseExitStatus = [self runGitCommand:[NSString stringWithFormat:@"rev-parse %@", branchName]
+                                          stdOutOutput:&devNull
+                                          stdErrOutput:&devNull];
+    return 0 == revParseExitStatus;
+
 }
 
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
@@ -436,38 +436,38 @@ static NSString *gitExecutablePath = nil;
 - (BOOL)isRevisionAvailableLocally:(NSString *)revision {
     NSParameterAssert(40 == revision.length);
 
-    // pastey:
-    // this is an optimized version of this command that doesn't spawn real git process.
-    // if we get any trouble with it, we can always return to an old and bullet-proof version,
-    // which is saved (commented) at the bottom of this method
-    //
+//    // pastey:
+//    // this is an optimized version of this command that doesn't spawn real git process.
+//    // if we get any trouble with it, we can always return to an old and bullet-proof version,
+//    // which is saved (commented) at the bottom of this method
+//    //
+//
+//    BOOL isDirectory = NO;
+//    NSString *objectsDirPath = [self.absolutePath stringByAppendingPathComponent:@".git/objects"];
+//    if (NO == [NSFileManager.defaultManager fileExistsAtPath:objectsDirPath isDirectory:&isDirectory]) {
+//        if ([self isBareRepo]) {
+//            objectsDirPath = [self.absolutePath stringByAppendingPathComponent:@"objects"];
+//            if (NO == [NSFileManager.defaultManager fileExistsAtPath:objectsDirPath isDirectory:&isDirectory]) {
+//                NSAssert(NO, @"");
+//                return NO;
+//            }
+//        }
+//    }
+//
+//    if (NO == isDirectory) {
+//        NSAssert(NO, @"");
+//        return NO;
+//    }
+//
+//    NSString *relativeObjectPath = [[revision substringToIndex:2] stringByAppendingPathComponent:[revision substringFromIndex:2]];
+//    NSString *absoluteObjectPath = [objectsDirPath stringByAppendingPathComponent:relativeObjectPath];
+//
+//    return [NSFileManager.defaultManager fileExistsAtPath:absoluteObjectPath];
 
-    BOOL isDirectory = NO;
-    NSString *objectsDirPath = [self.absolutePath stringByAppendingPathComponent:@".git/objects"];
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:objectsDirPath isDirectory:&isDirectory]) {
-        if ([self isBareRepo]) {
-            objectsDirPath = [self.absolutePath stringByAppendingPathComponent:@"objects"];
-            if (NO == [NSFileManager.defaultManager fileExistsAtPath:objectsDirPath isDirectory:&isDirectory]) {
-                NSAssert(NO, @"");
-                return NO;
-            }
-        }
-    }
-
-    if (NO == isDirectory) {
-        NSAssert(NO, @"");
-        return NO;
-    }
-
-    NSString *relativeObjectPath = [[revision substringToIndex:2] stringByAppendingPathComponent:[revision substringFromIndex:2]];
-    NSString *absoluteObjectPath = [objectsDirPath stringByAppendingPathComponent:relativeObjectPath];
-
-    return [NSFileManager.defaultManager fileExistsAtPath:absoluteObjectPath];
-
-//    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"cat-file -e %@", revision]
-//                                  stdOutOutput:NULL
-//                                  stdErrOutput:NULL];
-//    return 0 == exitStatus;
+    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"cat-file -e %@", revision]
+                                  stdOutOutput:NULL
+                                  stdErrOutput:NULL];
+    return 0 == exitStatus;
 }
 
 - (BOOL)isRevisionDetached:(NSString *)revision numberOfOrphanedCommits:(int *)pNumberOfOrphanedCommits {
