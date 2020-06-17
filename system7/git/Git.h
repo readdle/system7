@@ -19,7 +19,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath bare:(BOOL)bare NS_DESIGNATED_INITIALIZER;
 
 + (nullable instancetype)repoAtPath:(NSString *)repoPath;
-+ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url destinationPath:(NSString *)destinationPath exitStatus:(int *)exitStatus;
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                           destinationPath:(NSString *)destinationPath
+                                exitStatus:(int *)exitStatus;
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                           destinationPath:(NSString *)destinationPath
+                                exitStatus:(int *)exitStatus;
+
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(int *)exitStatus;
 
 @property (nonatomic, readonly, strong) NSString *absolutePath;

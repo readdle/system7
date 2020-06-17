@@ -69,10 +69,19 @@ static NSString *gitExecutablePath = nil;
 }
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+destinationPath:(NSString *)destinationPath
+     exitStatus:(int *)exitStatus
+{
+    return [self cloneRepoAtURL:url branch:nil destinationPath:destinationPath exitStatus:exitStatus];
+}
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
-    NSString *command = [NSString stringWithFormat:@"git clone %@ %@", url, destinationPath];
+    NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
+    NSString *command = [NSString stringWithFormat:@"git clone %@ %@ %@", branchOption, url, destinationPath];
 
     *exitStatus = [self executeCommand:command];
 

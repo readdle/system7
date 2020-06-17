@@ -305,6 +305,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             int cloneExitStatus = 0;
             subrepoGit = [GitRepository
                           cloneRepoAtURL:subrepoDesc.url
+                          branch:subrepoDesc.branch
                           destinationPath:subrepoDesc.path
                           exitStatus:&cloneExitStatus];
             if (nil == subrepoGit || 0 != cloneExitStatus) {
