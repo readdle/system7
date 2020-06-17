@@ -380,16 +380,26 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             return S7ExitCodeInvalidSubrepoRevision;
         }
 
-        if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch]) {
-            return S7ExitCodeGitOperationFailed;
+        BOOL shouldCheckout = NO;
+        if ([subrepoGit doesRemoteBranchExist:subrepoDesc.branch]) {
+            if (0 != [subrepoGit checkoutRemoteTrackingBranch:subrepoDesc.branch]) {
+                return S7ExitCodeGitOperationFailed;
+            }
+
+            NSString *currentBranchHeadRevision = nil;
+            if (0 != [subrepoGit getCurrentRevision:&currentBranchHeadRevision]) {
+                return S7ExitCodeGitOperationFailed;
+            }
+
+            if (NO == [subrepoDesc.revision isEqualToString:currentBranchHeadRevision]) {
+                shouldCheckout = YES;
+            }
+        }
+        else {
+            shouldCheckout = YES;
         }
 
-        NSString *currentBranchHeadRevision = nil;
-        if (0 != [subrepoGit getCurrentRevision:&currentBranchHeadRevision]) {
-            return S7ExitCodeGitOperationFailed;
-        }
-
-        if (NO == [subrepoDesc.revision isEqualToString:currentBranchHeadRevision]) {
+        if (shouldCheckout) {
             fprintf(stdout,
                     " checkout '%s' to %s\n",
                     subrepoDesc.path.fileSystemRepresentation,
@@ -397,7 +407,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
             // `git checkout -B branch revision`
             // this also makes checkout recursive if subrepo is a S7 repo itself
-            [subrepoGit forceCheckoutExistingLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision];
+            if (0 != [subrepoGit forceCheckoutLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision]) {
+                // TODO: raise flag and complain
+            }
         }
 
         [self warnAboutDetachingIfNeeded:currentRevision subrepoDesc:subrepoDesc subrepoGit:subrepoGit];

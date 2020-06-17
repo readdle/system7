@@ -43,8 +43,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)checkoutExistingLocalBranch:(NSString *)branchName;
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName;
 - (int)deleteRemoteBranch:(NSString *)branchName;
-- (int)forceCheckoutExistingLocalBranch:(NSString *)branchName revision:(NSString *)revisions;
+- (int)forceCheckoutLocalBranch:(NSString *)branchName revision:(NSString *)revisions;
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName;
+- (BOOL)doesRemoteBranchExist:(NSString *)branchName;
 - (int)getCurrentBranch:(NSString * _Nullable __autoreleasing * _Nonnull)ppBranch
          isDetachedHEAD:(BOOL *)isDetachedHEAD
             isEmptyRepo:(BOOL *)isEmptyRepo;

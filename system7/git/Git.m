@@ -282,6 +282,15 @@ static NSString *gitExecutablePath = nil;
     return NO;
 }
 
+- (BOOL)doesRemoteBranchExist:(NSString *)branchName {
+    NSAssert(NO == [branchName hasPrefix:@"origin/"], @"expecting raw branch name without remote name");
+    NSAssert(NO == [self isBareRepo], @"not implemented for bare repos");
+    NSString *expectedRemoteRefPath = [[self.absolutePath
+                                        stringByAppendingPathComponent:@".git/refs/remotes/origin/"]
+                                        stringByAppendingPathComponent:branchName];
+    return [NSFileManager.defaultManager fileExistsAtPath:expectedRemoteRefPath];
+}
+
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
     // check if we are tracking this branch already
     if ([self isBranchTrackingRemoteBranch:branchName]) {
@@ -312,7 +321,7 @@ static NSString *gitExecutablePath = nil;
                   stdErrOutput:NULL];
 }
 
-- (int)forceCheckoutExistingLocalBranch:(NSString *)branchName revision:(NSString *)revisions {
+- (int)forceCheckoutLocalBranch:(NSString *)branchName revision:(NSString *)revisions {
     // pastey: theoretically, one can be concerned with "injection" here
     // I think it's not a problem for two reasons:
     //  1. s7 is purely a developer tool, so if someone wants to do some harm and they have access to our code,
