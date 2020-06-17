@@ -77,9 +77,6 @@ pushd Dependencies/ReaddleLib > /dev/null
 popd > /dev/null
 
 
-assert false
-
-
 pushd "$S7_ROOT/github/ReaddleLib" > /dev/null
   echo
   echo "branches at remote (2):"
@@ -105,7 +102,7 @@ pushd "$S7_ROOT/github/ReaddleLib" > /dev/null
 # then it was resurrected locally by checkout of an old revision where it existed
 # user made some real changes at 'master' branch and ment to push just it.
   git branch --list | grep "test"
-  assert test 0 -ne $?
+  assert test 0 -eq $?
   echo
   echo
 popd > /dev/null
