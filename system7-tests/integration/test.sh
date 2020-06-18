@@ -8,6 +8,8 @@ export S7_TESTS_DIR=$ORIGINAL_PWD
 #set -x
 
 ANY_TEST_FAILED=0
+
+VERBOSE=0
 LEAVE_TEST_REPOS_AFTER_FAIL=0
 if [ ! -z $1 ]
 then
@@ -15,6 +17,10 @@ then
     then
         shift
         LEAVE_TEST_REPOS_AFTER_FAIL=1
+    elif [ \( "$1" = "-v" \) -o \( "$1" = "--verbose" \) ]
+    then
+        shift
+        VERBOSE=1
     fi
 fi
 
@@ -89,7 +95,12 @@ do
     echo "🎬 running $CASE..."
     echo
 
-    sh "$ORIGINAL_PWD/$CASE"
+    if [ $VERBOSE -eq 1 ]
+    then
+        sh -x "$ORIGINAL_PWD/$CASE"
+    else
+        sh "$ORIGINAL_PWD/$CASE"
+    fi
 
     echo
     if [ -f "${S7_ROOT}/FAIL" ]
