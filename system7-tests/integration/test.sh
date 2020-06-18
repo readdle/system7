@@ -115,6 +115,8 @@ then
     cat "${ORIGINAL_PWD}/failed-cases" | sed 's/^/    /'
     echo
     echo "[❌ TESTS FAILED]"
+
+    exit 1
 else
     echo "[✅ SUCCESS]"
 fi
