@@ -9,7 +9,7 @@ function s7status {
     echo
     echo "status $1:"
     echo "#"
-    assert s7 stat -n | tee $ACTUAL
+    assert s7 stat -n | tee "$ACTUAL"
     echo "#"
 
     if [ ! -f "$ETALON" ]
