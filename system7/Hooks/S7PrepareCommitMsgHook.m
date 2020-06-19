@@ -48,7 +48,7 @@
         return S7ExitCodeNotGitRepository;
     }
 
-    if (NO == isCwdAnS7RepoRoot()) {
+    if (NO == isCurrentDirectoryS7RepoRoot()) {
         fprintf(stdout, " doing nothing, no s7 at this branch.\n");
         return 0;
     }

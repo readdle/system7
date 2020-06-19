@@ -20,7 +20,7 @@ int addLineToGitIgnore(NSString *lineToAppend);
 
 BOOL isExactlyOneBitSetInNumber(uint32_t bits);
 
-BOOL isCwdAnS7RepoRoot(void);
+BOOL isCurrentDirectoryS7RepoRoot(void);
 int s7RepoPreconditionCheck(void);
 int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
 
