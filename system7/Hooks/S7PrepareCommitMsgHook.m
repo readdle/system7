@@ -42,12 +42,15 @@
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
-    S7_REPO_PRECONDITION_CHECK();
-
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
         fprintf(stderr, "s7: hook – ran in not git repo root!\n");
         return S7ExitCodeNotGitRepository;
+    }
+
+    if (NO == isCurrentDirectoryS7RepoRoot()) {
+        fprintf(stdout, " doing nothing, no s7 at this branch.\n");
+        return 0;
     }
 
     const char *GIT_REFLOG_ACTION = getenv("GIT_REFLOG_ACTION");

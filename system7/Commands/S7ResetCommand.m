@@ -43,11 +43,7 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    BOOL isDirectory = NO;
-    const BOOL configFileExists = [[NSFileManager defaultManager] fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory];
-    if (NO == configFileExists || isDirectory) {
-        return S7ExitCodeNotS7Repo;
-    }
+    S7_REPO_PRECONDITION_CHECK();
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {

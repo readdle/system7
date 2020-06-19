@@ -110,10 +110,13 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     return 0;
 }
 
-int s7RepoPreconditionCheck(void) {
+BOOL isCurrentDirectoryS7RepoRoot(void) {
     BOOL isDirectory = NO;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory]
-        || isDirectory)
+    return [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory] && (NO == isDirectory);
+}
+
+int s7RepoPreconditionCheck(void) {
+    if (NO == isCurrentDirectoryS7RepoRoot())
     {
         fprintf(stderr,
                 "abort: not s7 repo root\n");
