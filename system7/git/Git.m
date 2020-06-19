@@ -69,8 +69,8 @@ static NSString *gitExecutablePath = nil;
 }
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
-destinationPath:(NSString *)destinationPath
-     exitStatus:(int *)exitStatus
+                           destinationPath:(NSString *)destinationPath
+                                exitStatus:(int *)exitStatus
 {
     return [self cloneRepoAtURL:url branch:nil destinationPath:destinationPath exitStatus:exitStatus];
 }
