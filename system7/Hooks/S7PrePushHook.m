@@ -78,8 +78,6 @@
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
-    S7_REPO_PRECONDITION_CHECK();
-
     GitRepository *repo = [[GitRepository alloc] initWithRepoPath:@"."];
     if (nil == repo) {
         return S7ExitCodeNotGitRepository;
@@ -176,14 +174,19 @@
               remoteRef:(NSString *)remoteRef
              remoteSha1:(NSString *)latestRemoteRevisionAtThisBranch
 {
+    fprintf(stdout, " processing '%s' -> '%s' push\n",
+            [localRef cStringUsingEncoding:NSUTF8StringEncoding],
+            [remoteRef cStringUsingEncoding:NSUTF8StringEncoding]);
+
     if ([localSha1ToPush isEqualToString:[GitRepository nullRevision]]) {
-        // ignore remote branch delete
-        return 0;
+        fprintf(stdout, " remote branch delete. Nothing to do here.\n");
+        return S7ExitCodeSuccess;
     }
 
     if ([localRef hasPrefix:@"refs/tags/"]) {
         // ignore tag push. We won't do anything anyways, but why even try, if we can skip it right away
-        return 0;
+        fprintf(stdout, " tag push. Nothing to do here.\n");
+        return S7ExitCodeSuccess;
     }
 
     int gitExitStatus = 0;
@@ -191,10 +194,11 @@
                                                    atRevision:localSha1ToPush
                                                    exitStatus:&gitExitStatus];
     if (nil == configContentsAtRevisionToPush || 0 != gitExitStatus) {
-        // there's .s7substate in the commit we are trying to push,
+        // there's no .s7substate in the commit we are trying to push,
         // this means there's no s7 at this branch, so we shouldn't do
         // anything here
         //
+        fprintf(stdout, " not s7 branch. Nothing to do here.\n");
         return S7ExitCodeSuccess;
     }
 
@@ -245,7 +249,7 @@
         }
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

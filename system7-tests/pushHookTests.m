@@ -33,7 +33,7 @@
 
 - (void)testOnNotS7Repo {
     S7PrePushHook *command = [S7PrePushHook new];
-    XCTAssertEqual(S7ExitCodeNotS7Repo, [command runWithArguments:@[]]);
+    XCTAssertEqual(S7ExitCodeNotGitRepository, [command runWithArguments:@[]]);
 }
 
 - (void)testOnUpToDateRepo {
@@ -65,7 +65,7 @@
                                      revision,
                                      [GitRepository nullRevision]];
 
-        XCTAssertEqual(S7ExitCodeNotS7Repo, [command runWithArguments:@[]]);
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
     }];
 }
 
