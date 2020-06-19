@@ -8,7 +8,7 @@ assert s7 init
 assert git add .
 assert git commit -m "\"init s7\""
 
-assert s7 add --stage Dependencies/ReaddleLib "$S7_ROOT/github/ReaddleLib"
+assert s7 add --stage Dependencies/ReaddleLib '"$S7_ROOT/github/ReaddleLib"'
 assert git commit -m '"add ReaddleLib subrepo"'
 
 assert test -d Dependencies/ReaddleLib
@@ -37,7 +37,7 @@ assert git push
 
 cd "$S7_ROOT/nik"
 
-assert git clone "$S7_ROOT/github/rd2"
+assert git clone '"$S7_ROOT/github/rd2"'
 
 cd rd2
 

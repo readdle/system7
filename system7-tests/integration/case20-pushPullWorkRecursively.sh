@@ -1,6 +1,6 @@
 #!/bin/sh
 
-assert git init -q --bare "$S7_ROOT/github/FormCalc"
+assert git init -q --bare '"$S7_ROOT/github/FormCalc"'
 git clone -q "$S7_ROOT/github/FormCalc" tmp
 pushd tmp
     touch .gitignore
@@ -19,7 +19,7 @@ assert s7 init
 assert git add .
 assert git commit -m "\"init s7\""
 
-assert s7 add --stage Dependencies/FormCalc "$S7_ROOT/github/FormCalc"
+assert s7 add --stage Dependencies/FormCalc '"$S7_ROOT/github/FormCalc"'
 assert git commit -m '"add FormCalc subrepo"'
 
 pushd Dependencies/FormCalc > /dev/null
@@ -48,7 +48,7 @@ assert s7 init
 assert git add .
 assert git commit -m "\"init s7\""
 
-assert s7 add --stage Dependencies/RDPDFKit "$S7_ROOT/github/RDPDFKit"
+assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"'
 
 assert test -d Dependencies/RDPDFKit/Dependencies/FormCalc
 assert test AST = `cat Dependencies/RDPDFKit/Dependencies/FormCalc/Parser.c`

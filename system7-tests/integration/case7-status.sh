@@ -47,7 +47,7 @@ assert git commit -m "\"init s7\""
 
 s7status initial
 
-assert s7 add --stage Dependencies/ReaddleLib "$S7_ROOT/github/ReaddleLib"
+assert s7 add --stage Dependencies/ReaddleLib '"$S7_ROOT/github/ReaddleLib"'
 
 s7status after_add
 

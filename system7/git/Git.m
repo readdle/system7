@@ -81,7 +81,7 @@ destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
-    NSString *command = [NSString stringWithFormat:@"git clone %@ %@ %@", branchOption, url, destinationPath];
+    NSString *command = [NSString stringWithFormat:@"git clone %@ \"%@\" \"%@\"", branchOption, url, destinationPath];
 
     *exitStatus = [self executeCommand:command];
 

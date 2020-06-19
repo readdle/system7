@@ -2,7 +2,7 @@
 
 cd "$S7_ROOT/nik"
 
-assert git clone "$S7_ROOT/github/rd2"
+assert git clone '"$S7_ROOT/github/rd2"'
 
 cd rd2
 
@@ -22,7 +22,7 @@ assert s7 init
 assert git add .
 assert git commit -m "\"init s7\""
 
-assert s7 add --stage Dependencies/ReaddleLib "$S7_ROOT/github/ReaddleLib"
+assert s7 add --stage Dependencies/ReaddleLib '"$S7_ROOT/github/ReaddleLib"'
 
 pushd Dependencies/ReaddleLib > /dev/null
   echo sqrt > RDMath.h
@@ -46,7 +46,7 @@ assert s7 init
 assert git add .
 assert git commit -m "\"init s7\""
 
-assert s7 add --stage Dependencies/RDPDFKit "$S7_ROOT/github/RDPDFKit"
+assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"'
 
 pushd Dependencies/RDPDFKit > /dev/null
   echo "parsing" > RDPDFAnnotation.h
