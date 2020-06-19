@@ -27,7 +27,7 @@ assert git push
 
 cd "$S7_ROOT/nik"
 
-assert git clone "$S7_ROOT/github/rd2"
+assert git clone '"$S7_ROOT/github/rd2"'
 
 cd rd2
 
