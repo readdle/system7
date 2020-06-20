@@ -1,12 +1,16 @@
 #!/bin/sh
 
-set -x
-
 which git > /dev/null
 if [ 0 -ne $? ]
 then
     echo "error: failed to locate 'git' command."
     exit 1
+fi
+
+FORCE="no"
+if [ \( "$1" = "-f" \) -o \( "$1" = "--force" \) ]
+then
+    FORCE="yes"
 fi
 
 SYSTEM7_DIR="${HOME}/.system7"
@@ -32,7 +36,7 @@ function update() {
     pushd "${SYSTEM7_DIR}" > /dev/null
         PREVIOUS_REVISION=$(git rev-parse HEAD)
 
-        git checkout dev && git pull
+        git checkout master && git pull
 
         if [ 0 -ne $? ]
         then
@@ -41,12 +45,6 @@ function update() {
         fi
 
         CURRENT_REVISION=$(git rev-parse HEAD)
-
-        FORCE="no"
-        if [ ! -f "${HOME}/bin/s7" ]
-        then
-            FORCE="yes"
-        fi
 
         if [ \( "no" = $FORCE \) -a \( "$CURRENT_REVISION" = "$PREVIOUS_REVISION" \) ]
         then
@@ -68,6 +66,7 @@ then
     echo "failed to locate s7 at your machine. Will install it"
 
     SHOULD_UPDATE="yes"
+    FORCE="yes"
 else
     LAST_CHECK_DATE=$(cat "${LAST_CHECK_DATE_FILE_PATH}" 2>/dev/null)
     if [ "$TODAY" != "$LAST_CHECK_DATE" ]
@@ -78,9 +77,9 @@ else
     fi
 fi
 
-if [ $SHOULD_UPDATE = "yes" ]
+if [ \( "$SHOULD_UPDATE" = "yes" \) -o \( "$FORCE" = "yes" \) ]
 then
     update
 
-    echo $TODAY > "${LAST_CHECK_DATE_FILE_PATH}"
+    echo "$TODAY" > "${LAST_CHECK_DATE_FILE_PATH}"
 fi
