@@ -48,7 +48,7 @@ function update() {
             FORCE="yes"
         fi
 
-        if [ ( "no" = $FORCE ) -a ( "$CURRENT_REVISION" = "$PREVIOUS_REVISION" ) ]
+        if [ \( "no" = $FORCE \) -a \( "$CURRENT_REVISION" = "$PREVIOUS_REVISION" \) ]
         then
             # avoid heavy buildme.sh if 'git pull' didn't change the revision
             # this script is run during rd2 build, so better for it to be as quick as possible
