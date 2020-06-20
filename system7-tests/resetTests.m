@@ -193,6 +193,68 @@
     }];
 }
 
+- (void)testResetUntrackedFiles {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *subrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(subrepoGit, @"RDGeometry.h", @"tabula rasa", @"add geometry utils");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"init ReaddeLib"];
+
+        [subrepoGit createFile:@"experiment.c" withContents:@"wild experiment"];
+
+        NSString *untrackedFolderPath = [subrepoGit.absolutePath stringByAppendingPathComponent:@"a"];
+        NSString *untrackedSubFolderPath = [untrackedFolderPath stringByAppendingPathComponent:@"a"];
+        NSError *error = nil;
+        [NSFileManager.defaultManager
+         createDirectoryAtPath:untrackedSubFolderPath
+         withIntermediateDirectories:YES
+         attributes:nil
+         error:&error];
+        NSAssert(nil == error, @"");
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib/experiment.c"]);
+
+        S7ResetCommand *command = [S7ResetCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib/experiment.c"]);
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:untrackedFolderPath]);
+    }];
+}
+
+- (void)testResetBothUntrackedFilesAndUncommittedChanges {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *subrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(subrepoGit, @"RDGeometry.h", @"tabula rasa", @"add geometry utils");
+
+        s7rebind_with_stage();
+
+        [repo commitWithMessage:@"init ReaddeLib"];
+
+        [subrepoGit createFile:@"RDGeometry.h" withContents:@"sqrt"];
+        [subrepoGit createFile:@"experiment.c" withContents:@"wild experiment"];
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib/experiment.c"]);
+
+        S7ResetCommand *command = [S7ResetCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib/experiment.c"]);
+
+        NSString *RDGeometryContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/ReaddleLib/RDGeometry.h"
+                                                                       encoding:NSUTF8StringEncoding
+                                                                          error:nil];
+        XCTAssertEqualObjects(RDGeometryContents, @"tabula rasa");
+    }];
+}
+
+
 - (void)testResetCommittedLocalChanges {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init_deactivateHooks();

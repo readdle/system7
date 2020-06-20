@@ -226,17 +226,17 @@
 
     for (S7SubrepoDescription *subrepoDesc in subreposToPush) {
         fprintf(stdout,
-                " checking '%s' %s\n",
-                subrepoDesc.path.fileSystemRepresentation,
-                subrepoDesc.humanReadableRevisionAndBranchState.fileSystemRepresentation);
+                " checking '%s' ... ",
+                subrepoDesc.path.fileSystemRepresentation);
 
         GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoDesc.path];
         if (nil == subrepoGit) {
-            fprintf(stderr, "abort: '%s' is not a git repo\n", subrepoDesc.path.fileSystemRepresentation);
+            fprintf(stderr, "\nabort: '%s' is not a git repo\n", subrepoDesc.path.fileSystemRepresentation);
             return S7ExitCodeSubrepoIsNotGitRepository;
         }
 
         if ([subrepoGit isRevision:subrepoDesc.revision knownAtRemoteBranch:subrepoDesc.branch]) {
+            fprintf(stdout, " already pushed.\n");
             continue;
         }
 
@@ -247,6 +247,8 @@
         if (0 != gitExitStatus) {
             return gitExitStatus;
         }
+
+        fprintf(stdout, " success\n");
     }
 
     return S7ExitCodeSuccess;

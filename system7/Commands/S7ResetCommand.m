@@ -120,7 +120,9 @@
 
     if (resetAll && subreposToResetPaths.count > 0) {
         fprintf(stderr,
-                "please specify EITHER '--all' OR PATH...\n");
+                "\033[31m"
+                "please specify EITHER '--all' OR PATH...\n\n"
+                "\033[0m");
         [[self class] printCommandHelp];
         return S7ExitCodeInvalidArgument;
     }
@@ -136,7 +138,9 @@
 
     if (0 == subreposToResetPaths.count) {
         fprintf(stderr,
-                "please specify subrepos to reset or '--all'\n");
+                "\033[31m"
+                "please specify subrepos to reset or '--all'. Read why below.\n\n"
+                "\033[0m");
         [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }

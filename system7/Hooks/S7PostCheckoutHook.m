@@ -191,7 +191,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     if (backupFile) {
         fprintf(backupFile,
                 "%s %s detached commit %s\n",
-                [[NSDate.now description] cStringUsingEncoding:NSUTF8StringEncoding],
+                [[NSDate.date description] cStringUsingEncoding:NSUTF8StringEncoding],
                 subrepoDesc.path.fileSystemRepresentation,
                 [currentRevision cStringUsingEncoding:NSUTF8StringEncoding]);
 
