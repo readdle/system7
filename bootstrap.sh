@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -xg
+set -x
 
 #
 # for future desperado programmers:
