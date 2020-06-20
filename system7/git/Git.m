@@ -69,8 +69,8 @@ static NSString *gitExecutablePath = nil;
 }
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
-destinationPath:(NSString *)destinationPath
-     exitStatus:(int *)exitStatus
+                           destinationPath:(NSString *)destinationPath
+                                exitStatus:(int *)exitStatus
 {
     return [self cloneRepoAtURL:url branch:nil destinationPath:destinationPath exitStatus:exitStatus];
 }
@@ -798,17 +798,12 @@ destinationPath:(NSString *)destinationPath
 #pragma mark - reset -
 
 - (int)resetLocalChanges {
-    // from mercurial subrepos.py:
-    //  "first reset the index to unmark new files for commit, because
-    //   reset --hard will otherwise throw away files added for commit,
-    //   not just unmark them"
-
-    const int exitStatus = [self runGitCommand:@"reset HEAD" stdOutOutput:NULL stdErrOutput:NULL];
+    const int exitStatus = [self runGitCommand:@"reset --hard HEAD" stdOutOutput:NULL stdErrOutput:NULL];
     if (0 != exitStatus) {
         return exitStatus;
     }
 
-    return [self runGitCommand:@"reset --hard HEAD" stdOutOutput:NULL stdErrOutput:NULL];
+    return [self runGitCommand:@"clean -fd" stdOutOutput:NULL stdErrOutput:NULL];
 }
 
 - (int)resetHardToRevision:(NSString *)revision {
