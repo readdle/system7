@@ -243,7 +243,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 }
             }
 
-            fprintf(stdout, "removing subrepo '%s'", subrepoPath.fileSystemRepresentation);
+            fprintf(stdout, "removing subrepo '%s'\n", subrepoPath.fileSystemRepresentation);
 
             NSError *error = nil;
             if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoPath error:&error]) {
