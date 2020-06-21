@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
-
 which xcodebuild > /dev/null
 if [ 0 -ne $? ]
 then
