@@ -163,10 +163,10 @@
     }
 
     if (configFileExisted) {
-        fprintf(stdout, "reinitialized s7 repo\n");
+        fprintf(stdout, "reinitialized s7 repo in '%s'\n", repo.absolutePath.fileSystemRepresentation);
     }
     else {
-        fprintf(stdout, "initialized s7 repo\n");
+        fprintf(stdout, "initialized s7 repo in '%s'\n", repo.absolutePath.fileSystemRepresentation);
     }
 
     return S7ExitCodeSuccess;
