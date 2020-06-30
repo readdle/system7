@@ -50,7 +50,7 @@
 
     const BOOL testFolderRootCreated = [[NSFileManager defaultManager]
                                         createDirectoryAtPath:self.root
-                                        withIntermediateDirectories:NO
+                                        withIntermediateDirectories:YES
                                         attributes:nil
                                         error:&error];
     if (NO == testFolderRootCreated) {
@@ -60,7 +60,7 @@
 
     if (NO == [NSFileManager.defaultManager
                createDirectoryAtPath:[self.root stringByAppendingPathComponent:@"github"]
-               withIntermediateDirectories:NO
+               withIntermediateDirectories:YES
                attributes:nil
                error:nil])
     {
