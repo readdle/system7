@@ -30,8 +30,7 @@
 }
 
 + (NSString *)hookFileContents {
-    return @"#!/bin/sh\n"
-            "/usr/local/bin/s7 prepare-commit-msg-hook \"$@\"";
+    return hookFileContentsForHookNamed([self gitHookName]);
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

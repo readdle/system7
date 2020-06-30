@@ -21,8 +21,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 }
 
 + (NSString *)hookFileContents {
-    return @"#!/bin/sh\n"
-            "/usr/local/bin/s7 post-checkout-hook \"$@\"";
+    return hookFileContentsForHookNamed([self gitHookName]);
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

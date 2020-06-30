@@ -10,6 +10,8 @@
 		BE0173E124864DF300BA4B2F /* resetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E024864DF300BA4B2F /* resetTests.m */; };
 		BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
 		BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
+		BE04DFB824AB70D7004DFF55 /* S7Hook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE04DFB724AB70D7004DFF55 /* S7Hook.m */; };
+		BE04DFB924AB70D7004DFF55 /* S7Hook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE04DFB724AB70D7004DFF55 /* S7Hook.m */; };
 		BE1079BC2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BB2466C516002A2A45 /* S7SubrepoDescriptionConflict.m */; };
 		BE1079BD2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BB2466C516002A2A45 /* S7SubrepoDescriptionConflict.m */; };
 		BE1079C02466C557002A2A45 /* S7SubrepoDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = BE1079BF2466C557002A2A45 /* S7SubrepoDescription.m */; };
@@ -84,6 +86,7 @@
 		BE0173E024864DF300BA4B2F /* resetTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = resetTests.m; sourceTree = "<group>"; };
 		BE0173E224864EBF00BA4B2F /* S7ResetCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7ResetCommand.h; sourceTree = "<group>"; };
 		BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7ResetCommand.m; sourceTree = "<group>"; };
+		BE04DFB724AB70D7004DFF55 /* S7Hook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7Hook.m; sourceTree = "<group>"; };
 		BE1079BA2466C516002A2A45 /* S7SubrepoDescriptionConflict.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7SubrepoDescriptionConflict.h; sourceTree = "<group>"; };
 		BE1079BB2466C516002A2A45 /* S7SubrepoDescriptionConflict.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7SubrepoDescriptionConflict.m; sourceTree = "<group>"; };
 		BE1079BE2466C557002A2A45 /* S7SubrepoDescription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7SubrepoDescription.h; sourceTree = "<group>"; };
@@ -192,6 +195,7 @@
 			isa = PBXGroup;
 			children = (
 				BE50AA02246C2CEA00DBB618 /* S7Hook.h */,
+				BE04DFB724AB70D7004DFF55 /* S7Hook.m */,
 				BE50A9FF246C2CB800DBB618 /* S7PrePushHook.h */,
 				BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */,
 				BED36BDE246D8A1700D6EB1C /* S7PostCheckoutHook.h */,
@@ -415,6 +419,7 @@
 				BE3A29EF2460712F004A2B31 /* S7InitCommand.m in Sources */,
 				BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
 				BED36BEA246E904E00D6EB1C /* S7PostMergeHook.m in Sources */,
+				BE04DFB824AB70D7004DFF55 /* S7Hook.m in Sources */,
 				BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
@@ -442,6 +447,7 @@
 				BE172C4924642C3B00B57557 /* mergeTests.m in Sources */,
 				BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BE3A29F424607419004A2B31 /* addTests.m in Sources */,
+				BE04DFB924AB70D7004DFF55 /* S7Hook.m in Sources */,
 				BE0173E124864DF300BA4B2F /* resetTests.m in Sources */,
 				BE5B752F248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
