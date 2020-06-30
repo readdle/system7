@@ -22,7 +22,7 @@
 @implementation checkoutTests
 
 - (void)setUp {
-    self.env = [TestReposEnvironment new];
+    self.env = [[TestReposEnvironment alloc] initWithTestCaseName:self.className];
 }
 
 - (void)tearDown {

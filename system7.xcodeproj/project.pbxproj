@@ -117,6 +117,7 @@
 		BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7PrePushHook.m; sourceTree = "<group>"; };
 		BE50A9FF246C2CB800DBB618 /* S7PrePushHook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = S7PrePushHook.h; sourceTree = "<group>"; };
 		BE50AA02246C2CEA00DBB618 /* S7Hook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Hook.h; sourceTree = "<group>"; };
+		BE55A2F024AB803300AA735F /* system7-tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "system7-tests.xctestplan"; sourceTree = "<group>"; };
 		BE5B752C248947AD008E7378 /* S7PrepareCommitMsgHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PrepareCommitMsgHook.h; sourceTree = "<group>"; };
 		BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PrepareCommitMsgHook.m; sourceTree = "<group>"; };
 		BE8218742452BA7300E878A8 /* s7 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = s7; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -209,6 +210,7 @@
 		BE82186B2452BA7300E878A8 = {
 			isa = PBXGroup;
 			children = (
+				BE55A2F024AB803300AA735F /* system7-tests.xctestplan */,
 				BE8218762452BA7300E878A8 /* system7 */,
 				BE8218872452C1DE00E878A8 /* system7-tests */,
 				BE8218752452BA7300E878A8 /* Products */,
