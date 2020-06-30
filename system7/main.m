@@ -223,6 +223,20 @@ int helpCommand(NSArray<NSString *> *arguments) {
 }
 
 void upgradeHooksToUsrLocalBin() {
+#ifdef DEBUG
+    NSDateComponents *maximumMigrationDateComponents = [NSDateComponents new];
+    maximumMigrationDateComponents.year = 2020;
+    maximumMigrationDateComponents.month = 8;
+
+    NSDateComponents *todayDateComponents = [[NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian] components:(NSCalendarUnitYear | NSCalendarUnitMonth) fromDate:[NSDate date]];
+
+    if (todayDateComponents.year >= maximumMigrationDateComponents.year &&
+        todayDateComponents.month >= maximumMigrationDateComponents.month)
+    {
+        NSCAssert(NO, @"time to delete this function. If a person haven't used the repo for more than a month, then they will have to migrate it manually. I think month should be enough for everyone in our team.");
+    }
+#endif
+
     if (NO == isCurrentDirectoryS7RepoRoot()) {
         return;
     }
