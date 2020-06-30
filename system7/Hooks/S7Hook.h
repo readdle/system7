@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+NSString *hookFileContentsForHookNamed(NSString * hookName);
+
 NS_ASSUME_NONNULL_END
 
 #endif /* S7Hook_h */
