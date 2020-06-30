@@ -223,7 +223,7 @@ int helpCommand(NSArray<NSString *> *arguments) {
 }
 
 void upgradeHooksToUsrLocalBin() {
-    if (NO == isCwdAnS7RepoRoot()) {
+    if (NO == isCurrentDirectoryS7RepoRoot()) {
         return;
     }
 
