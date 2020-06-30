@@ -30,7 +30,7 @@
 @implementation mergeTests
 
 - (void)setUp {
-    self.env = [TestReposEnvironment new];
+    self.env = [[TestReposEnvironment alloc] initWithTestCaseName:self.className];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init_deactivateHooks();
