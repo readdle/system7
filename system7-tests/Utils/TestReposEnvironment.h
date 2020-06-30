@@ -14,6 +14,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface TestReposEnvironment : NSObject
 
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+
+- (instancetype)initWithTestCaseName:(NSString *)testCaseName;
+
 @property (nonatomic, readonly, strong) NSString *root;
 
 @property (nonatomic, readonly, strong) GitRepository *githubRd2Repo;

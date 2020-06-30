@@ -352,6 +352,26 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             return S7ExitCodeGitOperationFailed;
         }
 
+        if (clean && [NSFileManager.defaultManager fileExistsAtPath:[subrepoDesc.path stringByAppendingPathComponent:S7ConfigFileName]]) {
+            // if subrepo is an s7 repo itself, then reset it's subrepos first
+            // as otherwise checkout would refuse to reset sub-subrepos' content
+            //
+            S7Config *subConfigToResetTo = nil;
+            getConfig(subrepoGit, subrepoDesc.revision, &subConfigToResetTo);
+
+            const int checkoutExitStatus = executeInDirectory(subrepoDesc.path, ^int{
+                return [S7PostCheckoutHook
+                        checkoutSubreposForRepo:subrepoGit
+                        fromConfig:[S7Config emptyConfig]
+                        toConfig:subConfigToResetTo
+                        clean:YES];
+            });
+
+            if (0 != checkoutExitStatus) {
+                return checkoutExitStatus;
+            }
+        }
+
         S7SubrepoDescription *currentSubrepoDesc = [[S7SubrepoDescription alloc]
                                                     initWithPath:subrepoDesc.path
                                                     url:subrepoDesc.url
