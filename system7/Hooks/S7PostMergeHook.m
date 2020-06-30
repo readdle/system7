@@ -18,7 +18,7 @@
 
 + (NSString *)hookFileContents {
     return @"#!/bin/sh\n"
-            "s7 post-merge-hook \"$@\"";
+            "/usr/local/bin/s7 post-merge-hook \"$@\"";
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

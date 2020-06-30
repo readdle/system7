@@ -22,7 +22,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
 + (NSString *)hookFileContents {
     return @"#!/bin/sh\n"
-            "s7 post-checkout-hook \"$@\"";
+            "/usr/local/bin/s7 post-checkout-hook \"$@\"";
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
