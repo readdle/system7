@@ -222,6 +222,28 @@ int helpCommand(NSArray<NSString *> *arguments) {
     }
 }
 
+void upgradeHooksToUsrLocalBin() {
+    if (NO == isCwdAnS7RepoRoot()) {
+        return;
+    }
+
+    NSString *anyHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
+    if (nil == anyHookContents || [anyHookContents containsString:@"/usr/local/bin/s7"]) {
+        return;
+    }
+
+    S7InitCommand *initCommand = [S7InitCommand new];
+    [initCommand runWithArguments:@[ @"--force" ]];
+
+    S7Config *mainRepoConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+    for (NSString *subrepoPath in mainRepoConfig.subrepoPathsSet) {
+        executeInDirectory(subrepoPath, ^int {
+            upgradeHooksToUsrLocalBin();
+            return 0;
+        });
+    }
+}
+
 int main(int argc, const char * argv[]) {
     if (argc < 2) {
         printHelp();
@@ -245,6 +267,10 @@ int main(int argc, const char * argv[]) {
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
         fprintf(stderr, "s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
+    }
+
+    if (NO == [commandName isEqualToString:@"help"] && NO == [commandName isEqualToString:@"init"]) {
+        upgradeHooksToUsrLocalBin();
     }
 
     if ([commandName hasSuffix:@"-hook"]) {

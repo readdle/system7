@@ -31,7 +31,7 @@
 
 + (NSString *)hookFileContents {
     return @"#!/bin/sh\n"
-            "s7 prepare-commit-msg-hook \"$@\"";
+            "/usr/local/bin/s7 prepare-commit-msg-hook \"$@\"";
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

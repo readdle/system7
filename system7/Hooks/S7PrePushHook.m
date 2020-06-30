@@ -58,7 +58,7 @@
 
 + (NSString *)hookFileContents {
     return @"#!/bin/sh\n"
-            "s7 pre-push-hook \"$@\" <&0";
+            "/usr/local/bin/s7 pre-push-hook \"$@\" <&0";
 }
 
 - (NSString *)stdinContents {

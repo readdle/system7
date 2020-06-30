@@ -16,6 +16,12 @@
 #import "S7PostMergeHook.h"
 #import "S7PrepareCommitMsgHook.h"
 
+@interface S7InitCommand ()
+
+@property (nonatomic, assign) BOOL forceOverwriteHooks;
+
+@end
+
 @implementation S7InitCommand
 
 + (NSString *)commandName {
@@ -76,12 +82,27 @@
     puts("                   checkout subrepos to the proper state on");
     puts("                   git pull/checkout/merge");
     puts("                   etc.");
+    puts("");
+    puts("options:");
+    puts("");
+    puts(" --force -f   Forcibly overwrite any existing hooks with s7 hooks. Use this option");
+    puts("              if s7 init fails because of existing hooks but you don't care");
+    puts("              about their current contents.");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
         return S7ExitCodeNotGitRepository;
+    }
+
+    for (NSString *argument in arguments) {
+        if ([argument isEqualToString:@"-f"] || [argument isEqualToString:@"--force"]) {
+            self.forceOverwriteHooks = YES;
+        }
+        else {
+            return S7ExitCodeUnrecognizedOption;
+        }
     }
 
     BOOL isDirectory = NO;
@@ -176,7 +197,7 @@
     NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:[hookClass gitHookName]];
     NSString *contents = [hookClass hookFileContents];
 
-    if ([NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
+    if (NO == self.forceOverwriteHooks && [NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
         NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
         if ([contents isEqualToString:existingContents]) {
             return 0;
