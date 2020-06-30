@@ -13,6 +13,7 @@
 
 @interface TestReposEnvironment ()
 @property (nonatomic, strong) NSString *root;
+@property (nonatomic, strong) NSString *testCaseName;
 @end
 
 @implementation TestReposEnvironment
@@ -27,13 +28,16 @@
 @synthesize githubFormCalcRepo = _githubFormCalcRepo;
 @synthesize githubTestBareRepo = _githubTestBareRepo;
 
-- (instancetype)init {
+- (instancetype)initWithTestCaseName:(NSString *)testCaseName {
     self = [super init];
     if (nil == self) {
         return nil;
     }
 
-    _root = [NSTemporaryDirectory() stringByAppendingPathComponent:@"com.readdle.system7-tests"];
+    self.testCaseName = testCaseName;
+    _root = [[NSTemporaryDirectory()
+             stringByAppendingPathComponent:@"com.readdle.system7-tests"]
+             stringByAppendingPathComponent:testCaseName];
     BOOL isDirectory = NO;
     NSError *error = nil;
 
@@ -105,7 +109,11 @@
     static NSString *templateRepoPath = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        templateRepoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template"];
+        NSLog(@"== self.testCaseName = %@", self.testCaseName);
+
+        templateRepoPath = [[NSTemporaryDirectory()
+                            stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template"]
+                            stringByAppendingPathComponent:self.testCaseName];
 
         if ([[NSFileManager defaultManager] fileExistsAtPath:templateRepoPath]) {
             NSError *error = nil;
@@ -119,24 +127,26 @@
         NSCAssert(repo, @"");
         NSCAssert(0 == exitStatus, @"");
 
-        executeInDirectory(self.root, ^int {
-            // make repo non-empty by default
-            int gitCloneExitStatus = 0;
-            GitRepository *tmpRepo = [GitRepository cloneRepoAtURL:templateRepoPath destinationPath:@"tmp" exitStatus:&gitCloneExitStatus];
-            NSCParameterAssert(tmpRepo);
-            NSCParameterAssert(0 == gitCloneExitStatus);
+        NSString *tmpCloneRepoPath = [[NSTemporaryDirectory()
+                                       stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template-tmp-clone"]
+                                       stringByAppendingPathComponent:self.testCaseName];
 
-            [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
-            [tmpRepo add:@[@".gitignore"]];
-            [tmpRepo commitWithMessage:@"add .gitignore"];
-            [tmpRepo pushAllBranchesNeedingPush];
+        NSLog(@"== %@", templateRepoPath);
 
-            if (NO == [NSFileManager.defaultManager removeItemAtPath:@"tmp" error:nil]) {
-                NSCParameterAssert(NO);
-            }
+        // make repo non-empty by default
+        int gitCloneExitStatus = 0;
+        GitRepository *tmpRepo = [GitRepository cloneRepoAtURL:templateRepoPath destinationPath:tmpCloneRepoPath exitStatus:&gitCloneExitStatus];
+        NSCParameterAssert(tmpRepo);
+        NSCParameterAssert(0 == gitCloneExitStatus);
 
-            return 0;
-        });
+        [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
+        [tmpRepo add:@[@".gitignore"]];
+        [tmpRepo commitWithMessage:@"add .gitignore"];
+        [tmpRepo pushAllBranchesNeedingPush];
+
+        if (NO == [NSFileManager.defaultManager removeItemAtPath:tmpCloneRepoPath error:nil]) {
+            NSCParameterAssert(NO);
+        }
     });
 
     NSError *error = nil;

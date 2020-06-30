@@ -1,0 +1,25 @@
+{
+  "configurations" : [
+    {
+      "id" : "6A38E002-317E-45E8-A483-EB55257E6B81",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:system7.xcodeproj",
+        "identifier" : "BE8218852452C1DE00E878A8",
+        "name" : "system7-tests"
+      }
+    }
+  ],
+  "version" : 1
+}
