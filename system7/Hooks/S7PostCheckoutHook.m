@@ -288,7 +288,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     const int resetExitStatus = [subrepoGit resetLocalChanges];
                     if (0 != resetExitStatus) {
                         fprintf(stderr,
-                                "failed to discard uncommited changes in subrepo '%s'\n",
+                                "\033[31m"
+                                " failed to discard uncommited changes in subrepo '%s'\n"
+                                "\033[0m",
                                 subrepoDesc.path.fileSystemRepresentation);
                         return resetExitStatus;
                     }
@@ -309,7 +311,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                           exitStatus:&cloneExitStatus];
             if (nil == subrepoGit || 0 != cloneExitStatus) {
                 fprintf(stderr,
-                        " failed to clone subrepo '%s'\n",
+                        "\033[31m"
+                        " failed to clone subrepo '%s'\n"
+                        "\033[0m",
                         [subrepoDesc.path fileSystemRepresentation]);
                 return S7ExitCodeGitOperationFailed;
             }
@@ -341,7 +345,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             else {
                 NSAssert(NO, @"");
                 fprintf(stderr,
-                        "unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                        "\033[31m"
+                        " unexpected subrepo '%s' state. Failed to detect current branch.\n"
+                        "\033[0m",
                         subrepoDesc.path.fileSystemRepresentation);
                 return S7ExitCodeGitOperationFailed;
             }
@@ -372,7 +378,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
             if (NO == [subrepoGit isRevisionAvailableLocally:subrepoDesc.revision]) {
                 fprintf(stderr,
-                        " revision '%s' does not exist in '%s'\n",
+                        "\033[31m"
+                        " revision '%s' does not exist in '%s'\n"
+                        "\033[0m",
                         [subrepoDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
                         [subrepoDesc.path fileSystemRepresentation]);
 
