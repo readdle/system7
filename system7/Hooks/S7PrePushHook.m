@@ -57,8 +57,7 @@
 }
 
 + (NSString *)hookFileContents {
-    return @"#!/bin/sh\n"
-            "s7 pre-push-hook \"$@\" <&0";
+    return hookFileContentsForHookNamed([self gitHookName]);
 }
 
 - (NSString *)stdinContents {

@@ -19,9 +19,9 @@ SYSTEM7_DIR="${HOME}/.system7"
 
 function bootstrap() {
     rm -rf "${SYSTEM7_DIR}" > /dev/null
-    rm -f "${HOME}/bin/s7" > /dev/null
-    rm -f "${HOME}/bin/install-s7.sh" > /dev/null
-    rm -f "${HOME}/bin/update-s7.sh" > /dev/null
+    rm -f "/usr/local/bin/s7" > /dev/null
+    rm -f "/usr/local/bin/install-s7.sh" > /dev/null
+    rm -f "/usr/local/bin/update-s7.sh" > /dev/null
 
     git clone -b master git@github.com:readdle/system7.git "${SYSTEM7_DIR}"
     if [ 0 -ne $? ]
@@ -31,11 +31,7 @@ function bootstrap() {
     fi
 
     pushd "${SYSTEM7_DIR}" > /dev/null
-        mkdir -p "${HOME}/bin"
-        cp bootstrap.sh "${HOME}/bin/install-s7.sh"
-        cp update.sh "${HOME}/bin/update-s7.sh"
-
-        sh "${HOME}/bin/update-s7.sh"
+        sh "update.sh"
     popd > /dev/null
 }
 

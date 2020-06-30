@@ -136,6 +136,18 @@
     }];
 }
 
+- (void)testToInitForceOnRepoThatHasCustomGitHooks {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [@"дулі-дулі, дулі вам!" writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
+
+        S7InitCommand *command = [S7InitCommand new];
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[ @"--force" ]]);
+
+        NSString *installedHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqualObjects(installedHookContents, [S7PrePushHook hookFileContents]);
+    }];
+}
+
 - (void)testFirstInitOnLocalCopyRunsCheckout {
     __block NSString *expectedReaddleLibRevision = nil;
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
