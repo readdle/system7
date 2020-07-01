@@ -34,8 +34,16 @@
 }
 
 - (void)testOnNotS7Repo {
-    S7PostCheckoutHook *command = [S7PostCheckoutHook new];
-    XCTAssertEqual(S7ExitCodeNotS7Repo, [command runWithArguments:@[]]);
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *masterRevision = nil;
+        [repo getCurrentRevision:&masterRevision];
+
+        S7PostCheckoutHook *command = [S7PostCheckoutHook new];
+        const int exitStatus = [command runWithArguments:@[ masterRevision, masterRevision, @"1" ]];
+        XCTAssertEqual(S7ExitCodeSuccess, exitStatus);
+
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
+    }];
 }
 
 - (void)testWithoutRequiredArgument {
@@ -1111,6 +1119,41 @@
 
         NSString *RDSystemInfoContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/ReaddleLib/RDSystemInfo.h" encoding:NSUTF8StringEncoding error:nil];
         XCTAssertEqualObjects(RDSystemInfoContents, committedSystemInfoContents);
+    }];
+}
+
+- (void)testSwitchToPreS7Branch {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *masterRevision = nil;
+        [repo getCurrentRevision:&masterRevision];
+
+        [repo checkoutNewLocalBranch:@"s7"];
+
+        s7init_deactivateHooks();
+
+        s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        s7push_currentBranch(repo);
+
+        NSString *s7Revision = nil;
+        [repo getCurrentRevision:&s7Revision];
+
+        [repo checkoutExistingLocalBranch:@"master"];
+
+        S7PostCheckoutHook *postCheckoutHook = [S7PostCheckoutHook new];
+        [postCheckoutHook runWithArguments:@[s7Revision, masterRevision, @"1"]];
+
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
+
+        [repo checkoutExistingLocalBranch:@"s7"];
+
+        postCheckoutHook = [S7PostCheckoutHook new];
+        [postCheckoutHook runWithArguments:@[masterRevision, s7Revision, @"1"]];
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
     }];
 }
 
