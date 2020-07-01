@@ -357,7 +357,10 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             // as otherwise checkout would refuse to reset sub-subrepos' content
             //
             S7Config *subConfigToResetTo = nil;
-            getConfig(subrepoGit, subrepoDesc.revision, &subConfigToResetTo);
+            const int getConfigExitStatus = getConfig(subrepoGit, subrepoDesc.revision, &subConfigToResetTo);
+            if (0 != getConfigExitStatus) {
+                return getConfigExitStatus;
+            }
 
             const int checkoutExitStatus = executeInDirectory(subrepoDesc.path, ^int{
                 return [S7PostCheckoutHook
