@@ -32,8 +32,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
-    S7_REPO_PRECONDITION_CHECK();
-
     if (arguments.count < 3) {
         return S7ExitCodeMissingRequiredArgument;
     }
@@ -101,12 +99,23 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return checkoutExitStatus;
     }
 
-    if (0 != [toConfig saveToFileAtPath:S7ControlFileName]) {
-        fprintf(stderr,
-                "failed to save %s to disk.\n",
-                S7ControlFileName.fileSystemRepresentation);
+    if ([NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName]) {
+        if (0 != [toConfig saveToFileAtPath:S7ControlFileName]) {
+            fprintf(stderr,
+                    "failed to save %s to disk.\n",
+                    S7ControlFileName.fileSystemRepresentation);
 
-        return S7ExitCodeFileOperationFailed;
+            return S7ExitCodeFileOperationFailed;
+        }
+    }
+    else if ([NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName]) {
+        NSError *error = nil;
+        if (NO == [NSFileManager.defaultManager removeItemAtPath:S7ControlFileName error:&error]) {
+            fprintf(stderr, "failed to remove %s. Error: %s\n",
+                    S7ControlFileName.fileSystemRepresentation,
+                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+            return S7ExitCodeFileOperationFailed;
+        }
     }
 
     return 0;
