@@ -58,14 +58,6 @@ function update() {
             return
         fi
 
-        # copy the latest version of install and update scripts to /usr/local/bin/
-        # so that:
-        #  1. we can use them even if ~/.system7 folder gets removed
-        #  2. we update the update system itself
-        #
-        cp bootstrap.sh "/usr/local/bin/install-s7.sh"
-        cp update.sh "/usr/local/bin/update-s7.sh"
-
         ./buildme.sh
     popd > /dev/null
 }
