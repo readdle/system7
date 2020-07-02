@@ -836,10 +836,12 @@ static NSString *gitExecutablePath = nil;
         return @[];
     }
 
-    NSArray<NSString *> *result = [stdOutOutput componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    result = [result filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString * _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
-        return evaluatedObject.length > 0;
-    }]];
+    NSMutableArray<NSString *> *result = [NSMutableArray new];
+    [stdOutOutput enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        if (line.length > 0) {
+            [result addObject:line];
+        }
+    }];
     return result;
 }
 

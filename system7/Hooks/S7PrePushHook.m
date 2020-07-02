@@ -167,6 +167,124 @@
     return 0;
 }
 
+- (int)calculateSubreposToPushFromMainRepo:(GitRepository *)repo
+          latestRemoteRevisionAtThisBranch:(NSString *)latestRemoteRevisionAtThisBranch
+                           localSha1ToPush:(NSString *)localSha1ToPush
+                            subreposToPush:(NSMutableDictionary<NSString *,NSMutableArray<S7SubrepoDescription *> *> **)ppSubreposToPush
+{
+    S7Config *lastPushedConfig = nil;
+    int gitExitStatus = getConfig(repo, latestRemoteRevisionAtThisBranch, &lastPushedConfig);
+    if (0 != gitExitStatus) {
+        return gitExitStatus;
+    }
+
+    NSString *logFromRevision = latestRemoteRevisionAtThisBranch;
+    if ([latestRemoteRevisionAtThisBranch isEqualToString:[GitRepository nullRevision]]) {
+        logFromRevision = @"origin";
+    }
+
+    NSArray<NSString *> *allRevisionsChangingConfigSinceLastPush = [repo
+                                                                    logRevisionsOfFile:S7ConfigFileName
+                                                                    fromRef:logFromRevision
+                                                                    toRef:localSha1ToPush
+                                                                    exitStatus:&gitExitStatus];
+    if (0 != gitExitStatus) {
+        return S7ExitCodeGitOperationFailed;
+    }
+
+    if (0 == allRevisionsChangingConfigSinceLastPush.count) {
+        fprintf(stdout, " found no changes to subrepos in commits being pushed.\n");
+        return S7ExitCodeSuccess;
+    }
+
+    NSMutableSet<NSString *> *aggregatedSubreposToDeletePaths = [NSMutableSet new];
+    NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *aggregatedSubreposToAdd = [NSMutableDictionary new];
+    NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *aggregatedSubreposToUpdate = [NSMutableDictionary new];
+
+    S7Config *prevConfig = lastPushedConfig;
+
+    __auto_type addSubreposToAggregatedMap = ^ void (NSDictionary<NSString *, S7SubrepoDescription *> *source,
+                                                     NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *destination)
+    {
+        [source
+         enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull subrepoPath,
+                                             S7SubrepoDescription * _Nonnull subrepoDesc,
+                                             BOOL * _Nonnull _)
+         {
+            NSMutableArray<S7SubrepoDescription *> *descriptions = destination[subrepoPath];
+            if (nil == descriptions) {
+                descriptions = [NSMutableArray new];
+                destination[subrepoPath] = descriptions;
+            }
+
+            [descriptions addObject:subrepoDesc];
+        }];
+    };
+
+    for (NSString *revisionChangingConfig in allRevisionsChangingConfigSinceLastPush) {
+        S7Config *configAtRevision = nil;
+        gitExitStatus = getConfig(repo, revisionChangingConfig, &configAtRevision);
+        if (0 != gitExitStatus) {
+            return gitExitStatus;
+        }
+
+        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
+        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
+        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
+        const int diffExitStatus = diffConfigs(prevConfig,
+                                               configAtRevision,
+                                               &subreposToDelete,
+                                               &subreposToUpdate,
+                                               &subreposToAdd);
+        if (0 != diffExitStatus) {
+            return diffExitStatus;
+        }
+
+        prevConfig = configAtRevision;
+
+        if (subreposToDelete.count > 0) {
+            [aggregatedSubreposToDeletePaths addObjectsFromArray:subreposToDelete.allKeys];
+            [aggregatedSubreposToAdd removeObjectsForKeys:subreposToDelete.allKeys];
+            [aggregatedSubreposToUpdate removeObjectsForKeys:subreposToDelete.allKeys];
+        }
+
+        if (subreposToAdd.count > 0) {
+            [aggregatedSubreposToDeletePaths minusSet:[NSSet setWithArray:subreposToAdd.allKeys]];
+
+            addSubreposToAggregatedMap(subreposToAdd, aggregatedSubreposToAdd);
+        }
+
+        if (subreposToUpdate.count > 0) {
+#ifdef DEBUG
+            for (NSString *subrepoPath in subreposToUpdate) {
+                NSAssert(NO == [aggregatedSubreposToDeletePaths containsObject:subrepoPath], @"");
+            }
+#endif
+            addSubreposToAggregatedMap(subreposToUpdate, aggregatedSubreposToUpdate);
+        }
+    }
+
+    NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *subreposToPush =
+        [aggregatedSubreposToUpdate mutableCopy];
+    [aggregatedSubreposToAdd
+     enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull subrepoPath,
+                                         NSMutableArray<S7SubrepoDescription *> * _Nonnull addDescriptions,
+                                         BOOL * _Nonnull _)
+     {
+        NSMutableArray<S7SubrepoDescription *> *updateDescriptions = subreposToPush[subrepoPath];
+        if (updateDescriptions) {
+            [updateDescriptions addObjectsFromArray:addDescriptions];
+        }
+        else {
+            subreposToPush[subrepoPath] = addDescriptions;
+        }
+    }];
+
+    *ppSubreposToPush = subreposToPush;
+
+    return S7ExitCodeSuccess;
+}
+
 - (int)handlePushInRepo:(GitRepository *)repo
                localRef:(NSString *)localRef
               localSha1:(NSString *)localSha1ToPush
@@ -206,108 +324,14 @@
         return S7ExitCodeSuccess;
     }
 
-    S7Config *lastPushedConfig = nil;
-    gitExitStatus = getConfig(repo, latestRemoteRevisionAtThisBranch, &lastPushedConfig);
-    if (0 != gitExitStatus) {
-        return gitExitStatus;
+    NSMutableDictionary<NSString *,NSMutableArray<S7SubrepoDescription *> *> * subreposToPush = nil;
+    const int exitStatus = [self calculateSubreposToPushFromMainRepo:repo
+                                    latestRemoteRevisionAtThisBranch:latestRemoteRevisionAtThisBranch
+                                                     localSha1ToPush:localSha1ToPush
+                                                      subreposToPush:&subreposToPush];
+    if (0 != exitStatus) {
+        return exitStatus;
     }
-
-    NSString *logFromRevision = latestRemoteRevisionAtThisBranch;
-    if ([latestRemoteRevisionAtThisBranch isEqualToString:[GitRepository nullRevision]]) {
-        logFromRevision = @"origin";
-    }
-
-    NSArray<NSString *> *allRevisionsChangingConfigSinceLastPush = [repo
-                                                                    logRevisionsOfFile:S7ConfigFileName
-                                                                    fromRef:logFromRevision
-                                                                    toRef:localSha1ToPush
-                                                                    exitStatus:&gitExitStatus];
-    if (0 != gitExitStatus) {
-        return S7ExitCodeGitOperationFailed;
-    }
-
-    if (0 == allRevisionsChangingConfigSinceLastPush.count) {
-        fprintf(stdout, " found no changes to subrepos in commits being pushed.\n");
-        return S7ExitCodeSuccess;
-    }
-
-    NSMutableSet<NSString *> *aggregatedSubreposToDeletePaths = [NSMutableSet new];
-    NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *aggregatedSubreposToAdd = [NSMutableDictionary new];
-    NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *aggregatedSubreposToUpdate = [NSMutableDictionary new];
-
-    S7Config *prevConfig = lastPushedConfig;
-
-    __auto_type addSubreposToAggregatedMap = ^ void (NSDictionary<NSString *, S7SubrepoDescription *> *source,
-                                                     NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *destination)
-    {
-        [source
-        enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull subrepoPath,
-                                            S7SubrepoDescription * _Nonnull subrepoDesc,
-                                            BOOL * _Nonnull _)
-        {
-           NSMutableArray<S7SubrepoDescription *> *descriptions = destination[subrepoPath];
-           if (nil == descriptions) {
-               descriptions = [NSMutableArray new];
-               destination[subrepoPath] = descriptions;
-           }
-
-           [descriptions addObject:subrepoDesc];
-        }];
-    };
-
-    for (NSString *revisionChangingConfig in allRevisionsChangingConfigSinceLastPush) {
-        S7Config *configAtRevision = nil;
-        gitExitStatus = getConfig(repo, revisionChangingConfig, &configAtRevision);
-        if (0 != gitExitStatus) {
-            return gitExitStatus;
-        }
-
-        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
-        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
-        NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
-        const int diffExitStatus = diffConfigs(prevConfig,
-                                               configAtRevision,
-                                               &subreposToDelete,
-                                               &subreposToUpdate,
-                                               &subreposToAdd);
-        if (0 != diffExitStatus) {
-            return diffExitStatus;
-        }
-
-        prevConfig = configAtRevision;
-
-        if (subreposToDelete.count > 0) {
-            [aggregatedSubreposToDeletePaths addObjectsFromArray:subreposToDelete.allKeys];
-            [aggregatedSubreposToAdd removeObjectsForKeys:subreposToDelete.allKeys];
-            [aggregatedSubreposToUpdate removeObjectsForKeys:subreposToDelete.allKeys];
-        }
-
-        if (subreposToAdd.count > 0) {
-            [aggregatedSubreposToDeletePaths minusSet:[NSSet setWithArray:subreposToAdd.allKeys]];
-
-            addSubreposToAggregatedMap(subreposToAdd, aggregatedSubreposToAdd);
-        }
-
-        if (subreposToUpdate.count > 0) {
-            addSubreposToAggregatedMap(subreposToUpdate, aggregatedSubreposToUpdate);
-        }
-    }
-
-    NSMutableDictionary<NSString *, NSMutableArray<S7SubrepoDescription *> *> *subreposToPush =
-        [aggregatedSubreposToUpdate mutableCopy];
-    [aggregatedSubreposToAdd
-     enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull subrepoPath,
-                                         NSMutableArray<S7SubrepoDescription *> * _Nonnull addDescriptions,
-                                         BOOL * _Nonnull _)
-     {
-        NSMutableArray<S7SubrepoDescription *> *updateDescritions = subreposToPush[subrepoPath];
-        if (updateDescritions) {
-            [updateDescritions addObjectsFromArray:addDescriptions];
-        }
-        else {
-            subreposToPush[subrepoPath] = addDescriptions;
-        }
-     }];
 
     for (NSString *subrepoPath in subreposToPush) {
         fprintf(stdout,
