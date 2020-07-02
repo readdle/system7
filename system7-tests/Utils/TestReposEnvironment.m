@@ -109,8 +109,6 @@
     static NSString *templateRepoPath = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        NSLog(@"== self.testCaseName = %@", self.testCaseName);
-
         templateRepoPath = [[NSTemporaryDirectory()
                             stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template"]
                             stringByAppendingPathComponent:self.testCaseName];
@@ -130,8 +128,6 @@
         NSString *tmpCloneRepoPath = [[NSTemporaryDirectory()
                                        stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template-tmp-clone"]
                                        stringByAppendingPathComponent:self.testCaseName];
-
-        NSLog(@"== %@", templateRepoPath);
 
         // make repo non-empty by default
         int gitCloneExitStatus = 0;

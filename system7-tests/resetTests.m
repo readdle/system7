@@ -369,5 +369,54 @@
     }];
 }
 
+- (void)testResetChangesInSubSubrepo {
+    int cloneExitStatus = 0;
+    GitRepository *pdfKitRepo = [GitRepository cloneRepoAtURL:self.env.githubRDPDFKitRepo.absolutePath destinationPath:[self.env.root stringByAppendingPathComponent:@"pastey/rdpdfkit"] exitStatus:&cloneExitStatus];
+    XCTAssertEqual(0, cloneExitStatus);
+    XCTAssertNotNil(pdfKitRepo);
+
+    __block NSString *expectedFormCalcRevision = nil;
+    [pdfKitRepo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        s7add_stage(@"Dependencies/FormCalc", self.env.githubFormCalcRepo.absolutePath);
+
+        [repo commitWithMessage:@"add FormCalc subrepo"];
+
+        GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/FormCalc"];
+        XCTAssertNotNil(formCalcSubrepoGit);
+
+        expectedFormCalcRevision = commit(formCalcSubrepoGit, @"Parser.c", @"AST", @"ast");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up FormCalc"];
+
+        [formCalcSubrepoGit pushAllBranchesNeedingPush];
+        [repo pushCurrentBranch];
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+
+        GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit/Dependencies/FormCalc"];
+        XCTAssertNotNil(formCalcSubrepoGit);
+
+        [repo commitWithMessage:@"add PDFKit subrepo"];
+
+        [formCalcSubrepoGit createFile:@"Trash" withContents:@"asdf"];
+        commit(formCalcSubrepoGit, @"Parser.c", @"wild experiment", @"expertiment");
+
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/RDPDFKit/Dependencies/FormCalc/Trash"]);
+
+        S7ResetCommand *command = [S7ResetCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/RDPDFKit/Dependencies/FormCalc/Trash"]);
+        NSString *actualParserContents = [[NSString alloc] initWithContentsOfFile:@"Dependencies/RDPDFKit/Dependencies/FormCalc/Parser.c" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqualObjects(@"AST", actualParserContents);
+    }];
+}
 
 @end
