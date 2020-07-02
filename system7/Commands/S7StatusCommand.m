@@ -196,13 +196,31 @@
         result[subrepoPath] = @(S7StatusRemoved);
     }
 
-    for (S7SubrepoDescription *subrepoDesc in actualConfig.subrepoDescriptions) {
+    __auto_type addResult = ^ void (NSString *subrepoPath, NSNumber *status) {
+        @synchronized (self) {
+            result[subrepoPath] = status;
+        }
+    };
+
+    __block int error = 0;
+
+    dispatch_apply(actualConfig.subrepoDescriptions.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
+        @synchronized (self) {
+            if (0 != error) {
+                return;
+            }
+        }
+
+        S7SubrepoDescription *subrepoDesc = actualConfig.subrepoDescriptions[i];
         NSString *subrepoPath = subrepoDesc.path;
 
         GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
         if (nil == subrepoGit) {
-            fprintf(stderr, "error: '%s' is not a git repository\n", subrepoPath.fileSystemRepresentation);
-            return S7ExitCodeSubrepoIsNotGitRepository;
+            @synchronized (self) {
+                fprintf(stderr, "error: '%s' is not a git repository\n", subrepoPath.fileSystemRepresentation);
+                error = S7ExitCodeSubrepoIsNotGitRepository;
+            }
+            return;
         }
 
         S7Status status = S7StatusUnchanged;
@@ -219,7 +237,10 @@
         BOOL isEmptyRepo = NO;
         BOOL isDetachedHEAD = NO;
         if (0 != [subrepoGit getCurrentBranch:&currentBranch isDetachedHEAD:&isDetachedHEAD isEmptyRepo:&isEmptyRepo]) {
-            return S7ExitCodeGitOperationFailed;
+            @synchronized (self) {
+                error = S7ExitCodeGitOperationFailed;
+            }
+            return;
         }
 
         if (nil == currentBranch) {
@@ -227,16 +248,22 @@
                 status |= S7StatusDetachedHead;
             }
             else {
-                fprintf(stderr,
-                        "unexpected subrepo '%s' state. Failed to detect current branch.\n",
-                        subrepoPath.fileSystemRepresentation);
-                return S7ExitCodeGitOperationFailed;
+                @synchronized (self) {
+                    fprintf(stderr,
+                            "unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                            subrepoPath.fileSystemRepresentation);
+                    error = S7ExitCodeGitOperationFailed;
+                }
+                return;
             }
         }
         else {
             NSString *currentRevision = nil;
             if (0 != [subrepoGit getCurrentRevision:&currentRevision]) {
-                return S7ExitCodeGitOperationFailed;
+                @synchronized (self) {
+                    error = S7ExitCodeGitOperationFailed;
+                }
+                return;
             }
 
             S7SubrepoDescription *currentSubrepoDesc = [[S7SubrepoDescription alloc]
@@ -255,7 +282,11 @@
             }
         }
 
-        result[subrepoPath] = @(status);
+        addResult(subrepoPath, @(status));
+    });
+
+    if (0 != error) {
+        return error;
     }
 
     *ppStatus = result;
