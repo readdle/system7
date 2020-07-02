@@ -744,6 +744,32 @@
     }];
 }
 
+- (void)testPushChangesNotVisibleFromNaiveStartEndConfigDiff {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        NSString *initialReaddleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"add geometry utils");
+
+        [repo commitWithMessage:@"add subrepo"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+        [readdleLibSubrepoGit checkoutNewLocalBranch:@"experiment"];
+        NSString *readdleLibCommitExpectedToBePushed = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sin(Pi)", @"pi");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [readdleLibSubrepoGit forceCheckoutLocalBranch:@"master" revision:initialReaddleLibRevision];
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"revert ReaddleLib"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+        XCTAssertTrue([self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibCommitExpectedToBePushed]);
+    }];
+}
+
 // recursive push is tested by integration test (case20-pushPullWorkRecursively.sh)
 
 @end

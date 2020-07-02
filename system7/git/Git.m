@@ -813,6 +813,37 @@ static NSString *gitExecutablePath = nil;
     return exitStatus;
 }
 
+#pragma mark - examine history -
+
+- (NSArray<NSString *> *)logRevisionsOfFile:(NSString *)filePath
+                                    fromRef:(NSString *)fromRef
+                                      toRef:(NSString *)toRef
+                                 exitStatus:(int *)exitStatus
+{
+    NSParameterAssert(filePath.length > 0);
+
+    NSString *command = [NSString stringWithFormat:@"log %@..%@ --reverse --pretty=format:%%H -- %@",
+                         fromRef,
+                         toRef,
+                         filePath];
+    NSString *stdOutOutput = nil;
+    const int logExitStatus = [self runGitCommand:command
+                                     stdOutOutput:&stdOutOutput
+                                     stdErrOutput:NULL];
+    *exitStatus = logExitStatus;
+    if (0 != logExitStatus) {
+        NSAssert(NO, @"what?s");
+        return @[];
+    }
+
+    NSMutableArray<NSString *> *result = [NSMutableArray new];
+    [stdOutOutput enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        if (line.length > 0) {
+            [result addObject:line];
+        }
+    }];
+    return result;
+}
 
 - (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus {
     NSString *fileContents = nil;
@@ -825,6 +856,8 @@ static NSString *gitExecutablePath = nil;
                    stdErrOutput:&devNull];
     return fileContents;
 }
+
+#pragma mark - commit -
 
 - (BOOL)hasUncommitedChanges {
     if ([self isEmptyRepo]) {
