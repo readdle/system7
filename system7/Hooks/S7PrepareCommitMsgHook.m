@@ -9,6 +9,7 @@
 #import "S7PrepareCommitMsgHook.h"
 
 #import "S7PostCheckoutHook.h"
+#import "S7StatusCommand.h"
 
 // You may wonder why don't I use `pre-merge-commit`. The answer is –
 // this crap "can be bypassed with the --no-verify option". This is for
@@ -92,7 +93,7 @@
         return 0;
     }
 
-    if ([NSFileManager.defaultManager contentsEqualAtPath:S7ConfigFileName andPath:S7ControlFileName]) {
+    if ([S7StatusCommand areSubreposInSync]) {
         return 0;
     }
 

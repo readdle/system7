@@ -22,6 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface S7StatusCommand : NSObject <S7Command>
 
++ (BOOL)areSubreposInSync;
 + (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSString *, NSNumber * /* S7Status */> * _Nullable __autoreleasing * _Nonnull)ppStatus;
 
 @end

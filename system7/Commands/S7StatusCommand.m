@@ -161,9 +161,15 @@
     return S7ExitCodeSuccess;
 }
 
++ (BOOL)areSubreposInSync {
+    S7Config *mainConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+    S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+    return [mainConfig isEqual:controlConfig];
+}
+
 + (int)repo:(GitRepository *)repo calculateStatus:(NSDictionary<NSString *, NSNumber * /* S7Status */> * _Nullable __autoreleasing * _Nonnull)ppStatus
 {
-    if (NO == [NSFileManager.defaultManager contentsEqualAtPath:S7ConfigFileName andPath:S7ControlFileName]) {
+    if (NO == [self areSubreposInSync]) {
         return S7ExitCodeSubreposNotInSync;
     }
 
