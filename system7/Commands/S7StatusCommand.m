@@ -182,7 +182,7 @@
         return gitExitStatus;
     }
 
-    S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+    S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:[repo.absolutePath stringByAppendingPathComponent:S7ConfigFileName]];
 
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *stagedAddedSubrepos = nil;
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *stagedDeletedSubrepos = nil;
@@ -218,12 +218,18 @@
         }
 
         S7SubrepoDescription *subrepoDesc = actualConfig.subrepoDescriptions[i];
-        NSString *subrepoPath = subrepoDesc.path;
+        NSString *relativeSubrepoPath = subrepoDesc.path;
+        
+        subrepoDesc = [[S7SubrepoDescription alloc] initWithPath:[repo.absolutePath stringByAppendingPathComponent:subrepoDesc.path]
+                                                             url:subrepoDesc.url
+                                                        revision:subrepoDesc.revision
+                                                          branch:subrepoDesc.branch];
+        NSString *absoluteSubrepoPath = [repo.absolutePath stringByAppendingPathComponent:relativeSubrepoPath];
 
-        GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
+        GitRepository *subrepoGit = [GitRepository repoAtPath:[repo.absolutePath stringByAppendingPathComponent:relativeSubrepoPath]];
         if (nil == subrepoGit) {
             @synchronized (self) {
-                fprintf(stderr, "error: '%s' is not a git repository\n", subrepoPath.fileSystemRepresentation);
+                fprintf(stderr, "error: '%s' is not a git repository\n", relativeSubrepoPath.fileSystemRepresentation);
                 error = S7ExitCodeSubrepoIsNotGitRepository;
             }
             return;
@@ -231,11 +237,11 @@
 
         S7Status status = S7StatusUnchanged;
 
-        if (stagedAddedSubrepos[subrepoPath]) {
+        if (stagedAddedSubrepos[relativeSubrepoPath]) {
             status |= S7StatusAdded;
         }
 
-        if (stagedUpdatedSubrepos[subrepoPath]) {
+        if (stagedUpdatedSubrepos[relativeSubrepoPath]) {
             status |= S7StatusUpdatedAndRebound;
         }
 
@@ -257,7 +263,7 @@
                 @synchronized (self) {
                     fprintf(stderr,
                             "unexpected subrepo '%s' state. Failed to detect current branch.\n",
-                            subrepoPath.fileSystemRepresentation);
+                            relativeSubrepoPath.fileSystemRepresentation);
                     error = S7ExitCodeGitOperationFailed;
                 }
                 return;
@@ -273,7 +279,7 @@
             }
 
             S7SubrepoDescription *currentSubrepoDesc = [[S7SubrepoDescription alloc]
-                                                        initWithPath:subrepoPath
+                                                        initWithPath:absoluteSubrepoPath
                                                         url:subrepoDesc.url
                                                         revision:currentRevision
                                                         branch:currentBranch];
@@ -288,7 +294,22 @@
             }
         }
 
-        addResult(subrepoPath, @(status));
+        addResult(relativeSubrepoPath, @(status));
+
+        if ([NSFileManager.defaultManager fileExistsAtPath:[absoluteSubrepoPath stringByAppendingPathComponent:S7ConfigFileName]]) {
+            NSDictionary<NSString *, NSNumber *> *subrepoStatus = nil;
+            const int subrepoStatusExitCode = [self repo:subrepoGit calculateStatus:&subrepoStatus];
+            if (0 != subrepoStatusExitCode) {
+                @synchronized (self) {
+                    error = subrepoStatusExitCode;
+                }
+            }
+            else {
+                [subrepoStatus enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull subSubrepoPath, NSNumber * _Nonnull statusNumber, BOOL * _Nonnull stop) {
+                    addResult([relativeSubrepoPath stringByAppendingPathComponent:subSubrepoPath], statusNumber);
+                }];
+            }
+        }
     });
 
     if (0 != error) {

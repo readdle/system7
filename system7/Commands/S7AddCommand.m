@@ -300,6 +300,7 @@
             const int subrepoS7InitExitCode =
             executeInDirectory(path, ^int{
                 S7InitCommand *initCommand = [S7InitCommand new];
+                initCommand.installFakeHooks = self.installFakeHooks;
                 const int initExitCode = [initCommand runWithArguments:@[]];
                 if (0 != initExitCode) {
                     return initExitCode;

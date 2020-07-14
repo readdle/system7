@@ -316,4 +316,73 @@
     }];
 }
 
+- (void)testRecursive {
+    int cloneExitStatus = 0;
+    GitRepository *pdfKitRepo = [GitRepository cloneRepoAtURL:self.env.githubRDPDFKitRepo.absolutePath destinationPath:[self.env.root stringByAppendingPathComponent:@"pastey/rdpdfkit"] exitStatus:&cloneExitStatus];
+    XCTAssertEqual(0, cloneExitStatus);
+    XCTAssertNotNil(pdfKitRepo);
+
+    __block NSString *expectedFormCalcRevision = nil;
+    [pdfKitRepo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        [repo add:@[ @".gitattributes"] ];
+
+        s7add_stage(@"Dependencies/FormCalc", self.env.githubFormCalcRepo.absolutePath);
+
+        [repo commitWithMessage:@"add FormCalc subrepo"];
+
+        GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/FormCalc"];
+        XCTAssertNotNil(formCalcSubrepoGit);
+
+        expectedFormCalcRevision = commit(formCalcSubrepoGit, @"Parser.c", @"AST", @"ast");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up FormCalc"];
+
+        [formCalcSubrepoGit pushAllBranchesNeedingPush];
+        [repo pushCurrentBranch];
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+
+        GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit/Dependencies/FormCalc"];
+        XCTAssertNotNil(formCalcSubrepoGit);
+
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *status = nil;
+        int exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
+        XCTAssertEqual(S7ExitCodeSuccess, exitCode);
+        NSDictionary<NSString *, NSNumber * /* S7Status */> *expectedStatus = @{
+            @"Dependencies/RDPDFKit" : @(S7StatusAdded),
+            @"Dependencies/RDPDFKit/Dependencies/FormCalc" : @(S7StatusUnchanged)
+        };
+        XCTAssertEqualObjects(status, expectedStatus);
+
+        [repo commitWithMessage:@"add pdf kit subrepo"];
+
+        status = nil;
+        exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
+        XCTAssertEqual(S7ExitCodeSuccess, exitCode);
+        expectedStatus = @{
+            @"Dependencies/RDPDFKit" : @(S7StatusUnchanged),
+            @"Dependencies/RDPDFKit/Dependencies/FormCalc" : @(S7StatusUnchanged)
+        };
+        XCTAssertEqualObjects(status, expectedStatus);
+
+        [formCalcSubrepoGit createFile:@"Kaka" withContents:@"rubbish"];
+
+        status = nil;
+        exitCode = [S7StatusCommand repo:repo calculateStatus:&status];
+        XCTAssertEqual(S7ExitCodeSuccess, exitCode);
+        expectedStatus = @{
+            @"Dependencies/RDPDFKit" : @(S7StatusUnchanged),
+            @"Dependencies/RDPDFKit/Dependencies/FormCalc" : @(S7StatusHasUncommittedChanges)
+        };
+        XCTAssertEqualObjects(status, expectedStatus);
+    }];
+}
+
 @end
