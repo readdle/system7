@@ -717,9 +717,38 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (int)mergeWith:(NSString *)commit {
-    return [self runGitCommand:[NSString stringWithFormat:@"merge --no-edit %@", commit]
-                  stdOutOutput:NULL
-                  stdErrOutput:NULL];
+    // pastey:
+    // this is a zalipon for a recursive interactive merge of subrepos. See example situation in case-recursiveMerge.sh
+    // In English, we had a problem:
+    //  - user wants to merge two branches in main repo (rd2)
+    //  - git notices that .s7substate needs to be merged; git calls s7 merge-driver
+    //  - s7 merge-driver sees that a subrepo (RDPDFKit) has diverged. s7 asks user what to do. User decides to merge
+    //  - s7 calls git merge on RDPDFKit
+    //  - RDPDFKit is an s7 repo on its own. .s7substate in RDPDFKit needs to be merged. Git calls s7 merge-driver
+    //  - s7 merge-driver sees that RDPDFKit subrepo (FormCalc) has diverged. Ask user. User says – merge.
+    //  - hang!!!
+    //
+    // Turned out that we hanged in `fgets`. I.e. it was waiting for user's input. But user did answer. He could type
+    // as mad, but nothing happened at s7 side. stdin was somehow FUBAR at s7 side.
+    //
+    // As you can see, there's a bunch of buddies calling each other here, and every step passes stdin to the next
+    // command in one way or another:
+    //  - git calls s7 merge-driver. I looked into git code – it runs `sh -c <merge-driver>`. So here's the first
+    //    stdin juggling. Git creates pipes between shell and itself. Shell most likely fork/exec-s s7 and stdin
+    //    from shell is inherited by s7
+    //  - then s7 reads stdin and runs `git merge`. Used to run it using NSTask here. NSTask documentation says
+    //    that child process will inherit stdin from the calling process (s7)
+    //  - git merge calls s7 for subrepo. Shell. S7
+    //  - stdin FUBAR
+    //
+    // I've spent like four hours trying to find what's wrong with stdin. I dup-ed it, reopened, closed, checked all
+    // I could come up with. Nothing helped. The only zalipon that helps, is to use `system`, which would
+    // run git using shell. I'm not sure why this works. To investigate this further one might use strace (dtruss),
+    // but I'm full. Will investigate this further if we meet more trouble. To use dtruss one will have to disable SIP.
+    //
+    return executeInDirectory(self.absolutePath, ^int{
+        return [self.class executeCommand:[NSString stringWithFormat:@"git merge --no-edit %@", commit]];
+    });
 }
 
 - (int)merge {
