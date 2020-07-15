@@ -220,11 +220,11 @@
         S7SubrepoDescription *subrepoDesc = actualConfig.subrepoDescriptions[i];
         NSString *relativeSubrepoPath = subrepoDesc.path;
         
-        subrepoDesc = [[S7SubrepoDescription alloc] initWithPath:[repo.absolutePath stringByAppendingPathComponent:subrepoDesc.path]
+        NSString *absoluteSubrepoPath = [repo.absolutePath stringByAppendingPathComponent:relativeSubrepoPath];
+        subrepoDesc = [[S7SubrepoDescription alloc] initWithPath:absoluteSubrepoPath
                                                              url:subrepoDesc.url
                                                         revision:subrepoDesc.revision
                                                           branch:subrepoDesc.branch];
-        NSString *absoluteSubrepoPath = [repo.absolutePath stringByAppendingPathComponent:relativeSubrepoPath];
 
         GitRepository *subrepoGit = [GitRepository repoAtPath:absoluteSubrepoPath];
         if (nil == subrepoGit) {
