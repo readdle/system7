@@ -12,6 +12,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface S7AddCommand : NSObject <S7Command>
 
+// used by tests. This flag is passed-through to init command called on subrepos
+// that are s7 repos themselves
+@property (nonatomic, assign) BOOL installFakeHooks;
+
 @end
 
 NS_ASSUME_NONNULL_END

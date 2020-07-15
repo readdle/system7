@@ -34,6 +34,7 @@ int s7init_deactivateHooks(void) {
 
 GitRepository *s7add_impl(NSString *subrepoPath, NSString *url, BOOL stage) {
     S7AddCommand *addCommand = [S7AddCommand new];
+    addCommand.installFakeHooks = YES;
     NSArray<NSString *> *arguments = @[];
     if (stage) {
         arguments = [arguments arrayByAddingObject:@"--stage"];
