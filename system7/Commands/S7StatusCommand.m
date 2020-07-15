@@ -226,7 +226,7 @@
                                                           branch:subrepoDesc.branch];
         NSString *absoluteSubrepoPath = [repo.absolutePath stringByAppendingPathComponent:relativeSubrepoPath];
 
-        GitRepository *subrepoGit = [GitRepository repoAtPath:[repo.absolutePath stringByAppendingPathComponent:relativeSubrepoPath]];
+        GitRepository *subrepoGit = [GitRepository repoAtPath:absoluteSubrepoPath];
         if (nil == subrepoGit) {
             @synchronized (self) {
                 fprintf(stderr, "error: '%s' is not a git repository\n", relativeSubrepoPath.fileSystemRepresentation);
