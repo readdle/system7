@@ -38,6 +38,8 @@
 
         S7AddCommand *command = [S7AddCommand new];
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
+
+        XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[ @"--stage" ]]);
     });
 }
 

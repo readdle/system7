@@ -13,6 +13,8 @@
 #import "S7InitCommand.h"
 #import "S7PostCheckoutHook.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @implementation S7AddCommand
 
 + (NSString *)commandName {
@@ -88,6 +90,12 @@
                 return S7ExitCodeInvalidArgument;
             }
         }
+    }
+
+    if (nil == path) {
+        fprintf(stderr, "missing required argument PATH\n");
+        [[self class] printCommandHelp];
+        return S7ExitCodeMissingRequiredArgument;
     }
 
     return [self doAddSubrepo:path url:url branch:branch stageConfig:stageConfig];
@@ -344,3 +352,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END
