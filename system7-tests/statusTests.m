@@ -340,7 +340,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up FormCalc"];
 
-        [formCalcSubrepoGit pushAllBranchesNeedingPush];
+        [formCalcSubrepoGit pushCurrentBranch];
         [repo pushCurrentBranch];
     }];
 

@@ -138,7 +138,7 @@
         [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
         [tmpRepo add:@[@".gitignore"]];
         [tmpRepo commitWithMessage:@"add .gitignore"];
-        [tmpRepo pushAllBranchesNeedingPush];
+        [tmpRepo pushCurrentBranch];
 
         if (NO == [NSFileManager.defaultManager removeItemAtPath:tmpCloneRepoPath error:nil]) {
             NSCParameterAssert(NO);
