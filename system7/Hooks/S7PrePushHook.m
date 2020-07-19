@@ -347,8 +347,8 @@
                 " checking '%s' ... ",
                 subrepoPath.fileSystemRepresentation);
         // flush here 'cause next commands (for example, -isRevision:knownAtRemoteBranch:)
-        // may spawn some output to stderr, and user sees the soup of 'checking' and
-        // 'error: blah-blah...'
+        // may spawn some output to stderr, and user sees 'error: blah-blah...' and 'checking'
+        // in the wrong order, so the log seems wrong
         fflush(stdout);
 
         GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
