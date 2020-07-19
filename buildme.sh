@@ -39,11 +39,18 @@ fi
 #    If you were curious, the default PATH for GUI apps looks like this /usr/bin:/bin:/usr/sbin:/sbin. Many apps add some stuff to the PATH once they launch, for example, SourceTree adds the paths to its custom git/git-lfs, etc., Xcode adds SDK bins to the PATH. This is why, we couldn't use Hg from Xcode Run Scripts without explicitly adding /usr/local/bin to the PATH in the beginning of a script.
 #
 
-xcodebuild -target system7 -configuration Release DSTROOT="/" install
-if [ 0 -ne $? ]
+xcodebuild_cmd() {
+    xcodebuild -target system7 -configuration Release DSTROOT="/" install
+}
+
+if ! xcodebuild_cmd
 then
-    echo "error: s7 build failed. Please contact s7 developers."
-    exit 1
+    rm -rf build
+    if ! xcodebuild_cmd
+    then
+        echo "error: s7 build failed. Please contact s7 developers."
+        exit 1
+    fi
 fi
 
 # copy the latest version of install and update scripts to /usr/local/bin/
