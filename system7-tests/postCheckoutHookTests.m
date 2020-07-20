@@ -283,7 +283,7 @@
         // make more changes to ReaddleLib, but commit and push them only to ReaddleLib repo
         readdleLibRevisionOnMasterPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
 
-        XCTAssertEqual(0, [readdleLibSubrepoGit pushAllBranchesNeedingPush]);
+        XCTAssertEqual(0, [readdleLibSubrepoGit pushCurrentBranch]);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {

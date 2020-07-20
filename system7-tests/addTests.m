@@ -243,7 +243,7 @@
         XCTAssertEqual(0, [tempReaddleLibRepo createFile:@"RDSystemInformation.h" withContents:nil]);
         XCTAssertEqual(0, [tempReaddleLibRepo add:@[ @"RDSystemInformation.h" ]]);
         [tempReaddleLibRepo commitWithMessage:@"add RDSystemInformation.h, lorem ipsum, etc."];
-        XCTAssertEqual(0, [tempReaddleLibRepo pushAllBranchesNeedingPush]);
+        XCTAssertEqual(0, [tempReaddleLibRepo pushCurrentBranch]);
 
         [tempReaddleLibRepo getCurrentRevision:&expectedRevision];
     });
@@ -367,7 +367,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up FormCalc"];
 
-        [formCalcSubrepoGit pushAllBranchesNeedingPush];
+        [formCalcSubrepoGit pushCurrentBranch];
         [repo pushCurrentBranch];
     }];
 

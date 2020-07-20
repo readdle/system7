@@ -43,11 +43,20 @@
 //     This is how HG works with HG subrepos.
 //  3. only branches that were rebound in the main repo.
 //     I.e. if a branch in subrepo was never mentioned in the main
-//     repo .s7substate, then it won't be pushed. This would require
-//     too much hassle to determine – we would have to examine every
-//     commit about to push, check it updates .s7substate and collect
-//     branches for every subrepo. Fuck it
-// I decided to stick to the second variant for now.
+//     repo .s7substate, then it won't be pushed.
+//
+// At first, I decided to use the second variant. Turned out there's no reliable way (I'm aware of)
+// in Git to find out the list of branches that need to be pushed.
+// I used `git log --branches --not --remotes --no-walk --decorate --pretty=format:%S` for some time,
+// but turned out that it reports some behind branches from time to time (I haven't found an easy way
+// to reproduce this). I could fix it by removing --no-walk, but I've found another scenario where
+// even without --no-walk not all branches are listed – it you merge brances with fast-forward (they
+// both point to the same commit), only one of branches is reported by `git log --branches --not --remotes`.
+// I thought,– "alright – I can list .git/refs/heads and .git/refs/remotes, and build the list
+// of branches to push by hand". Here comes a new problem – how do you distinct between the new local
+// branch and a stale local branch which remote companion has been removed and pruned?
+//
+// All the problems of the second approach led to the 3rd solution.
 //
 
 @synthesize testStdinContents;
@@ -337,6 +346,10 @@
         fprintf(stdout,
                 " checking '%s' ... ",
                 subrepoPath.fileSystemRepresentation);
+        // flush here 'cause next commands (for example, -isRevision:knownAtRemoteBranch:)
+        // may spawn some output to stderr, and user sees 'error: blah-blah...' and 'checking'
+        // in the wrong order, so the log seems wrong
+        fflush(stdout);
 
         GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
         if (nil == subrepoGit) {
@@ -344,29 +357,37 @@
             return S7ExitCodeSubrepoIsNotGitRepository;
         }
 
-        BOOL pushedSubrepo = NO;
-        NSArray<S7SubrepoDescription *> * subrepoDescriptions = subreposToPush[subrepoPath];
-        for (S7SubrepoDescription *subrepoDesc in subrepoDescriptions) {
-            if ([subrepoGit isRevision:subrepoDesc.revision knownAtRemoteBranch:subrepoDesc.branch]) {
+        NSMutableSet<NSString *> *branchesToPush = [NSMutableSet new];
+
+        for (S7SubrepoDescription *subrepoDesc in subreposToPush[subrepoPath]) {
+            NSString *branch = subrepoDesc.branch;
+            if ([branchesToPush containsObject:branch]) {
                 continue;
             }
 
-            fprintf(stdout, " pushing...\n");
-
-            // if subrepo is a s7 repo itself, pre-push hook in it will do the rest for us
-            const int gitExitStatus = [subrepoGit pushAllBranchesNeedingPush];
-            if (0 != gitExitStatus) {
-                return gitExitStatus;
+            if ([subrepoGit isRevision:subrepoDesc.revision knownAtRemoteBranch:branch]) {
+                continue;
             }
 
-            pushedSubrepo = YES;
-
-            fprintf(stdout, " success\n");
-
-            break;
+            [branchesToPush addObject:branch];
         }
 
-        if (NO == pushedSubrepo) {
+        if (branchesToPush.count > 0) {
+            fprintf(stdout, "\n"); // close the 'checking...'
+
+            for (NSString *branch in branchesToPush) {
+                fprintf(stdout, "  pushing '%s'...\n", [branch cStringUsingEncoding:NSUTF8StringEncoding]);
+
+                // if subrepo is a s7 repo itself, pre-push hook in it will do the rest for us
+                const int gitExitStatus = [subrepoGit pushBranch:branch];
+                if (0 != gitExitStatus) {
+                    return gitExitStatus;
+                }
+            }
+
+            fprintf(stdout, " success\n");
+        }
+        else {
             fprintf(stdout, " already pushed.\n");
         }
     }

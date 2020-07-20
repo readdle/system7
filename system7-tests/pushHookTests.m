@@ -285,7 +285,7 @@
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        [repo pushAllBranchesNeedingPush];
+        [repo pushCurrentBranch];
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -315,7 +315,7 @@
                                      rd2RevisionAfterPull];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        [repo pushAllBranchesNeedingPush];
+        [repo pushCurrentBranch];
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -367,7 +367,7 @@
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
 
-        [repo pushAllBranchesNeedingPush];
+        [repo pushCurrentBranch];
 
         NSString *readdleLibRevision = commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
         NSString *pdfKitRevision = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", nil, @"add annotations");
@@ -767,6 +767,80 @@
         XCTAssertEqual(0, s7push_currentBranch(repo));
 
         XCTAssertTrue([self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibCommitExpectedToBePushed]);
+    }];
+}
+
+- (void)testTwoBranchesPointingToSameCommitArePushed {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", nil, @"add geometry utils");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        [readdleLibSubrepoGit checkoutNewLocalBranch:@"feature/system-info"];
+        commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"RDGetDeviceModel()", @"add new method");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"switch ReaddleLib back to master"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        s7init_deactivateHooks();
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        [readdleLibSubrepoGit checkoutRemoteTrackingBranch:@"feature/system-info"];
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+        XCTAssertEqual(0, [readdleLibSubrepoGit mergeWith:@"feature/system-info"]);
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"merge System Info branch in ReaddleLib into master"];
+
+        NSString *latestRevisionAtMaster = nil;
+        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&latestRevisionAtMaster]);
+
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"feature/system-info"];
+        NSString *latestRevisionAtFeature = nil;
+        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&latestRevisionAtFeature]);
+
+        XCTAssertEqualObjects(latestRevisionAtFeature, latestRevisionAtMaster);
+
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+
+    int exitStatus = 0;
+    GitRepository *readdleLibRepo = [GitRepository
+                                     cloneRepoAtURL:self.env.githubReaddleLibRepo.absolutePath
+                                     destinationPath:[self.env.root stringByAppendingPathComponent:@"ReaddleLib"]
+                                     exitStatus:&exitStatus];
+    XCTAssertNotNil(readdleLibRepo);
+    XCTAssertEqual(0, exitStatus);
+
+    [readdleLibRepo run:^(GitRepository * _Nonnull repo) {
+        NSString *remoteRevisionAtMaster = nil;
+        [repo getLatestRemoteRevision:&remoteRevisionAtMaster atBranch:@"master"];
+
+        NSString *remoteRevisionAtFeature = nil;
+        [repo getLatestRemoteRevision:&remoteRevisionAtFeature atBranch:@"feature/system-info"];
+
+        XCTAssertNotNil(remoteRevisionAtMaster);
+        XCTAssertNotNil(remoteRevisionAtFeature);
+        // we used not to push 'feature/system-info' because of the way we detected which branches need push
+        XCTAssertEqualObjects(remoteRevisionAtMaster, remoteRevisionAtFeature);
     }];
 }
 

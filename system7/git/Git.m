@@ -758,45 +758,23 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (BOOL)hasUnpushedCommits {
-    int dummy = 0;
-    return [self branchesToPushWithExitStatus:&dummy].count > 0;
-}
-
-- (NSArray<NSString *> *)branchesToPushWithExitStatus:(int *)exitStatus {
     NSString *stdOutOutput = nil;
-    const int logExitStatus = [self runGitCommand:@"log --branches --not --remotes --no-walk --decorate --pretty=format:%S"
+    const int logExitStatus = [self runGitCommand:@"log --branches --not --remotes --pretty=format:%h"
                                      stdOutOutput:&stdOutOutput
                                      stdErrOutput:NULL];
-    *exitStatus = logExitStatus;
     if (0 != logExitStatus) {
-        return @[];
+        return NO;
     }
 
-    NSArray<NSString *> *result = [stdOutOutput componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    result = [result filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString * _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
-        return evaluatedObject.length > 0;
-    }]];
+    __block BOOL result = NO;
+    [stdOutOutput enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        if (line.length > 0) {
+            result = YES;
+            *stop = YES;
+        }
+    }];
+
     return result;
-}
-
-- (int)pushAllBranchesNeedingPush {
-    int logExitStatus = 0;
-    NSArray<NSString *> *branchesToPush = [self branchesToPushWithExitStatus:&logExitStatus];
-    if (0 != logExitStatus) {
-        return logExitStatus;
-    }
-
-    if (0 == branchesToPush.count) {
-        fprintf(stdout, "found nothing to push\n");
-        return 0;
-    }
-
-    NSString *branches = [branchesToPush componentsJoinedByString:@" "];
-
-    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"push -u origin %@", branches]
-                                  stdOutOutput:NULL
-                                  stdErrOutput:NULL];
-    return exitStatus;
 }
 
 - (int)pushCurrentBranch {

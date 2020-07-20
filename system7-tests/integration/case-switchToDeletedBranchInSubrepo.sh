@@ -89,11 +89,18 @@ popd > /dev/null
 
 
 # this resurrects 'test' branch locally
-git checkout $INTERESTING_COMMIT
+git checkout -b test $INTERESTING_COMMIT
 
-git switch master
+pushd Dependencies/ReaddleLib > /dev/null
+  echo "test 2" >> RDMath.h
+  git add RDMath.h
+  git commit -m"up RDMath.h"
+popd > /dev/null
 
-assert git push
+assert s7 rebind --stage
+assert git commit -m '"up ReaddleLib"'
+
+assert git push -u origin test
 
 pushd "$S7_ROOT/github/ReaddleLib" > /dev/null
   echo
