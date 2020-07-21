@@ -187,14 +187,9 @@
         return gitExitStatus;
     }
 
-    NSString *logFromRevision = latestRemoteRevisionAtThisBranch;
-    if ([latestRemoteRevisionAtThisBranch isEqualToString:[GitRepository nullRevision]]) {
-        logFromRevision = @"origin";
-    }
-
     NSArray<NSString *> *allRevisionsChangingConfigSinceLastPush = [repo
                                                                     logRevisionsOfFile:S7ConfigFileName
-                                                                    fromRef:logFromRevision
+                                                                    fromRef:latestRemoteRevisionAtThisBranch
                                                                     toRef:localSha1ToPush
                                                                     exitStatus:&gitExitStatus];
     if (0 != gitExitStatus) {
