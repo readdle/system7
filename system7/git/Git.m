@@ -319,7 +319,7 @@ static NSString *gitExecutablePath = nil;
 }
 
 - (int)deleteLocalBranch:(NSString *)branchName {
-    return [self runGitCommand:[NSString stringWithFormat:@"branch -D %@", branchName]
+    return [self runGitCommand:[NSString stringWithFormat:@"branch -d %@", branchName]
                   stdOutOutput:NULL
                   stdErrOutput:NULL];
 }
@@ -834,23 +834,34 @@ static NSString *gitExecutablePath = nil;
                                  exitStatus:(int *)exitStatus
 {
     NSParameterAssert(filePath.length > 0);
+    
+    NSString *command =
+    [NSString stringWithFormat:@"log %@..%@ --reverse --pretty=format:%%H -- %@",
+     fromRef,
+     toRef,
+     filePath];
+    
+    return [self runRevisionsCommand:command exitStatus:exitStatus];
+}
 
-    NSString *command = nil;
+- (NSArray<NSString *> *)logNotPushedCommitsFromRef:(NSString *)fromRef
+                                               file:(nullable NSString *)filePath
+                                         exitStatus:(int *)exitStatus
+{
+    NSString *command =
+    [NSString stringWithFormat:@"log %@ --not --remotes --reverse --pretty=format:%%H",
+     fromRef];
     
-    if ([fromRef isEqualToString:[GitRepository nullRevision]]) {
-        command =
-        [NSString stringWithFormat:@"log %@ --not --remotes --reverse --pretty=format:%%H -- %@",
-         toRef,
-         filePath];
-    }
-    else {
-        command =
-        [NSString stringWithFormat:@"log %@..%@ --reverse --pretty=format:%%H -- %@",
-         fromRef,
-         toRef,
-         filePath];
+    if (filePath.length > 0) {
+        command = [command stringByAppendingFormat:@" -- %@", filePath];
     }
     
+    return [self runRevisionsCommand:command exitStatus:exitStatus];
+}
+
+- (NSArray<NSString *> *)runRevisionsCommand:(NSString *)command
+                                  exitStatus:(int *)exitStatus
+{
     NSString *stdOutOutput = nil;
     const int logExitStatus = [self runGitCommand:command
                                      stdOutOutput:&stdOutOutput

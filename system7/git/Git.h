@@ -74,6 +74,10 @@ NS_ASSUME_NONNULL_BEGIN
                                       toRef:(NSString *)toRef
                                  exitStatus:(int *)exitStatus;
 
+- (NSArray<NSString *> *)logNotPushedCommitsFromRef:(NSString *)fromRef
+                                               file:(nullable NSString *)file
+                                         exitStatus:(int *)exitStatus;
+
 - (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;
 
 - (BOOL)hasUncommitedChanges;
