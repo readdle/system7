@@ -50,6 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)checkoutNewLocalBranch:(NSString *)branchName;
 - (int)checkoutExistingLocalBranch:(NSString *)branchName;
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName;
+- (int)deleteLocalBranch:(NSString *)branchName;
 - (int)deleteRemoteBranch:(NSString *)branchName;
 - (int)forceCheckoutLocalBranch:(NSString *)branchName revision:(NSString *)revisions;
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName;
@@ -72,6 +73,10 @@ NS_ASSUME_NONNULL_BEGIN
                                     fromRef:(NSString *)fromRef
                                       toRef:(NSString *)toRef
                                  exitStatus:(int *)exitStatus;
+
+- (NSArray<NSString *> *)logNotPushedCommitsFromRef:(NSString *)fromRef
+                                               file:(nullable NSString *)file
+                                         exitStatus:(int *)exitStatus;
 
 - (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;
 

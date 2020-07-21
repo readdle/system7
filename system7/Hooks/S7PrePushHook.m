@@ -187,16 +187,24 @@
         return gitExitStatus;
     }
 
-    NSString *logFromRevision = latestRemoteRevisionAtThisBranch;
+    NSArray<NSString *> *allRevisionsChangingConfigSinceLastPush = nil;
+    
     if ([latestRemoteRevisionAtThisBranch isEqualToString:[GitRepository nullRevision]]) {
-        logFromRevision = @"origin";
+        allRevisionsChangingConfigSinceLastPush =
+        [repo
+         logNotPushedCommitsFromRef:localSha1ToPush
+         file:S7ConfigFileName
+         exitStatus:&gitExitStatus];
     }
-
-    NSArray<NSString *> *allRevisionsChangingConfigSinceLastPush = [repo
-                                                                    logRevisionsOfFile:S7ConfigFileName
-                                                                    fromRef:logFromRevision
-                                                                    toRef:localSha1ToPush
-                                                                    exitStatus:&gitExitStatus];
+    else {
+        allRevisionsChangingConfigSinceLastPush =
+        [repo
+         logRevisionsOfFile:S7ConfigFileName
+         fromRef:latestRemoteRevisionAtThisBranch
+         toRef:localSha1ToPush
+         exitStatus:&gitExitStatus];
+    }
+    
     if (0 != gitExitStatus) {
         return S7ExitCodeGitOperationFailed;
     }

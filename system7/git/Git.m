@@ -318,6 +318,12 @@ static NSString *gitExecutablePath = nil;
                              stdErrOutput:NULL];
 }
 
+- (int)deleteLocalBranch:(NSString *)branchName {
+    return [self runGitCommand:[NSString stringWithFormat:@"branch -d %@", branchName]
+                  stdOutOutput:NULL
+                  stdErrOutput:NULL];
+}
+
 - (int)checkoutNewLocalBranch:(NSString *)branchName {
     return [self runGitCommand:[NSString stringWithFormat:@"checkout -b %@", branchName]
                   stdOutOutput:NULL
@@ -828,11 +834,36 @@ static NSString *gitExecutablePath = nil;
                                  exitStatus:(int *)exitStatus
 {
     NSParameterAssert(filePath.length > 0);
+    
+    NSString *command =
+    [NSString stringWithFormat:@"log %@..%@ --reverse --pretty=format:%%H -- %@",
+     fromRef,
+     toRef,
+     filePath];
+    
+    return [self runRevisionsCommand:command exitStatus:exitStatus];
+}
 
-    NSString *command = [NSString stringWithFormat:@"log %@..%@ --reverse --pretty=format:%%H -- %@",
-                         fromRef,
-                         toRef,
-                         filePath];
+- (NSArray<NSString *> *)logNotPushedCommitsFromRef:(NSString *)fromRef
+                                               file:(nullable NSString *)filePath
+                                         exitStatus:(int *)exitStatus
+{
+    NSString *command =
+    [NSString stringWithFormat:@"log %@ --not --remotes --reverse --pretty=format:%%H",
+     fromRef];
+    
+    if (filePath.length > 0) {
+        command = [command stringByAppendingFormat:@" -- %@", filePath];
+    }
+    
+    return [self runRevisionsCommand:command exitStatus:exitStatus];
+}
+
+- (NSArray<NSString *> *)runRevisionsCommand:(NSString *)command
+                                  exitStatus:(int *)exitStatus
+{
+    NSParameterAssert(command);
+    
     NSString *stdOutOutput = nil;
     const int logExitStatus = [self runGitCommand:command
                                      stdOutOutput:&stdOutOutput
