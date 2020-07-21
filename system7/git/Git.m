@@ -862,6 +862,8 @@ static NSString *gitExecutablePath = nil;
 - (NSArray<NSString *> *)runRevisionsCommand:(NSString *)command
                                   exitStatus:(int *)exitStatus
 {
+    NSParameterAssert(command);
+    
     NSString *stdOutOutput = nil;
     const int logExitStatus = [self runGitCommand:command
                                      stdOutOutput:&stdOutOutput
