@@ -194,7 +194,7 @@
         GitRepository *const readdleLib = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         [readdleLib checkoutNewLocalBranch:@"experiment/srgb"];
         commit(readdleLib, @"NSColor+RD.h", @"sRGB", @"repaint");
-        // with this option I was able to created situation when
+        // with this option I was able to create situation when
         // I had fully functional local and remote branches yet
         // local branch wasn't tracking remote. Git was OK about it
         // but s7 was unable to checkout this branch
