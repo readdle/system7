@@ -305,6 +305,10 @@ static NSString *gitExecutablePath = nil;
     if ([self isBranchTrackingRemoteBranch:branchName]) {
         return [self checkoutExistingLocalBranch:branchName];
     }
+    
+    if ([self doesBranchExist:branchName]) {
+        return [self checkoutExistingLocalBranch:branchName];
+    }
 
     return [self runGitCommand:[NSString stringWithFormat:@"checkout --track origin/%@", branchName]
                              stdOutOutput:NULL
