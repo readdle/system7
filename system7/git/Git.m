@@ -98,7 +98,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
     NSString *command = [NSString stringWithFormat:@"git clone %@ \"%@\" \"%@\"", branchOption, url, destinationPath];
 
-    *exitStatus = [self executeGitCommand:command];
+    *exitStatus = [self executeCommand:command];
 
     if (0 != *exitStatus) {
         return nil;
@@ -115,7 +115,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
     command = [command stringByAppendingFormat:@" %@", path];
 
-    const int gitInitResult = [self executeGitCommand:command];
+    const int gitInitResult = [self executeCommand:command];
 
     *exitStatus = gitInitResult;
 
@@ -128,7 +128,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 #pragma mark - utils -
 
-+ (int)executeGitCommand:(NSString *)command {
++ (int)executeCommand:(NSString *)command {
     return system([command cStringUsingEncoding:NSUTF8StringEncoding]);
 }
 
@@ -782,7 +782,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     // but I'm full. Will investigate this further if we meet more trouble. To use dtruss one will have to disable SIP.
     //
     return executeInDirectory(self.absolutePath, ^int{
-        return [self.class executeGitCommand:[NSString stringWithFormat:@"git merge --no-edit %@", commit]];
+        return [self.class executeCommand:[NSString stringWithFormat:@"git merge --no-edit %@", commit]];
     });
 }
 
