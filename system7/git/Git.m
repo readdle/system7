@@ -13,26 +13,46 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static NSString *gitExecutablePath = nil;
 
 @implementation GitRepository
 
-+ (void)load {
-    NSString *PATH = [[NSProcessInfo processInfo].environment objectForKey:@"PATH"];
-    NSArray<NSString *> *pathComponents = [PATH componentsSeparatedByString:@":"];
-    for (NSString *pathComponent in pathComponents) {
-        NSString *possibleGitExecutablePath = [pathComponent stringByAppendingPathComponent:@"git"];
-        if ([[NSFileManager defaultManager] fileExistsAtPath:possibleGitExecutablePath]) {
-            gitExecutablePath = possibleGitExecutablePath;
-            break;
-        }
-    }
+#pragma mark - Environment
 
++ (NSString *)envGitExecutablePath {
+    static dispatch_once_t onceToken;
+    static NSString *gitExecutablePath;
+    dispatch_once(&onceToken, ^{
+        NSString *PATH = [[NSProcessInfo processInfo].environment objectForKey:@"PATH"];
+        NSArray<NSString *> *pathComponents = [PATH componentsSeparatedByString:@":"];
+        for (NSString *pathComponent in pathComponents) {
+            NSString *possibleGitExecutablePath = [pathComponent stringByAppendingPathComponent:@"git"];
+            if ([[NSFileManager defaultManager] fileExistsAtPath:possibleGitExecutablePath]) {
+                gitExecutablePath = possibleGitExecutablePath;
+                break;
+            }
+        }
+    });
+    
     if (nil == gitExecutablePath) {
         fprintf(stderr, "failed to locate 'git' executable in your system. Looked through PATH – nothing there.\n");
         exit(1);
     }
+    
+    return gitExecutablePath;
 }
+
++ (NSArray<NSString *> *_Nullable)envGitConfiguration {
+    static dispatch_once_t onceToken;
+    static NSArray<NSString *> *configuration;
+    dispatch_once(&onceToken, ^{
+        NSString *const value = [NSProcessInfo processInfo].environment[@"S7_CONFIG"];
+        configuration = [value componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    });
+    
+    return configuration;
+}
+
+#pragma mark - Initialization
 
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath {
     return [self initWithRepoPath:repoPath bare:NO];
@@ -60,6 +80,8 @@ static NSString *gitExecutablePath = nil;
     else {
         _absolutePath = [[[NSFileManager.defaultManager currentDirectoryPath] stringByAppendingPathComponent:repoPath] stringByStandardizingPath];
     }
+    
+    _configuration = [GitRepository envGitConfiguration];
 
     return self;
 }
@@ -81,9 +103,9 @@ static NSString *gitExecutablePath = nil;
                                 exitStatus:(int *)exitStatus
 {
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
-    NSString *command = [NSString stringWithFormat:@"git clone %@ \"%@\" \"%@\"", branchOption, url, destinationPath];
+    NSString *command = [NSString stringWithFormat:@"clone %@ \"%@\" \"%@\"", branchOption, url, destinationPath];
 
-    *exitStatus = [self executeCommand:command];
+    *exitStatus = [self executeGitCommand:command configuration:nil];
 
     if (0 != *exitStatus) {
         return nil;
@@ -93,14 +115,14 @@ static NSString *gitExecutablePath = nil;
 }
 
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(nonnull int *)exitStatus {
-    NSString *command = @"git init";
+    NSString *command = @"init";
     if (bare) {
         command = [command stringByAppendingString:@" --bare"];
     }
 
     command = [command stringByAppendingFormat:@" %@", path];
 
-    const int gitInitResult = [self executeCommand:command];
+    const int gitInitResult = [self executeGitCommand:command configuration:nil];
 
     *exitStatus = gitInitResult;
 
@@ -113,7 +135,13 @@ static NSString *gitExecutablePath = nil;
 
 #pragma mark - utils -
 
-+ (int)executeCommand:(NSString *)command {
++ (int)executeGitCommand:(NSString *)command
+           configuration:(NSArray<NSString *> *_Nullable)configuration
+{
+    command = [NSString stringWithFormat:@"git %@ %@",
+               [[self taskArgumentsFromConfiguration:configuration arguments:@[]] componentsJoinedByString:@" "],
+               command];
+    
     return system([command cStringUsingEncoding:NSUTF8StringEncoding]);
 }
 
@@ -141,18 +169,21 @@ static NSString *gitExecutablePath = nil;
 
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:arguments
+                            configuration:self.configuration
                              stdOutOutput:ppStdOutOutput
                              stdErrOutput:ppStdErrOutput];
 }
 
 + (int)runGitInRepoAtPath:(NSString *)repoPath
             withArguments:(NSArray<NSString *> *)arguments
+            configuration:(NSArray<NSString *> *)configuration
              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
     NSTask *task = [NSTask new];
-    [task setLaunchPath:gitExecutablePath];
-    [task setArguments:arguments];
+    [task setLaunchPath:[self envGitExecutablePath]];
+    [task setArguments:[self taskArgumentsFromConfiguration:configuration
+                                                  arguments:arguments]];
     task.currentDirectoryURL = [NSURL fileURLWithPath:repoPath];
 
     // https://stackoverflow.com/questions/49184623/nstask-race-condition-with-readabilityhandler-block
@@ -217,6 +248,23 @@ static NSString *gitExecutablePath = nil;
     pipeCloseSemaphore = NULL;
 
     return [task terminationStatus];
+}
+
++ (NSArray<NSString *> *)taskArgumentsFromConfiguration:(NSArray<NSString *> *_Nullable)configuration
+                                              arguments:(NSArray<NSString *> *)arguments
+{
+    if (configuration.count == 0) {
+        return arguments;
+    }
+    
+    NSMutableArray<NSString *> *const taskArguments = [NSMutableArray arrayWithCapacity:configuration.count * 2 + arguments.count];
+    for (NSString *entry in configuration) {
+        [taskArguments addObject:@"-c"]; // tagged pointer for sure
+        [taskArguments addObject:entry];
+    }
+    [taskArguments addObjectsFromArray:arguments];
+    
+    return taskArguments;
 }
 
 #pragma mark - repo info -
@@ -757,7 +805,8 @@ static NSString *gitExecutablePath = nil;
     // but I'm full. Will investigate this further if we meet more trouble. To use dtruss one will have to disable SIP.
     //
     return executeInDirectory(self.absolutePath, ^int{
-        return [self.class executeCommand:[NSString stringWithFormat:@"git merge --no-edit %@", commit]];
+        return [self.class executeGitCommand:[NSString stringWithFormat:@"merge --no-edit %@", commit]
+                               configuration:self.configuration];
     });
 }
 
@@ -894,6 +943,7 @@ static NSString *gitExecutablePath = nil;
     *exitStatus = [self.class
                    runGitInRepoAtPath:self.absolutePath
                    withArguments:@[ @"show", spell ]
+                   configuration:self.configuration
                    stdOutOutput:&fileContents
                    stdErrOutput:&devNull];
     return fileContents;
@@ -920,6 +970,7 @@ static NSString *gitExecutablePath = nil;
     const int statusExitCode = [self.class
                                 runGitInRepoAtPath:self.absolutePath
                                 withArguments:@[ @"status", @"--porcelain", @"--untracked-files=normal" ]
+                                configuration:self.configuration
                                 stdOutOutput:&statusOutput
                                 stdErrOutput:NULL];
     if (0 != statusExitCode) {
@@ -934,6 +985,7 @@ static NSString *gitExecutablePath = nil;
     NSArray<NSString *> *args = [@[@"add", @"--"] arrayByAddingObjectsFromArray:filePaths];
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:args
+                            configuration:self.configuration
                              stdOutOutput:NULL
                              stdErrOutput:NULL];
 }
@@ -941,6 +993,7 @@ static NSString *gitExecutablePath = nil;
 - (int)commitWithMessage:(NSString *)message {
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:@[ @"commit", [NSString stringWithFormat:@"-m'%@'", message] ]
+                            configuration:self.configuration
                              stdOutOutput:NULL
                              stdErrOutput:NULL];
 }
@@ -969,6 +1022,15 @@ static NSString *gitExecutablePath = nil;
         block(self);
         return 0;
     });
+}
+
+- (int)runGitCommand:(NSString *)command additionalConfiguration:(NSArray<NSString *> *)configuration {
+    NSArray<NSString *> *const currentConfiguration = self.configuration;
+    self.configuration = [self.configuration arrayByAddingObjectsFromArray:configuration];
+    const int code = [self runGitCommand:command stdOutOutput:nil stdErrOutput:nil];
+    self.configuration = currentConfiguration;
+    
+    return code;
 }
 
 @end
