@@ -198,7 +198,7 @@
         // I had fully functional local and remote branches yet
         // local branch wasn't tracking remote. Git was OK about it
         // but s7 was unable to checkout this branch
-        [readdleLib runGitCommand:@"push" additionalConfiguration:@[@"push.default=current"]];
+        [readdleLib runGitCommand:@"-c push.default=current push"];
         
         [repo checkoutNewLocalBranch:@"experiment/srgb"];
         s7rebind_with_stage();

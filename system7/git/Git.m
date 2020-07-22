@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation GitRepository
 
+static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
+
 #pragma mark - Environment
 
 + (NSString *)envGitExecutablePath {
@@ -39,17 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
     }
     
     return gitExecutablePath;
-}
-
-+ (NSArray<NSString *> *_Nullable)envGitConfiguration {
-    static dispatch_once_t onceToken;
-    static NSArray<NSString *> *configuration;
-    dispatch_once(&onceToken, ^{
-        NSString *const value = [NSProcessInfo processInfo].environment[@"S7_CONFIG"];
-        configuration = [value componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-    });
-    
-    return configuration;
 }
 
 #pragma mark - Initialization
@@ -81,7 +72,9 @@ NS_ASSUME_NONNULL_BEGIN
         _absolutePath = [[[NSFileManager.defaultManager currentDirectoryPath] stringByAppendingPathComponent:repoPath] stringByStandardizingPath];
     }
     
-    _configuration = [GitRepository envGitConfiguration];
+    if (GitRepository.testRepoConfigureOnInitBlock) {
+        GitRepository.testRepoConfigureOnInitBlock(self);
+    }
 
     return self;
 }
@@ -103,9 +96,9 @@ NS_ASSUME_NONNULL_BEGIN
                                 exitStatus:(int *)exitStatus
 {
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
-    NSString *command = [NSString stringWithFormat:@"clone %@ \"%@\" \"%@\"", branchOption, url, destinationPath];
+    NSString *command = [NSString stringWithFormat:@"git clone %@ \"%@\" \"%@\"", branchOption, url, destinationPath];
 
-    *exitStatus = [self executeGitCommand:command configuration:nil];
+    *exitStatus = [self executeGitCommand:command];
 
     if (0 != *exitStatus) {
         return nil;
@@ -115,14 +108,14 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(nonnull int *)exitStatus {
-    NSString *command = @"init";
+    NSString *command = @"git init";
     if (bare) {
         command = [command stringByAppendingString:@" --bare"];
     }
 
     command = [command stringByAppendingFormat:@" %@", path];
 
-    const int gitInitResult = [self executeGitCommand:command configuration:nil];
+    const int gitInitResult = [self executeGitCommand:command];
 
     *exitStatus = gitInitResult;
 
@@ -135,13 +128,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - utils -
 
-+ (int)executeGitCommand:(NSString *)command
-           configuration:(NSArray<NSString *> *_Nullable)configuration
-{
-    command = [NSString stringWithFormat:@"git %@ %@",
-               [[self taskArgumentsFromConfiguration:configuration arguments:@[]] componentsJoinedByString:@" "],
-               command];
-    
++ (int)executeGitCommand:(NSString *)command {
     return system([command cStringUsingEncoding:NSUTF8StringEncoding]);
 }
 
@@ -169,21 +156,18 @@ NS_ASSUME_NONNULL_BEGIN
 
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:arguments
-                            configuration:self.configuration
                              stdOutOutput:ppStdOutOutput
                              stdErrOutput:ppStdErrOutput];
 }
 
 + (int)runGitInRepoAtPath:(NSString *)repoPath
             withArguments:(NSArray<NSString *> *)arguments
-            configuration:(NSArray<NSString *> *)configuration
              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
     NSTask *task = [NSTask new];
     [task setLaunchPath:[self envGitExecutablePath]];
-    [task setArguments:[self taskArgumentsFromConfiguration:configuration
-                                                  arguments:arguments]];
+    [task setArguments:arguments];
     task.currentDirectoryURL = [NSURL fileURLWithPath:repoPath];
 
     // https://stackoverflow.com/questions/49184623/nstask-race-condition-with-readabilityhandler-block
@@ -248,23 +232,6 @@ NS_ASSUME_NONNULL_BEGIN
     pipeCloseSemaphore = NULL;
 
     return [task terminationStatus];
-}
-
-+ (NSArray<NSString *> *)taskArgumentsFromConfiguration:(NSArray<NSString *> *_Nullable)configuration
-                                              arguments:(NSArray<NSString *> *)arguments
-{
-    if (configuration.count == 0) {
-        return arguments;
-    }
-    
-    NSMutableArray<NSString *> *const taskArguments = [NSMutableArray arrayWithCapacity:configuration.count * 2 + arguments.count];
-    for (NSString *entry in configuration) {
-        [taskArguments addObject:@"-c"]; // tagged pointer for sure
-        [taskArguments addObject:entry];
-    }
-    [taskArguments addObjectsFromArray:arguments];
-    
-    return taskArguments;
 }
 
 #pragma mark - repo info -
@@ -353,11 +320,21 @@ NS_ASSUME_NONNULL_BEGIN
     if ([self isBranchTrackingRemoteBranch:branchName]) {
         return [self checkoutExistingLocalBranch:branchName];
     }
+        
+    if ([self doesBranchExist:[NSString stringWithFormat:@"origin/%@", branchName]] == NO) {
+        return S7ExitCodeGitOperationFailed;
+    }
     
+    // setup tracking if branch and origin/branch exist
     if ([self doesBranchExist:branchName]) {
+        NSString *const command = [NSString stringWithFormat:@"branch --set-upstream-to=origin/%1$@ %1$@", branchName];
+        const int setUpstreamExitStatus = [self runGitCommand:command stdOutOutput:nil stdErrOutput:nil];
+        if (0 != setUpstreamExitStatus) {
+            return setUpstreamExitStatus;
+        }
         return [self checkoutExistingLocalBranch:branchName];
     }
-
+        
     return [self runGitCommand:[NSString stringWithFormat:@"checkout --track origin/%@", branchName]
                              stdOutOutput:NULL
                              stdErrOutput:NULL];
@@ -805,8 +782,7 @@ NS_ASSUME_NONNULL_BEGIN
     // but I'm full. Will investigate this further if we meet more trouble. To use dtruss one will have to disable SIP.
     //
     return executeInDirectory(self.absolutePath, ^int{
-        return [self.class executeGitCommand:[NSString stringWithFormat:@"merge --no-edit %@", commit]
-                               configuration:self.configuration];
+        return [self.class executeGitCommand:[NSString stringWithFormat:@"git merge --no-edit %@", commit]];
     });
 }
 
@@ -943,7 +919,6 @@ NS_ASSUME_NONNULL_BEGIN
     *exitStatus = [self.class
                    runGitInRepoAtPath:self.absolutePath
                    withArguments:@[ @"show", spell ]
-                   configuration:self.configuration
                    stdOutOutput:&fileContents
                    stdErrOutput:&devNull];
     return fileContents;
@@ -970,7 +945,6 @@ NS_ASSUME_NONNULL_BEGIN
     const int statusExitCode = [self.class
                                 runGitInRepoAtPath:self.absolutePath
                                 withArguments:@[ @"status", @"--porcelain", @"--untracked-files=normal" ]
-                                configuration:self.configuration
                                 stdOutOutput:&statusOutput
                                 stdErrOutput:NULL];
     if (0 != statusExitCode) {
@@ -985,7 +959,6 @@ NS_ASSUME_NONNULL_BEGIN
     NSArray<NSString *> *args = [@[@"add", @"--"] arrayByAddingObjectsFromArray:filePaths];
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:args
-                            configuration:self.configuration
                              stdOutOutput:NULL
                              stdErrOutput:NULL];
 }
@@ -993,7 +966,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)commitWithMessage:(NSString *)message {
     return [self.class runGitInRepoAtPath:self.absolutePath
                             withArguments:@[ @"commit", [NSString stringWithFormat:@"-m'%@'", message] ]
-                            configuration:self.configuration
                              stdOutOutput:NULL
                              stdErrOutput:NULL];
 }
@@ -1024,13 +996,16 @@ NS_ASSUME_NONNULL_BEGIN
     });
 }
 
-- (int)runGitCommand:(NSString *)command additionalConfiguration:(NSArray<NSString *> *)configuration {
-    NSArray<NSString *> *const currentConfiguration = self.configuration;
-    self.configuration = [self.configuration arrayByAddingObjectsFromArray:configuration];
-    const int code = [self runGitCommand:command stdOutOutput:nil stdErrOutput:nil];
-    self.configuration = currentConfiguration;
-    
-    return code;
+- (int)runGitCommand:(NSString *)command {
+    return [self runGitCommand:command stdOutOutput:nil stdErrOutput:nil];
+}
+
++ (void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
+    return _testRepoConfigureOnInitBlock;
+}
+
++ (void)setTestRepoConfigureOnInitBlock:(void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
+    _testRepoConfigureOnInitBlock = testRepoConfigureOnInitBlock;
 }
 
 @end

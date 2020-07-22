@@ -124,6 +124,10 @@
         __unused GitRepository *repo = [GitRepository initializeRepositoryAtPath:templateRepoPath bare:YES exitStatus:&exitStatus];
         NSCAssert(repo, @"");
         NSCAssert(0 == exitStatus, @"");
+        
+        GitRepository.testRepoConfigureOnInitBlock = ^(GitRepository * _Nonnull repo) {
+            [repo runGitCommand:@"config --local commit.gpgsign false"];
+        };
 
         NSString *tmpCloneRepoPath = [[NSTemporaryDirectory()
                                        stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template-tmp-clone"]

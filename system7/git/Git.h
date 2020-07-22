@@ -32,8 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(int *)exitStatus;
 
 @property (nonatomic, readonly, strong) NSString *absolutePath;
-// array of "key=value" strings that will be passed to git via -c arguments
-@property (nonatomic, strong) NSArray<NSString *> *configuration;
 
 - (BOOL)isEmptyRepo;
 - (BOOL)isBareRepo;
@@ -100,7 +98,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)createFile:(NSString *)relativeFilePath withContents:(nullable NSString *)contents;
 - (void)run:(void (NS_NOESCAPE ^)(GitRepository *repo))block;
 
-- (int)runGitCommand:(NSString *)command additionalConfiguration:(NSArray<NSString *> *)configuration;
+- (int)runGitCommand:(NSString *)command;
+
+@property (nonatomic, class) void (^testRepoConfigureOnInitBlock)(GitRepository *repo);
 
 @end
 
