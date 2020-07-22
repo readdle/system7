@@ -128,6 +128,12 @@
         NSString *tmpCloneRepoPath = [[NSTemporaryDirectory()
                                        stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template-tmp-clone"]
                                        stringByAppendingPathComponent:self.testCaseName];
+        
+        if ([[NSFileManager defaultManager] fileExistsAtPath:tmpCloneRepoPath]) {
+            if (NO == [[NSFileManager defaultManager] removeItemAtPath:tmpCloneRepoPath error:nil]) {
+                NSCParameterAssert(NO);
+            }
+        }
 
         // make repo non-empty by default
         int gitCloneExitStatus = 0;
