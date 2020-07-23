@@ -932,6 +932,88 @@
     }];
 }
 
+- (void)testPushExistingBranchWithDeletedBranchInSubrepoHistory {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        // Add ReaddleLib subrepo
+        NSString *subrepoPath = @"Dependencies/ReaddleLib";
+        GitRepository *readdleLibSubrepo = s7add(subrepoPath, self.env.githubReaddleLibRepo.absolutePath);
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+        
+        NSString *rd2RevisionAfterAddedReaddleLib = nil;
+        [repo getCurrentRevision:&rd2RevisionAfterAddedReaddleLib];
+
+        S7PrePushHook *command = [S7PrePushHook new];
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+                                     rd2RevisionAfterAddedReaddleLib,
+                                     [GitRepository nullRevision]];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+
+        [repo pushCurrentBranch];
+        
+        // Switch to another branch in main repo
+        [repo checkoutNewLocalBranch:@"feature/plus-button"];
+        
+        // Switch to another branch in ReaddleLib subrepo
+        [readdleLibSubrepo checkoutNewLocalBranch:@"feature/dead-branch"];
+        commit(readdleLibSubrepo, @"RDGeometry.h", nil, @"add geometry utils");
+
+        s7rebind_with_stage();
+        
+        [repo commitWithMessage:@"up ReaddleLib"];
+        NSString *rd2RevisionWithDeadBranchInSubrepo = nil;
+        [repo getCurrentRevision:&rd2RevisionWithDeadBranchInSubrepo];
+
+        command = [S7PrePushHook new];
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/feature/plus-button %@ refs/heads/feature/plus-button %@",
+                                     rd2RevisionWithDeadBranchInSubrepo,
+                                     [GitRepository nullRevision]];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+        
+        [repo pushCurrentBranch];
+        
+        // Merge "pull request" in ReaddleLib subrepo into master and delete merged branch
+        [readdleLibSubrepo checkoutExistingLocalBranch:@"master"];
+        [readdleLibSubrepo mergeWith:@"feature/dead-branch"];
+        [readdleLibSubrepo deleteRemoteBranch:@"feature/dead-branch"];
+        [readdleLibSubrepo deleteLocalBranch:@"feature/dead-branch"];
+        
+        commit(readdleLibSubrepo, @"NSLayoutConstraint+ReaddleLib.h", nil, @"add autolayout utils");
+        
+        s7rebind_with_stage();
+        
+        [repo commitWithMessage:@"up ReaddleLib"];
+        NSString *rd2RevisionWithMergedNonMasterInSubrepo = nil;
+        [repo getCurrentRevision:&rd2RevisionWithMergedNonMasterInSubrepo];
+
+        command = [S7PrePushHook new];
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/feature/plus-button %@ refs/heads/feature/plus-button %@",
+                                     rd2RevisionWithMergedNonMasterInSubrepo,
+                                     rd2RevisionWithDeadBranchInSubrepo];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+        
+        [repo pushCurrentBranch];
+        
+        // Merge 'pull request' into master
+        [repo checkoutExistingLocalBranch:@"master"];
+        [repo mergeWith:@"feature/plus-button"];
+        
+        [repo commitWithMessage:@"Merged Plus Button feature"];
+        
+        NSString *rd2MergeCommit = nil;
+        [repo getCurrentRevision:&rd2MergeCommit];
+        
+        command = [S7PrePushHook new];
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+                                     rd2MergeCommit,
+                                     rd2RevisionAfterAddedReaddleLib];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+    }];
+}
+
 // recursive push is tested by integration test (case20-pushPullWorkRecursively.sh)
 
 @end

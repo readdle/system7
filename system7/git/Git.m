@@ -858,15 +858,15 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 #pragma mark - examine history -
 
-- (NSArray<NSString *> *)logRevisionsOfFile:(NSString *)filePath
-                                    fromRef:(NSString *)fromRef
-                                      toRef:(NSString *)toRef
-                                 exitStatus:(int *)exitStatus
+- (NSArray<NSString *> *)logNotPushedRevisionsOfFile:(NSString *)filePath
+                                             fromRef:(NSString *)fromRef
+                                               toRef:(NSString *)toRef
+                                          exitStatus:(int *)exitStatus
 {
     NSParameterAssert(filePath.length > 0);
     
     NSString *command =
-    [NSString stringWithFormat:@"log %@..%@ --reverse --pretty=format:%%H -- %@",
+    [NSString stringWithFormat:@"log %@..%@ --not --remotes --reverse --pretty=format:%%H -- %@",
      fromRef,
      toRef,
      filePath];
