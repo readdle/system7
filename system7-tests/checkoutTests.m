@@ -183,4 +183,44 @@
     }];
 }
 
+- (void)testCheckoutNonTrackingBranchInSubrepo {
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+        
+        GitRepository *const readdleLib = s7add_stage(@"Dependencies/ReaddleLib",
+                                                      self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+        s7push_currentBranch(repo);
+        
+        [readdleLib checkoutNewLocalBranch:@"experiment/srgb"];
+        commit(readdleLib, @"NSColor+RD.h", @"sRGB", @"repaint");
+        // with this option I was able to create situation when
+        // I had fully functional local and remote branches yet
+        // local branch wasn't tracking remote. Git was OK about it
+        // but s7 was unable to checkout this branch
+        [readdleLib runGitCommand:@"-c push.default=current push"];
+        
+        [repo checkoutNewLocalBranch:@"experiment/srgb"];
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"updated ReaddleLib"];
+        
+        NSString *readdleLibRevision;
+        [readdleLib getCurrentRevision:&readdleLibRevision];
+        XCTAssertNotNil(readdleLibRevision);
+        commit(readdleLib, @"NSColor+RD.h", @"sRGB\n", @"newline!");
+        
+        [repo checkoutExistingLocalBranch:@"master"];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        
+        [repo checkoutExistingLocalBranch:@"experiment/srgb"];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        
+        
+        NSString *checkedReaddleLibRevision;
+        [readdleLib getCurrentRevision:&checkedReaddleLibRevision];
+        XCTAssertNotNil(checkedReaddleLibRevision);
+        XCTAssertEqualObjects(readdleLibRevision, checkedReaddleLibRevision);
+    }];
+}
+
 @end

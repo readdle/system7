@@ -13,26 +13,37 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static NSString *gitExecutablePath = nil;
 
 @implementation GitRepository
 
-+ (void)load {
-    NSString *PATH = [[NSProcessInfo processInfo].environment objectForKey:@"PATH"];
-    NSArray<NSString *> *pathComponents = [PATH componentsSeparatedByString:@":"];
-    for (NSString *pathComponent in pathComponents) {
-        NSString *possibleGitExecutablePath = [pathComponent stringByAppendingPathComponent:@"git"];
-        if ([[NSFileManager defaultManager] fileExistsAtPath:possibleGitExecutablePath]) {
-            gitExecutablePath = possibleGitExecutablePath;
-            break;
-        }
-    }
+static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
+#pragma mark - Environment
+
++ (NSString *)envGitExecutablePath {
+    static dispatch_once_t onceToken;
+    static NSString *gitExecutablePath;
+    dispatch_once(&onceToken, ^{
+        NSString *PATH = [[NSProcessInfo processInfo].environment objectForKey:@"PATH"];
+        NSArray<NSString *> *pathComponents = [PATH componentsSeparatedByString:@":"];
+        for (NSString *pathComponent in pathComponents) {
+            NSString *possibleGitExecutablePath = [pathComponent stringByAppendingPathComponent:@"git"];
+            if ([[NSFileManager defaultManager] fileExistsAtPath:possibleGitExecutablePath]) {
+                gitExecutablePath = possibleGitExecutablePath;
+                break;
+            }
+        }
+    });
+    
     if (nil == gitExecutablePath) {
         fprintf(stderr, "failed to locate 'git' executable in your system. Looked through PATH – nothing there.\n");
         exit(1);
     }
+    
+    return gitExecutablePath;
 }
+
+#pragma mark - Initialization
 
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath {
     return [self initWithRepoPath:repoPath bare:NO];
@@ -59,6 +70,10 @@ static NSString *gitExecutablePath = nil;
     }
     else {
         _absolutePath = [[[NSFileManager.defaultManager currentDirectoryPath] stringByAppendingPathComponent:repoPath] stringByStandardizingPath];
+    }
+    
+    if (GitRepository.testRepoConfigureOnInitBlock) {
+        GitRepository.testRepoConfigureOnInitBlock(self);
     }
 
     return self;
@@ -151,7 +166,7 @@ static NSString *gitExecutablePath = nil;
              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
     NSTask *task = [NSTask new];
-    [task setLaunchPath:gitExecutablePath];
+    [task setLaunchPath:[self envGitExecutablePath]];
     [task setArguments:arguments];
     task.currentDirectoryURL = [NSURL fileURLWithPath:repoPath];
 
@@ -305,7 +320,22 @@ static NSString *gitExecutablePath = nil;
     if ([self isBranchTrackingRemoteBranch:branchName]) {
         return [self checkoutExistingLocalBranch:branchName];
     }
-
+        
+    if ([self doesBranchExist:[NSString stringWithFormat:@"origin/%@", branchName]] == NO) {
+        fprintf(stderr, "failed to checkout remote tracking branch: remote branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeGitOperationFailed;
+    }
+    
+    // setup tracking if branch and origin/branch exist
+    if ([self doesBranchExist:branchName]) {
+        NSString *const command = [NSString stringWithFormat:@"branch --set-upstream-to=origin/%1$@ %1$@", branchName];
+        const int setUpstreamExitStatus = [self runGitCommand:command stdOutOutput:nil stdErrOutput:nil];
+        if (0 != setUpstreamExitStatus) {
+            return setUpstreamExitStatus;
+        }
+        return [self checkoutExistingLocalBranch:branchName];
+    }
+        
     return [self runGitCommand:[NSString stringWithFormat:@"checkout --track origin/%@", branchName]
                              stdOutOutput:NULL
                              stdErrOutput:NULL];
@@ -965,6 +995,18 @@ static NSString *gitExecutablePath = nil;
         block(self);
         return 0;
     });
+}
+
+- (int)runGitCommand:(NSString *)command {
+    return [self runGitCommand:command stdOutOutput:nil stdErrOutput:nil];
+}
+
++ (void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
+    return _testRepoConfigureOnInitBlock;
+}
+
++ (void)setTestRepoConfigureOnInitBlock:(void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
+    _testRepoConfigureOnInitBlock = testRepoConfigureOnInitBlock;
 }
 
 @end
