@@ -187,11 +187,11 @@
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init_deactivateHooks();
         
-        s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        GitRepository *const readdleLib = s7add_stage(@"Dependencies/ReaddleLib",
+                                                      self.env.githubReaddleLibRepo.absolutePath);
         [repo commitWithMessage:@"add ReaddleLib subrepo"];
         s7push_currentBranch(repo);
         
-        GitRepository *const readdleLib = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         [readdleLib checkoutNewLocalBranch:@"experiment/srgb"];
         commit(readdleLib, @"NSColor+RD.h", @"sRGB", @"repaint");
         // with this option I was able to create situation when

@@ -9,18 +9,7 @@
     }
   ],
   "defaultOptions" : {
-    "codeCoverage" : false,
-    "environmentVariableEntries" : [
-      {
-        "key" : "S7_CONFIG",
-        "value" : "commit.gpgsign=false"
-      },
-      {
-        "enabled" : false,
-        "key" : "S7_TRACE",
-        "value" : "1"
-      }
-    ]
+    "codeCoverage" : false
   },
   "testTargets" : [
     {

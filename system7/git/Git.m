@@ -322,6 +322,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
         
     if ([self doesBranchExist:[NSString stringWithFormat:@"origin/%@", branchName]] == NO) {
+        fprintf(stderr, "failed to checkout remote tracking branch: remote branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeGitOperationFailed;
     }
     

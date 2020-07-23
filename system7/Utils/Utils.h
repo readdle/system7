@@ -24,6 +24,8 @@ BOOL isCurrentDirectoryS7RepoRoot(void);
 int s7RepoPreconditionCheck(void);
 int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
 
+NSString *_Nullable getGlobalGitConfigValue(NSString *key);
+
 #define S7_REPO_PRECONDITION_CHECK()                    \
     do {                                                \
         const int result = s7RepoPreconditionCheck();   \

@@ -125,9 +125,12 @@
         NSCAssert(repo, @"");
         NSCAssert(0 == exitStatus, @"");
         
-        GitRepository.testRepoConfigureOnInitBlock = ^(GitRepository * _Nonnull repo) {
-            [repo runGitCommand:@"config --local commit.gpgsign false"];
-        };
+        // nsavko: working around my local setup
+        if ([getGlobalGitConfigValue(@"commit.gpgsign") isEqualToString:@"true"]) {
+            GitRepository.testRepoConfigureOnInitBlock = ^(GitRepository * _Nonnull repo) {
+                [repo runGitCommand:@"config --local commit.gpgsign false"];
+            };
+        }
 
         NSString *tmpCloneRepoPath = [[NSTemporaryDirectory()
                                        stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template-tmp-clone"]
