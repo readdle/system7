@@ -9,6 +9,7 @@
 #import "S7InitCommand.h"
 
 #import "Utils.h"
+#import "HelpPager.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -33,61 +34,61 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 init");
+    help_puts("s7 init");
     printCommandAliases(self);
-    puts("");
-    puts("    No other s7 command can be run on a repo untill s7 is");
-    puts("    initialized in the repo.");
-    puts("");
-    puts("    On a virgin repo – creates all necessary config files,");
-    puts("    installs git hooks, configures merge driver.");
-    puts("");
-    puts("    `s7 init` must be called on a newly cloned s7 repo.");
-    puts("    It will not only install necessary hooks, but also");
-    puts("    checkout subrepos. If any subrepo is an s7 repo itself");
-    puts("    it will also be initialized.");
-    puts("");
-    puts("    Can be called multiple times to re-install necessary");
-    puts("    files/hooks if they are missing.");
-    puts("");
-    puts("    Installed s7 files:");
-    puts("");
-    puts("     .s7substate:  main config file that stores the state of");
-    puts("                   subrepos. The only file you'll actually");
-    puts("                   work with. All other files are 'system'.");
-    puts("");
-    puts("     .s7control:   control copy of .s7substate that is used");
-    puts("                   to detect unauthorized changes to .s7substate.");
-    puts("                   Also used by some git-hooks for other tasks.");
-    puts("");
-    puts("     .s7bak:       created in some cases when you 'loose' commits");
-    puts("                   in subrepos. Detached commit hashes are printed");
-    puts("                   to console and also saved to this file.");
-    puts("");
-    puts("    Installed/modified Git hooks/configuration files:");
-    puts("");
-    puts("     .gitignore:   all registered subrepos are added to .gitignore.");
-    puts("");
-    puts("     .gitattributes, .git/config:");
-    puts("                   merge driver for .s7substate file is registered");
-    puts("                   in these files.");
-    puts("");
-    puts("     .git/hooks/post-checkout,");
-    puts("     .git/hooks/post-commit,");
-    puts("     .git/hooks/post-merge,");
-    puts("     .git/hooks/prepare-commit-msg,");
-    puts("     .git/hooks/pre-push:");
-    puts("                   these hooks automate s7 operations such as:");
-    puts("                   push subrepos before main repo is pushed;");
-    puts("                   checkout subrepos to the proper state on");
-    puts("                   git pull/checkout/merge");
-    puts("                   etc.");
-    puts("");
-    puts("options:");
-    puts("");
-    puts(" --force -f   Forcibly overwrite any existing hooks with s7 hooks. Use this option");
-    puts("              if s7 init fails because of existing hooks but you don't care");
-    puts("              about their current contents.");
+    help_puts("");
+    help_puts("    No other s7 command can be run on a repo untill s7 is");
+    help_puts("    initialized in the repo.");
+    help_puts("");
+    help_puts("    On a virgin repo – creates all necessary config files,");
+    help_puts("    installs git hooks, configures merge driver.");
+    help_puts("");
+    help_puts("    `s7 init` must be called on a newly cloned s7 repo.");
+    help_puts("    It will not only install necessary hooks, but also");
+    help_puts("    checkout subrepos. If any subrepo is an s7 repo itself");
+    help_puts("    it will also be initialized.");
+    help_puts("");
+    help_puts("    Can be called multiple times to re-install necessary");
+    help_puts("    files/hooks if they are missing.");
+    help_puts("");
+    help_puts("    Installed s7 files:");
+    help_puts("");
+    help_puts("     .s7substate:  main config file that stores the state of");
+    help_puts("                   subrepos. The only file you'll actually");
+    help_puts("                   work with. All other files are 'system'.");
+    help_puts("");
+    help_puts("     .s7control:   control copy of .s7substate that is used");
+    help_puts("                   to detect unauthorized changes to .s7substate.");
+    help_puts("                   Also used by some git-hooks for other tasks.");
+    help_puts("");
+    help_puts("     .s7bak:       created in some cases when you 'loose' commits");
+    help_puts("                   in subrepos. Detached commit hashes are printed");
+    help_puts("                   to console and also saved to this file.");
+    help_puts("");
+    help_puts("    Installed/modified Git hooks/configuration files:");
+    help_puts("");
+    help_puts("     .gitignore:   all registered subrepos are added to .gitignore.");
+    help_puts("");
+    help_puts("     .gitattributes, .git/config:");
+    help_puts("                   merge driver for .s7substate file is registered");
+    help_puts("                   in these files.");
+    help_puts("");
+    help_puts("     .git/hooks/post-checkout,");
+    help_puts("     .git/hooks/post-commit,");
+    help_puts("     .git/hooks/post-merge,");
+    help_puts("     .git/hooks/prepare-commit-msg,");
+    help_puts("     .git/hooks/pre-push:");
+    help_puts("                   these hooks automate s7 operations such as:");
+    help_puts("                   push subrepos before main repo is pushed;");
+    help_puts("                   checkout subrepos to the proper state on");
+    help_puts("                   git pull/checkout/merge");
+    help_puts("                   etc.");
+    help_puts("");
+    help_puts("options:");
+    help_puts("");
+    help_puts(" --force -f   Forcibly overwrite any existing hooks with s7 hooks. Use this option");
+    help_puts("              if s7 init fails because of existing hooks but you don't care");
+    help_puts("              about their current contents.");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

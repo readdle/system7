@@ -9,6 +9,7 @@
 #import "S7RebindCommand.h"
 #import "S7Config.h"
 #import "Git.h"
+#import "HelpPager.h"
 
 @implementation S7RebindCommand
 
@@ -21,19 +22,19 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 rebind [--stage] [PATH]...");
+    help_puts("s7 rebind [--stage] [PATH]...");
     printCommandAliases(self);
-    puts("");
-    puts("save a new revision/branch of a subrepo(s) to .s7substate");
-    puts("");
-    puts("    If PATH(s) supplied, saves current state of subrepos at PATH(s)");
-    puts("    to .s7substate.");
-    puts("    Without PATH(s), checks all registered subrepos for changes");
-    puts("    and updates .s7substate with all found changes.");
-    puts("");
-    puts("options:");
-    puts("");
-    puts(" --stage     stage updated files for save with the next `git commit`");
+    help_puts("");
+    help_puts("save a new revision/branch of a subrepo(s) to .s7substate");
+    help_puts("");
+    help_puts("    If PATH(s) supplied, saves current state of subrepos at PATH(s)");
+    help_puts("    to .s7substate.");
+    help_puts("    Without PATH(s), checks all registered subrepos for changes");
+    help_puts("    and updates .s7substate with all found changes.");
+    help_puts("");
+    help_puts("options:");
+    help_puts("");
+    help_puts(" --stage     stage updated files for save with the next `git commit`");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

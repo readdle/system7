@@ -13,6 +13,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#define s7TraceGit(...) do { if ([GitRepository envGitTraceEnabled]) { \
+NSString *const __trace = [NSString stringWithFormat:__VA_ARGS__]; \
+fprintf(stderr, "%s", [__trace cStringUsingEncoding:NSUTF8StringEncoding]); \
+} } while (0)
 
 @implementation GitRepository
 
@@ -41,6 +45,17 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
     
     return gitExecutablePath;
+}
+
+
++ (BOOL)envGitTraceEnabled {
+    static dispatch_once_t onceToken;
+    static BOOL traceEnabled;
+    
+    dispatch_once(&onceToken, ^{
+        traceEnabled = [[NSProcessInfo processInfo].environment[@"S7_TRACE_GIT"] intValue] != 0;
+    });
+    return traceEnabled;
 }
 
 #pragma mark - Initialization
@@ -129,7 +144,11 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 #pragma mark - utils -
 
 + (int)executeCommand:(NSString *)command {
-    return system([command cStringUsingEncoding:NSUTF8StringEncoding]);
+    s7TraceGit(@"s7: %@\n", command);
+    const int exitCode = system([command cStringUsingEncoding:NSUTF8StringEncoding]);
+    s7TraceGit(@"s7: git exit code %@\n", @(exitCode));
+    
+    return exitCode;
 }
 
 - (int)runGitCommand:(NSString *)command
@@ -186,10 +205,22 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                 strongPipe.fileHandleForReading.readabilityHandler = nil;
             }
             else {
-               [resultingData appendData:newData];
+                [resultingData appendData:newData];
+                
+                s7TraceGit(@"%@", [[NSString alloc] initWithData:newData encoding:NSUTF8StringEncoding]);
             }
         };
     };
+    
+    __autoreleasing NSString * __stdOutOutputGuarantee;
+    if ([self envGitTraceEnabled] && nil == ppStdOutOutput) {
+        ppStdOutOutput = &__stdOutOutputGuarantee;
+    }
+    
+    __autoreleasing NSString *__stdErrOutputGuarantee;
+    if ([self envGitTraceEnabled] && nil == ppStdErrOutput) {
+        ppStdErrOutput = &__stdErrOutputGuarantee;
+    }
 
     __block NSMutableData *outputData = nil;
     if (ppStdOutOutput) {
@@ -212,6 +243,8 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         fprintf(stderr, "failed to run git command. Error = %s", [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return 1;
     }
+    
+    s7TraceGit(@"s7: git %@\n", [task.arguments componentsJoinedByString:@" "]);
 
     [task waitUntilExit];
 
@@ -231,6 +264,8 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
     pipeCloseSemaphore = NULL;
 
+    s7TraceGit(@"s7: git exit code %@\n", @([task terminationStatus]));
+    
     return [task terminationStatus];
 }
 

@@ -26,6 +26,8 @@
 
 #import "S7ConfigMergeDriver.h"
 
+#import "HelpPager.h"
+
 // Why separate command? What alternatives did I consider?
 // 0. — git submodules – also known as sobmodules – sadly well known piece of crap
 //    — git-subtree and git-subrepo – both seemed promissing until I found out
@@ -81,41 +83,52 @@
 //
 
 void printHelp() {
-    puts("usage: s7 <command> [<arguments>]");
-    puts("");
-    puts("Available commands:");
-    puts("");
-    puts("  help      show help for a given command or this a overview");
-    puts("");
-    puts("  init      create all necessary config files/hooks in the git repo");
-    puts("");
-    puts("  add       add a new subrepo");
-    puts("  remove    remove the specified subrepos");
-    puts("");
-    puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
-    puts("");
-    puts("  checkout  update subrepos to correspond to the state saved in .s7substate");
-    puts("  reset     reset subrepo(s) to the last committed state from .s7substate");
-    puts("");
-    puts("  status    show changed subrepos");
-    puts("");
-    puts("");
-    puts("FAQ.");
-    puts("");
-    puts(" Q: how to push changes to subrepos together with the main repo?");
-    puts(" A: just `git push [OPTIONS]` on the main repo. S7 git-hooks will push");
-    puts("    necessary subrepos automatically.");
-    puts("");
-    puts(" Q: how to checkout subrepos after I pull or checkout a different");
-    puts("    branch/revision?");
-    puts(" A: just `git pull`/`git checkout` as you normally do.");
-    puts("    S7 git-hooks will update subrepos as necessary.");
-    puts("");
-    puts(" Q: I ran `git reset` or `git stash` and now s7 complains that it's");
-    puts("    not in sync.");
-    puts(" A: git doesn't run any hooks for these commands, so you would have");
-    puts("    to update subrepos using `s7 checkout` (see `s7 help checkout`");
-    puts("    for more info).");
+    help_puts("");
+    help_puts("\033[1mSYNOPSIS\033[0m");
+    help_puts("");
+    help_puts("  \033[4ms7\033[0m <command> [<arguments>]");
+    help_puts("");
+    help_puts("\033[1mAVAILABLE COMMANDS\033[0m");
+    help_puts("");
+    help_puts("  help      show help for a given command or this a overview");
+    help_puts("");
+    help_puts("  init      create all necessary config files/hooks in the git repo");
+    help_puts("");
+    help_puts("  add       add a new subrepository");
+    help_puts("");
+    help_puts("  remove    remove the specified subrepos");
+    help_puts("");
+    help_puts("  rebind    save a new revision/branch of a subrepo(s) to .s7substate");
+    help_puts("");
+    help_puts("  checkout  update subrepos to correspond to the state saved in .s7substate");
+    help_puts("");
+    help_puts("  reset     reset subrepo(s) to the last committed state from .s7substate");
+    help_puts("");
+    help_puts("  status    show changed subrepos");
+    help_puts("");
+    help_puts("\033[1mFAQ\033[0m");
+    help_puts("");
+    help_puts(" Q: how to push changes to subrepos together with the main repo?");
+    help_puts(" A: just `git push [OPTIONS]` on the main repo. S7 git-hooks will push");
+    help_puts("    necessary subrepos automatically.");
+    help_puts("");
+    help_puts(" Q: how to checkout subrepos after I pull or checkout a different");
+    help_puts("    branch/revision?");
+    help_puts(" A: just `git pull`/`git checkout` as you normally do.");
+    help_puts("    S7 git-hooks will update subrepos as necessary.");
+    help_puts("");
+    help_puts(" Q: I ran `git reset` or `git stash` and now s7 complains that it's");
+    help_puts("    not in sync.");
+    help_puts(" A: git doesn't run any hooks for these commands, so you would have");
+    help_puts("    to update subrepos using `s7 checkout` (see `s7 help checkout`");
+    help_puts("    for more info).");
+    help_puts("");
+    help_puts("\033[1mENVIRONMENT VARIABLES\033[0m");
+    help_puts("");
+    help_puts(" S7_TRACE_GIT");
+    help_puts("    Enables trace of git commands that s7 invokes. If the variable is set to");
+    help_puts("    positive integer, s7 will log each git command, it's stdout and stderr");
+    help_puts("    output (if any), and git return code.");
 }
 
 Class commandClassByName(NSString *commandName) {
@@ -205,20 +218,26 @@ Class hookClassByName(NSString *hookName) {
 }
 
 int helpCommand(NSArray<NSString *> *arguments) {
-    if (arguments.count < 1) {
-        printHelp();
-        return 0;
+    @try {
+        openHelpPager();
+        if (arguments.count < 1) {
+            printHelp();
+            return 0;
+        }
+        
+        NSString *commandName = arguments.firstObject;
+        Class<S7Command> commandClass = commandClassByName(commandName);
+        if (commandClass) {
+            [commandClass printCommandHelp];
+            return 0;
+        }
+        else {
+            printHelp();
+            return 1;
+        }
     }
-
-    NSString *commandName = arguments.firstObject;
-    Class<S7Command> commandClass = commandClassByName(commandName);
-    if (commandClass) {
-        [commandClass printCommandHelp];
-        return 0;
-    }
-    else {
-        printHelp();
-        return 1;
+    @finally {
+        closeHelpPager();
     }
 }
 
@@ -260,7 +279,7 @@ void upgradeHooksToUsrLocalBin() {
 
 int main(int argc, const char * argv[]) {
     if (argc < 2) {
-        printHelp();
+        helpCommand(@[]);
         return S7ExitCodeUnknownCommand;
     }
 
