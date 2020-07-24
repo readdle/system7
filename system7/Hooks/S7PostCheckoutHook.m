@@ -265,6 +265,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
     }
 
+    NSMutableArray<GitRepository *> *newlyClonedSubrepos = [NSMutableArray new];
+
     BOOL anySubrepoContainedUncommittedChanges = NO;
 
     for (S7SubrepoDescription *subrepoDesc in toConfig.subrepoDescriptions) {
@@ -311,6 +313,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     " cloning subrepo '%s' from '%s'\n",
                     [subrepoDesc.path fileSystemRepresentation],
                     [subrepoDesc.url fileSystemRepresentation]);
+            fflush(stdout); // flush to make sure that *what is cloned* comes before errors if they arise
 
             int cloneExitStatus = 0;
             subrepoGit = [GitRepository
@@ -320,24 +323,28 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                           exitStatus:&cloneExitStatus];
             if (nil == subrepoGit || 0 != cloneExitStatus) {
                 fprintf(stderr,
-                        "\033[31m"
-                        " failed to clone subrepo '%s'\n"
-                        "\033[0m",
-                        [subrepoDesc.path fileSystemRepresentation]);
-                return S7ExitCodeGitOperationFailed;
-            }
+                        "⚠️  failed to clone '%s' with exact branch '%s'. Will retry to clone default branch and switch to the revision\n",
+                        [subrepoDesc.path fileSystemRepresentation],
+                        [subrepoDesc.branch cStringUsingEncoding:NSUTF8StringEncoding]);
 
-            if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoDesc.path stringByAppendingPathComponent:S7ConfigFileName]]) {
-                const int initExitStatus =
-                executeInDirectory(subrepoDesc.path, ^int{
-                    S7InitCommand *initCommand = [S7InitCommand new];
-                    return [initCommand runWithArguments:@[]];
-                });
+                cloneExitStatus = 0;
+                subrepoGit = [GitRepository
+                              cloneRepoAtURL:subrepoDesc.url
+                              branch:nil
+                              destinationPath:subrepoDesc.path
+                              exitStatus:&cloneExitStatus];
 
-                if (0 != initExitStatus) {
-                    return initExitStatus;
+                if (nil == subrepoGit || 0 != cloneExitStatus) {
+                    fprintf(stderr,
+                            "\033[31m"
+                            " failed to clone subrepo '%s'\n"
+                            "\033[0m",
+                            [subrepoDesc.path fileSystemRepresentation]);
+                    return S7ExitCodeGitOperationFailed;
                 }
             }
+
+            [newlyClonedSubrepos addObject:subrepoGit];
         }
 
         NSString *currentBranch = nil;
@@ -471,7 +478,23 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeSubrepoHasLocalChanges;
     }
 
-    return 0;
+    int exitStatus = S7ExitCodeSuccess;
+
+    for (GitRepository *subrepoGit in newlyClonedSubrepos) {
+        if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]]) {
+            const int initExitStatus =
+            executeInDirectory(subrepoGit.absolutePath, ^int{
+                S7InitCommand *initCommand = [S7InitCommand new];
+                return [initCommand runWithArguments:@[]];
+            });
+
+            if (0 != initExitStatus) {
+                exitStatus = initExitStatus;
+            }
+        }
+    }
+
+    return exitStatus;
 }
 
 + (void (^)(NSString * _Nonnull, int))warnAboutDetachingCommitsHook {
