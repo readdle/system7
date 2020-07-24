@@ -96,6 +96,7 @@
                     "`s7 checkout` might help you to make subrepos up-to-date.\n"
                     "\033[0m");
         }
+        *foundAnyChanges = YES;
         return exitStatus;
     }
 
