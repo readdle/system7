@@ -739,7 +739,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 #pragma mark - exchange -
 
 - (int)fetch {
-    const int exitStatus = [self runGitCommand:@"fetch"
+    const int exitStatus = [self runGitCommand:@"fetch -p"
                                   stdOutOutput:NULL
                                   stdErrOutput:NULL];
     return exitStatus;
