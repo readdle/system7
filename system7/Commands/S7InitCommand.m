@@ -214,6 +214,21 @@
     }
 
     NSError *error = nil;
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks"]) {
+        if (NO == [NSFileManager.defaultManager
+                   createDirectoryAtPath:@".git/hooks"
+                   withIntermediateDirectories:NO
+                   attributes:nil
+                   error:&error])
+        {
+            fprintf(stderr,
+                    "'.git/hooks' directory doesn't exist. Failed to create it. Error: %s\n",
+                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+
+            return S7ExitCodeFileOperationFailed;
+        }
+    }
+
     if (NO == [contents writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
         fprintf(stderr,
                 "failed to save %s to disk. Error: %s\n",

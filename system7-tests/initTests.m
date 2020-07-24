@@ -245,4 +245,15 @@
     }];
 }
 
+- (void)testInRepoWithoutGitHooksDirectory {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        // one of our developers cloned repo using SourceTree and then 's7 init' failed,
+        // 'cause there was no .git/hook dir
+        XCTAssertTrue([NSFileManager.defaultManager removeItemAtPath:@".git/hooks" error:nil]);
+
+        S7InitCommand *command = [S7InitCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[]]);
+    }];
+}
+
 @end
