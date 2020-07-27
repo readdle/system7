@@ -207,6 +207,26 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 }
 
++ (int)initS7InNewlyClonedSubrepos:(NSArray<GitRepository *> *)newlyClonedSubrepos {
+    int result = S7ExitCodeSuccess;
+
+    for (GitRepository *subrepoGit in newlyClonedSubrepos) {
+        if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]]) {
+            const int initExitStatus =
+            executeInDirectory(subrepoGit.absolutePath, ^int{
+                S7InitCommand *initCommand = [S7InitCommand new];
+                return [initCommand runWithArguments:@[]];
+            });
+
+            if (0 != initExitStatus) {
+                result = initExitStatus;
+            }
+        }
+    }
+
+    return result;
+}
+
 + (int)checkoutSubreposForRepo:(GitRepository *)repo
                     fromConfig:(S7Config *)fromConfig
                       toConfig:(S7Config *)toConfig
@@ -478,23 +498,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeSubrepoHasLocalChanges;
     }
 
-    int exitStatus = S7ExitCodeSuccess;
-
-    for (GitRepository *subrepoGit in newlyClonedSubrepos) {
-        if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]]) {
-            const int initExitStatus =
-            executeInDirectory(subrepoGit.absolutePath, ^int{
-                S7InitCommand *initCommand = [S7InitCommand new];
-                return [initCommand runWithArguments:@[]];
-            });
-
-            if (0 != initExitStatus) {
-                exitStatus = initExitStatus;
-            }
-        }
-    }
-
-    return exitStatus;
+    return [self initS7InNewlyClonedSubrepos:newlyClonedSubrepos];
 }
 
 + (void (^)(NSString * _Nonnull, int))warnAboutDetachingCommitsHook {
