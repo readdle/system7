@@ -1166,19 +1166,19 @@
         GitRepository *readdleLibSubrepo = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         [repo commitWithMessage:@"add ReaddleLib subrepo"];
 
-        [readdleLibSubrepo checkoutNewLocalBranch:@"feature/god-for-saken-feature"];
+        [readdleLibSubrepo checkoutNewLocalBranch:@"feature/god-forsaken-feature"];
         lastReboundReaddleLibRevision = commit(readdleLibSubrepo, @"File.c", @"new feature", @"new feature");
 
         s7rebind_with_stage();
-        [repo commitWithMessage:@"switch ReaddleLib to feature/god-for-saken-feature"];
+        [repo commitWithMessage:@"switch ReaddleLib to feature/god-forsaken-feature"];
 
         s7push_currentBranch(repo);
 
         // merge pull request in ReaddleLib
         [readdleLibSubrepo checkoutExistingLocalBranch:@"master"];
-        [readdleLibSubrepo mergeWith:@"feature/god-for-saken-feature"];
-        [readdleLibSubrepo deleteLocalBranch:@"feature/god-for-saken-feature"];
-        [readdleLibSubrepo deleteRemoteBranch:@"feature/god-for-saken-feature"];
+        [readdleLibSubrepo mergeWith:@"feature/god-forsaken-feature"];
+        [readdleLibSubrepo deleteLocalBranch:@"feature/god-forsaken-feature"];
+        [readdleLibSubrepo deleteRemoteBranch:@"feature/god-forsaken-feature"];
 
         // and forget to rebind rd2 back to master of ReaddleLib...
     }];
@@ -1197,7 +1197,7 @@
         BOOL dummy = NO;
         NSString *actualReaddleLibBranch = nil;
         [readdleLibSubrepo getCurrentBranch:&actualReaddleLibBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
-        XCTAssertEqualObjects(actualReaddleLibBranch, @"feature/god-for-saken-feature");
+        XCTAssertEqualObjects(actualReaddleLibBranch, @"feature/god-forsaken-feature");
         NSString *actualReaddleLibRevision = nil;
         [readdleLibSubrepo getCurrentRevision:&actualReaddleLibRevision];
         XCTAssertEqualObjects(actualReaddleLibRevision, lastReboundReaddleLibRevision);
