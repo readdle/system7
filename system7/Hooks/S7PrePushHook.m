@@ -199,7 +199,7 @@
     else {
         allRevisionsChangingConfigSinceLastPush =
         [repo
-         logRevisionsOfFile:S7ConfigFileName
+         logNotPushedRevisionsOfFile:S7ConfigFileName
          fromRef:latestRemoteRevisionAtThisBranch
          toRef:localSha1ToPush
          exitStatus:&gitExitStatus];

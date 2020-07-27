@@ -69,10 +69,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isMergeRevision:(NSString *)revision;
 - (int)checkoutRevision:(NSString *)revision;
 
-- (NSArray<NSString *> *)logRevisionsOfFile:(NSString *)filePath
-                                    fromRef:(NSString *)fromRef
-                                      toRef:(NSString *)toRef
-                                 exitStatus:(int *)exitStatus;
+- (NSArray<NSString *> *)logNotPushedRevisionsOfFile:(NSString *)filePath
+                                             fromRef:(NSString *)fromRef
+                                               toRef:(NSString *)toRef
+                                          exitStatus:(int *)exitStatus;
 
 - (NSArray<NSString *> *)logNotPushedCommitsFromRef:(NSString *)fromRef
                                                file:(nullable NSString *)file
