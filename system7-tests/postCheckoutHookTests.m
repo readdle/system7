@@ -1157,6 +1157,53 @@
     }];
 }
 
+- (void)testCheckoutClonesSubrepoEvenIfRemoteBranchIsDeleted {
+    __block NSString *lastReboundReaddleLibRevision = nil;
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepo = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        [readdleLibSubrepo checkoutNewLocalBranch:@"feature/god-forsaken-feature"];
+        lastReboundReaddleLibRevision = commit(readdleLibSubrepo, @"File.c", @"new feature", @"new feature");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"switch ReaddleLib to feature/god-forsaken-feature"];
+
+        s7push_currentBranch(repo);
+
+        // merge pull request in ReaddleLib
+        [readdleLibSubrepo checkoutExistingLocalBranch:@"master"];
+        [readdleLibSubrepo mergeWith:@"feature/god-forsaken-feature"];
+        [readdleLibSubrepo deleteLocalBranch:@"feature/god-forsaken-feature"];
+        [readdleLibSubrepo deleteRemoteBranch:@"feature/god-forsaken-feature"];
+
+        // and forget to rebind rd2 back to master of ReaddleLib...
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        XCTAssertEqual(S7ExitCodeSuccess, s7checkout([GitRepository nullRevision], currentRevision));
+
+        GitRepository *readdleLibSubrepo = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepo);
+
+        BOOL dummy = NO;
+        NSString *actualReaddleLibBranch = nil;
+        [readdleLibSubrepo getCurrentBranch:&actualReaddleLibBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
+        XCTAssertEqualObjects(actualReaddleLibBranch, @"feature/god-forsaken-feature");
+        NSString *actualReaddleLibRevision = nil;
+        [readdleLibSubrepo getCurrentRevision:&actualReaddleLibRevision];
+        XCTAssertEqualObjects(actualReaddleLibRevision, lastReboundReaddleLibRevision);
+    }];
+}
+
 // there's no unit test for recursive checkout as it works on hooks
 // and I don't want to rely on hooks (s7 version installed on test machine) in unit-tests,
 // that's why recursive is tested by integration tests only
