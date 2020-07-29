@@ -9,6 +9,7 @@
 #import "S7CheckoutCommand.h"
 
 #import "S7PostCheckoutHook.h"
+#import "HelpPager.h"
 
 @implementation S7CheckoutCommand
 
@@ -21,19 +22,19 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 checkout");
+    help_puts("s7 checkout");
     printCommandAliases(self);
-    puts("");
-    puts("Update subrepos to correspond to the state saved in .s7substate.");
-    puts("Keeps subrepo intact if it contains any uncommitted changes.");
-    puts("");
-    puts("You would need this after:");
-    puts(" 1. merge conflict in main repo. In that case no hooks are called,");
-    puts("    thus there's no chance for s7 to update subrepos automatically.");
-    puts("    If you decide to build project after fixing merge conflicts,");
-    puts("    you would stumble on subrepos 'not in sync' error.");
-    puts(" 2. you use `git reset OLD_REV`. No hooks are called on `git reset`");
-    puts("    So, you'd have to update subrepos manually, using this command.");
+    help_puts("");
+    help_puts("Update subrepos to correspond to the state saved in .s7substate.");
+    help_puts("Keeps subrepo intact if it contains any uncommitted changes.");
+    help_puts("");
+    help_puts("You would need this after:");
+    help_puts(" 1. merge conflict in main repo. In that case no hooks are called,");
+    help_puts("    thus there's no chance for s7 to update subrepos automatically.");
+    help_puts("    If you decide to build project after fixing merge conflicts,");
+    help_puts("    you would stumble on subrepos 'not in sync' error.");
+    help_puts(" 2. you use `git reset OLD_REV`. No hooks are called on `git reset`");
+    help_puts("    So, you'd have to update subrepos manually, using this command.");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

@@ -10,6 +10,7 @@
 
 #import "Utils.h"
 #import "S7Diff.h"
+#import "HelpPager.h"
 
 @implementation S7StatusCommand
 
@@ -22,16 +23,16 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 status [-n]");
+    help_puts("s7 status [-n]");
     printCommandAliases(self);
-    puts("");
-    puts("show changed subrepos. By default, also prints main repo `git status`;");
-    puts("");
-    puts("  By default, also prints main repo `git status` (unless -n is passed).");
-    puts("");
-    puts("options:");
-    puts("");
-    puts(" -n    do not print main repo status along with subrepos' status");
+    help_puts("");
+    help_puts("show changed subrepos. By default, also prints main repo `git status`;");
+    help_puts("");
+    help_puts("  By default, also prints main repo `git status` (unless -n is passed).");
+    help_puts("");
+    help_puts("options:");
+    help_puts("");
+    help_puts(" -n    do not print main repo status along with subrepos' status");
 
 }
 

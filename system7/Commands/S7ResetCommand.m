@@ -10,6 +10,7 @@
 
 #import "Utils.h"
 #import "S7PostCheckoutHook.h"
+#import "HelpPager.h"
 
 @implementation S7ResetCommand
 
@@ -22,25 +23,25 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 reset [-X|--exclude PATH] --all|PATH...");
+    help_puts("s7 reset [-X|--exclude PATH] --all|PATH...");
     printCommandAliases(self);
-    puts("");
-    fprintf(stdout, "reset subrepos to the state saved in the last committed %s\n", S7ConfigFileName.fileSystemRepresentation);
-    puts("");
-    puts("   ⚠️  CAUTION: reset is a shotgun – use carefully.");
-    puts("");
-    puts("   - It drops any uncommitted local changes in a reset subrepo.");
-    puts("   - It doesn't keep any backups.");
-    puts("   - It can make changes committed in subrepos 'detached', and the only way");
-    puts("     to get them back would be via search in ref-log.");
-    puts("");
-    puts("   With this in mind --all or PATH... options were made required,");
-    puts("   so that you could think twice before running this command.");
-    puts("");
-    puts("options ([+] can be repeated):");
-    puts("");
-    puts(" --all             reset all subrepo");
-    puts(" -X --exclude [+]  do not reset given subrepos");
+    help_puts("");
+    help_puts("reset subrepos to the state saved in the last committed %s", S7ConfigFileName.fileSystemRepresentation);
+    help_puts("");
+    help_puts("   ⚠️  CAUTION: reset is a shotgun – use carefully.");
+    help_puts("");
+    help_puts("   - It drops any uncommitted local changes in a reset subrepo.");
+    help_puts("   - It doesn't keep any backups.");
+    help_puts("   - It can make changes committed in subrepos 'detached', and the only way");
+    help_puts("     to get them back would be via search in ref-log.");
+    help_puts("");
+    help_puts("   With this in mind --all or PATH... options were made required,");
+    help_puts("   so that you could think twice before running this command.");
+    help_puts("");
+    help_puts("options ([+] can be repeated):");
+    help_puts("");
+    help_puts(" --all             reset all subrepo");
+    help_puts(" -X --exclude [+]  do not reset given subrepos");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
 		BE0173E124864DF300BA4B2F /* resetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E024864DF300BA4B2F /* resetTests.m */; };
 		BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
 		BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
@@ -83,6 +84,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2465939A24CA336700EFC5A0 /* HelpPager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HelpPager.h; sourceTree = "<group>"; };
+		2465939B24CA336700EFC5A0 /* HelpPager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HelpPager.m; sourceTree = "<group>"; };
 		BE0173E024864DF300BA4B2F /* resetTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = resetTests.m; sourceTree = "<group>"; };
 		BE0173E224864EBF00BA4B2F /* S7ResetCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7ResetCommand.h; sourceTree = "<group>"; };
 		BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7ResetCommand.m; sourceTree = "<group>"; };
@@ -276,6 +279,8 @@
 				BED60E152458811A008EA752 /* Utils.m */,
 				BE172CD424657CE900B57557 /* S7Diff.h */,
 				BE172CD124657CA700B57557 /* S7Diff.m */,
+				2465939A24CA336700EFC5A0 /* HelpPager.h */,
+				2465939B24CA336700EFC5A0 /* HelpPager.m */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -370,7 +375,7 @@
 		BE82186C2452BA7300E878A8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1130;
+				LastUpgradeCheck = 1160;
 				ORGANIZATIONNAME = Readdle;
 				TargetAttributes = {
 					BE8218732452BA7300E878A8 = {
@@ -437,6 +442,7 @@
 				BED60FB9245ABB43008EA752 /* S7RebindCommand.m in Sources */,
 				BE1079C02466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
 				BED36BE6246E809000D6EB1C /* S7PostCommitHook.m in Sources */,
+				2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */,
 				BE394D3C2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -611,6 +617,7 @@
 		BE82187C2452BA7300E878A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = system7/system7.pch;
@@ -621,6 +628,7 @@
 		BE82187D2452BA7300E878A8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = system7/system7.pch;

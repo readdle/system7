@@ -12,6 +12,7 @@
 #import "Utils.h"
 #import "S7InitCommand.h"
 #import "S7PostCheckoutHook.h"
+#import "HelpPager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,24 +27,24 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 + (void)printCommandHelp {
-    puts("s7 add [--stage] PATH [URL [BRANCH]]");
+    help_puts("s7 add [--stage] PATH [URL [BRANCH]]");
     printCommandAliases(self);
-    puts("");
-    puts("add a new subrepo at PATH.");
-    puts("");
-    puts("    If used with the PATH only, assumes that subrepo has been already");
-    puts("    cloned to the PATH. Deduces URL and BRANCH from the actual subrepo");
-    puts("    git repo state.");
-    puts("");
-    puts("    If used with PATH and URL, clones git repo from URL to PATH.");
-    puts("    (If subrepo at PATH already exists, then `add` will check that it");
-    puts("    was cloned from the URL.)");
-    puts("    In this variant, if BRANCH is supplied, cloned subrepo is also");
-    puts("    switched to the BRANCH.");
-    puts("");
-    puts("options:");
-    puts("");
-    puts(" --stage     stage updated files for save with the next `git commit`");
+    help_puts("");
+    help_puts("add a new subrepo at PATH.");
+    help_puts("");
+    help_puts("    If used with the PATH only, assumes that subrepo has been already");
+    help_puts("    cloned to the PATH. Deduces URL and BRANCH from the actual subrepo");
+    help_puts("    git repo state.");
+    help_puts("");
+    help_puts("    If used with PATH and URL, clones git repo from URL to PATH.");
+    help_puts("    (If subrepo at PATH already exists, then `add` will check that it");
+    help_puts("    was cloned from the URL.)");
+    help_puts("    In this variant, if BRANCH is supplied, cloned subrepo is also");
+    help_puts("    switched to the BRANCH.");
+    help_puts("");
+    help_puts("options:");
+    help_puts("");
+    help_puts(" --stage     stage updated files for save with the next `git commit`");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {

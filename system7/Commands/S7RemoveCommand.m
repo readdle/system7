@@ -7,6 +7,7 @@
 //
 
 #import "S7RemoveCommand.h"
+#import "HelpPager.h"
 
 @implementation S7RemoveCommand
 
@@ -19,15 +20,15 @@
 }
 
 + (void)printCommandHelp {
-    puts("s7 remove [OPTION] PATH...");
+    help_puts("s7 remove [OPTION] PATH...");
     printCommandAliases(self);
-    puts("");
-    puts("Remove the specified subrepos");
-    puts("");
-    puts("options:");
-    puts("");
-    puts(" -f --force  remove subrepo directory even if it contain uncommited/not pushed");
-    puts("             local changes");
+    help_puts("");
+    help_puts("Remove the specified subrepos");
+    help_puts("");
+    help_puts("options:");
+    help_puts("");
+    help_puts(" -f --force  remove subrepo directory even if it contain uncommited/not pushed");
+    help_puts("             local changes");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
