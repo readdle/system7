@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
+		24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
 		BE0173E124864DF300BA4B2F /* resetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E024864DF300BA4B2F /* resetTests.m */; };
 		BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
 		BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
@@ -485,6 +486,7 @@
 				BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 				BE3A29E524604C10004A2B31 /* statusTests.m in Sources */,
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,
+				24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */,
 				BE3A29F02460712F004A2B31 /* S7InitCommand.m in Sources */,
 				BED60E172458811A008EA752 /* Utils.m in Sources */,
 				BE28CB332472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */,
