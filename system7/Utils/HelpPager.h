@@ -10,8 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-void openHelpPager(void);
-void closeHelpPager(void);
+int withHelpPaginationDo(int (^block)(void));
 
 void help_puts(const char * __restrict, ...) __printflike(1, 2);
 

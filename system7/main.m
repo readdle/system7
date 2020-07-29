@@ -218,8 +218,7 @@ Class hookClassByName(NSString *hookName) {
 }
 
 int helpCommand(NSArray<NSString *> *arguments) {
-    @try {
-        openHelpPager();
+    return withHelpPaginationDo(^int {
         if (arguments.count < 1) {
             printHelp();
             return 0;
@@ -235,10 +234,7 @@ int helpCommand(NSArray<NSString *> *arguments) {
             printHelp();
             return 1;
         }
-    }
-    @finally {
-        closeHelpPager();
-    }
+    });
 }
 
 void upgradeHooksToUsrLocalBin() {
