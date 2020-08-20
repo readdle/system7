@@ -31,6 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, strong) GitRepository *pasteyRd2Repo;
 @property (nonatomic, readonly, strong) GitRepository *nikRd2Repo;
 
+- (GitRepository *)initializeRemoteRepoAtRelativePath:(NSString *)relativePath;
+
 - (void)touch:(NSString *)filePath;
 - (void)makeDir:(NSString *)filePath;
 

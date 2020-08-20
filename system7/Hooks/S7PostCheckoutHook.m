@@ -327,8 +327,36 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     }
                 }
             }
+
+            NSString *currentUrl = nil;
+            if (0 != [subrepoGit getUrl:&currentUrl]) {
+                return S7ExitCodeGitOperationFailed;
+            }
+
+            if (NO == [currentUrl isEqualToString:subrepoDesc.url]) {
+                fprintf(stdout,
+                        " detected that subrepo '%s' has migrated:\n"
+                        "  from '%s'\n"
+                        "  to '%s'\n"
+                        "  removing an old version...\n",
+                        [subrepoDesc.path fileSystemRepresentation],
+                        [currentUrl cStringUsingEncoding:NSUTF8StringEncoding],
+                        [subrepoDesc.url cStringUsingEncoding:NSUTF8StringEncoding]);
+                fflush(stdout);
+
+                NSError *error = nil;
+                if (NO == [[NSFileManager defaultManager] removeItemAtPath:subrepoDesc.path error:&error]) {
+                    fprintf(stderr, "failed to remove old version of '%s' from disk. Error: %s\n",
+                            subrepoDesc.path.fileSystemRepresentation,
+                            [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+                    return S7ExitCodeFileOperationFailed;
+                }
+
+                subrepoGit = nil;
+            }
         }
-        else {
+
+        if (nil == subrepoGit) {
             fprintf(stdout,
                     " cloning subrepo '%s' from '%s'\n",
                     [subrepoDesc.path fileSystemRepresentation],
@@ -339,6 +367,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             subrepoGit = [GitRepository
                           cloneRepoAtURL:subrepoDesc.url
                           branch:subrepoDesc.branch
+                          bare:NO
                           destinationPath:subrepoDesc.path
                           exitStatus:&cloneExitStatus];
             if (nil == subrepoGit || 0 != cloneExitStatus) {
@@ -350,7 +379,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 cloneExitStatus = 0;
                 subrepoGit = [GitRepository
                               cloneRepoAtURL:subrepoDesc.url
-                              branch:nil
                               destinationPath:subrepoDesc.path
                               exitStatus:&cloneExitStatus];
 

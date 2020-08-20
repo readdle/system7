@@ -58,16 +58,6 @@
         return nil;
     }
 
-    if (NO == [NSFileManager.defaultManager
-               createDirectoryAtPath:[self.root stringByAppendingPathComponent:@"github"]
-               withIntermediateDirectories:YES
-               attributes:nil
-               error:nil])
-    {
-        NSParameterAssert(NO);
-        return nil;
-    }
-
     return self;
 }
 
@@ -158,7 +148,13 @@
         }
     });
 
+    NSString *repoParentDirPath = [absoluteFilePath stringByDeletingLastPathComponent];
+
     NSError *error = nil;
+    if (NO == [NSFileManager.defaultManager createDirectoryAtPath:repoParentDirPath withIntermediateDirectories:YES attributes:nil error:&error]) {
+        NSAssert(NO, @"");
+    }
+
     if (NO == [NSFileManager.defaultManager copyItemAtPath:templateRepoPath toPath:absoluteFilePath error:&error]) {
         NSAssert(NO, @"");
     }

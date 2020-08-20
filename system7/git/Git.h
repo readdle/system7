@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
                                     branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus;
 

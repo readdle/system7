@@ -102,16 +102,22 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
-    return [self cloneRepoAtURL:url branch:nil destinationPath:destinationPath exitStatus:exitStatus];
+    return [self cloneRepoAtURL:url branch:nil bare:NO destinationPath:destinationPath exitStatus:exitStatus];
 }
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
                                     branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
-    NSString *command = [NSString stringWithFormat:@"git clone %@ \"%@\" \"%@\"", branchOption, url, destinationPath];
+    NSString *bareOption = bare ? @"--bare" : @"";
+    NSString *command = [NSString stringWithFormat:@"git clone %@ %@ \"%@\" \"%@\"",
+                         branchOption,
+                         bareOption,
+                         url,
+                         destinationPath];
 
     *exitStatus = [self executeCommand:command];
 
@@ -119,7 +125,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         return nil;
     }
 
-    return [[GitRepository alloc] initWithRepoPath:destinationPath];
+    return [[GitRepository alloc] initWithRepoPath:destinationPath bare:bare];
 }
 
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(nonnull int *)exitStatus {
