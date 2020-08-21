@@ -1204,6 +1204,134 @@
     }];
 }
 
+- (void)testSubrepoMigrationToNewHosting {
+    int exitStatus = 0;
+    GitRepository *bitbucketRepo = [GitRepository
+                                    cloneRepoAtURL:self.env.githubReaddleLibRepo.absolutePath
+                                    destinationPath:[self.env.root stringByAppendingPathComponent:@"bitbucket/ReaddleLib"]
+                                    exitStatus:&exitStatus];
+    XCTAssertNotNil(bitbucketRepo);
+    XCTAssertEqual(0, exitStatus);
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepo = s7add_stage(@"Dependencies/ReaddleLib", bitbucketRepo.absolutePath);
+        XCTAssertNotNil(readdleLibSubrepo);
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        XCTAssertEqual(S7ExitCodeSuccess, s7checkout([GitRepository nullRevision], currentRevision));
+
+        GitRepository *readdleLibSubrepo = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7remove(@"Dependencies/ReaddleLib");
+
+        GitRepository *readdleLibSubrepo = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        XCTAssertNotNil(readdleLibSubrepo);
+        [repo commitWithMessage:@"migrate ReaddleLib subrepo from Bitbucket to GitHub"];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        XCTAssertEqual(S7ExitCodeSuccess, s7checkout([GitRepository nullRevision], currentRevision));
+
+        GitRepository *readdleLibSubrepo = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepo);
+        NSString *remoteUrl = nil;
+        [readdleLibSubrepo getUrl:&remoteUrl];
+        XCTAssertEqualObjects(remoteUrl, self.env.githubReaddleLibRepo.absolutePath);
+    }];
+}
+
+- (void)testSubrepoMigrationToDifferentFork {
+    GitRepository *airBnbLottie = [self.env initializeRemoteRepoAtRelativePath:@"github/airbnb/lottie-ios"];
+    XCTAssertNotNil(airBnbLottie);
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *lottieSubrepo = s7add_stage(@"Dependencies/Thirdparty/lottie-ios", airBnbLottie.absolutePath);
+        XCTAssertNotNil(lottieSubrepo);
+        [repo commitWithMessage:@"add lottie subrepo"];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        XCTAssertEqual(S7ExitCodeSuccess, s7checkout([GitRepository nullRevision], currentRevision));
+
+        GitRepository *lottieSubrepo = [GitRepository repoAtPath:@"Dependencies/Thirdparty/lottie-ios"];
+        XCTAssertNotNil(lottieSubrepo);
+    }];
+
+    int exitStatus = 0;
+    GitRepository *lottieReaddleForkRepo = [GitRepository
+                                            cloneRepoAtURL:airBnbLottie.absolutePath
+                                            branch:nil
+                                            bare:YES
+                                            destinationPath:[self.env.root stringByAppendingPathComponent:@"github/readdle/lottie-ios"]
+                                            exitStatus:&exitStatus];
+    NSAssert(lottieReaddleForkRepo, @"");
+    XCTAssertEqual(0, exitStatus);
+
+    __block NSString *customLottieFixRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7remove(@"Dependencies/Thirdparty/lottie-ios");
+
+        GitRepository *lottieSubrepo = s7add_stage(@"Dependencies/Thirdparty/lottie-ios", lottieReaddleForkRepo.absolutePath);
+        XCTAssertNotNil(lottieSubrepo);
+        [repo commitWithMessage:@"move to custom fork of lottie"];
+
+        customLottieFixRevision = commit(lottieSubrepo, @"FilepathImageProvider.swift", @"fix", @"fix conflicting NSImage extension");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"fix conflicting NSImage extension in lottie"];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        NSString *currentRevision = nil;
+        [repo getCurrentRevision:&currentRevision];
+
+        XCTAssertEqual(S7ExitCodeSuccess, s7checkout([GitRepository nullRevision], currentRevision));
+
+        GitRepository *lottieSubrepo = [GitRepository repoAtPath:@"Dependencies/Thirdparty/lottie-ios"];
+        XCTAssertNotNil(lottieSubrepo);
+        NSString *remoteUrl = nil;
+        [lottieSubrepo getUrl:&remoteUrl];
+        XCTAssertEqualObjects(remoteUrl, lottieReaddleForkRepo.absolutePath);
+
+        NSString *lottieRevision = nil;
+        [lottieSubrepo getCurrentRevision:&lottieRevision];
+        XCTAssertEqualObjects(lottieRevision, customLottieFixRevision);
+    }];
+}
+
 // there's no unit test for recursive checkout as it works on hooks
 // and I don't want to rely on hooks (s7 version installed on test machine) in unit-tests,
 // that's why recursive is tested by integration tests only
