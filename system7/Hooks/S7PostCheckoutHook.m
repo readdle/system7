@@ -207,20 +207,20 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 }
 
-+ (int)initS7InNewlyClonedSubrepos:(NSArray<GitRepository *> *)newlyClonedSubrepos {
++ (int)initS7InSubrepos:(NSArray<GitRepository *> *)subrepos {
     int result = S7ExitCodeSuccess;
 
-    for (GitRepository *subrepoGit in newlyClonedSubrepos) {
-        if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]]) {
-            const int initExitStatus =
-            executeInDirectory(subrepoGit.absolutePath, ^int{
-                S7InitCommand *initCommand = [S7InitCommand new];
-                return [initCommand runWithArguments:@[]];
-            });
+    for (GitRepository *subrepoGit in subrepos) {
+        NSAssert([NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]], @"");
 
-            if (0 != initExitStatus) {
-                result = initExitStatus;
-            }
+        const int initExitStatus =
+        executeInDirectory(subrepoGit.absolutePath, ^int{
+            S7InitCommand *initCommand = [S7InitCommand new];
+            return [initCommand runWithArguments:@[]];
+        });
+
+        if (0 != initExitStatus) {
+            result = initExitStatus;
         }
     }
 
@@ -285,7 +285,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
     }
 
-    NSMutableArray<GitRepository *> *newlyClonedSubrepos = [NSMutableArray new];
+    NSMutableArray<GitRepository *> *subreposToInit = [NSMutableArray new];
 
     BOOL anySubrepoContainedUncommittedChanges = NO;
 
@@ -392,7 +392,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 }
             }
 
-            [newlyClonedSubrepos addObject:subrepoGit];
+            if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoDesc.path stringByAppendingPathComponent:S7ConfigFileName]]) {
+                [subreposToInit addObject:subrepoGit];
+            }
         }
 
         NSString *currentBranch = nil;
@@ -505,6 +507,13 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             if (0 != [subrepoGit forceCheckoutLocalBranch:subrepoDesc.branch revision:subrepoDesc.revision]) {
                 // TODO: raise flag and complain
             }
+
+            const BOOL configFileExists = [NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]];
+            const BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ControlFileName]];
+            if (configFileExists && NO == controlFileExists) {
+                // handling the case when a nested subrepo is added to an existing subrepo
+                [subreposToInit addObject:subrepoGit];
+            }
         }
 
         [self warnAboutDetachingIfNeeded:currentRevision subrepoDesc:subrepoDesc subrepoGit:subrepoGit];
@@ -526,7 +535,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeSubrepoHasLocalChanges;
     }
 
-    return [self initS7InNewlyClonedSubrepos:newlyClonedSubrepos];
+    return [self initS7InSubrepos:subreposToInit];
 }
 
 + (void (^)(NSString * _Nonnull, int))warnAboutDetachingCommitsHook {
