@@ -40,6 +40,8 @@ fi
 #
 
 xcodebuild_cmd() {
+    unset USER_HEADER_SEARCH_PATHS
+    unset HEADER_SEARCH_PATHS
     xcodebuild -target system7 -configuration Release DSTROOT="/" install
 }
 
