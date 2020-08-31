@@ -40,6 +40,8 @@ fi
 #
 
 xcodebuild_cmd() {
+    // when executed as part of xcode run script phase, env is populated with settings of current project
+    // these headers are unwanted and may cause module import conflicts  
     unset USER_HEADER_SEARCH_PATHS
     unset HEADER_SEARCH_PATHS
     xcodebuild -target system7 -configuration Release DSTROOT="/" install
