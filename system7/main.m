@@ -274,6 +274,26 @@ void upgradeHooksToUsrLocalBin() {
 }
 
 int main(int argc, const char * argv[]) {
+    // Turn off stdout buffering to make sure that the order of output corresponds to the logic we have in code.
+    // stderr is not buffered by default. If we don't flush stdout after each fprintf,
+    // then in case of error, we get a confusing output in terminal. For example:
+    //
+    //   checking out subrepo X
+    //   blah-blah
+    //   error: blah-blah
+    //   blah-blah
+    //   checking out subrepo Y
+    //
+    // instead of expected:
+    //
+    //   checking out subrepo X
+    //   blah-blah
+    //   checking out subrepo Y
+    //   error: blah-blah
+    //   blah-blah
+    //
+    setbuf(stdout, NULL);
+
     if (argc < 2) {
         helpCommand(@[]);
         return S7ExitCodeUnknownCommand;

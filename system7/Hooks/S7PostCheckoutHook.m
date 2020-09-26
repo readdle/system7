@@ -342,7 +342,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                         [subrepoDesc.path fileSystemRepresentation],
                         [currentUrl cStringUsingEncoding:NSUTF8StringEncoding],
                         [subrepoDesc.url cStringUsingEncoding:NSUTF8StringEncoding]);
-                fflush(stdout);
 
                 NSError *error = nil;
                 if (NO == [[NSFileManager defaultManager] removeItemAtPath:subrepoDesc.path error:&error]) {
@@ -361,7 +360,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     " cloning subrepo '%s' from '%s'\n",
                     [subrepoDesc.path fileSystemRepresentation],
                     [subrepoDesc.url fileSystemRepresentation]);
-            fflush(stdout); // flush to make sure that *what is cloned* comes before errors if they arise
 
             int cloneExitStatus = 0;
             subrepoGit = [GitRepository
