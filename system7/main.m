@@ -35,8 +35,8 @@
 // 1. no bash scripts – bash script for such tasks is always a big pain in the ass
 // 2. no python – I could have written in python, but I just know C better
 // 3. I looked for some plugin system in git – didn't find one
-// 4. considered forking git itself. First, I had pre-vomit hiccups at the very thought about it.
-//    Second, too many GUIs I know, are bunding their own version of git, so my fork will be useless.
+// 4. considered forking git itself. First, I had pre-vomit hiccups at the very thought of it.
+//    Second, too many GUIs I know, are bundling their own version of git, so my fork will be useless.
 // 5. thus I stopped at separate command + few git hooks
 //
 // I was thinking of the way to do all subrepos managing stuff almost automatic as it's done
