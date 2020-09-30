@@ -8,6 +8,7 @@
 
 #import "Git.h"
 #import "Utils.h"
+#import "S7IniConfig.h"
 
 #include <stdlib.h>
 
@@ -641,7 +642,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                       error:&error];
     if (nil == HEAD) {
         if (NO == [self isBareRepo]) {
-            return 1;
+            return S7ExitCodeGitOperationFailed;
         }
 
         bareRepo = YES;
@@ -763,18 +764,27 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 }
 
 - (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl {
-    NSString *stdOutOutput = nil;
-    const int exitStatus = [self runGitCommand:@"remote get-url origin"
-                                  stdOutOutput:&stdOutOutput
-                                  stdErrOutput:NULL];
-    if (0 != exitStatus) {
-        return exitStatus;
+    S7IniConfig *parsedGitConfig = [S7IniConfig configWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@".git/config"]];
+    if (nil == parsedGitConfig) {
+        NSAssert(NO, @"WTF?");
+        return S7ExitCodeGitOperationFailed;
     }
 
-    NSString *url = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+    NSDictionary<NSString *, NSString *> *remoteSection = parsedGitConfig.dictionaryRepresentation[@"remote \"origin\""];
+    if (nil == remoteSection) {
+        NSAssert(NO, @"WTF?");
+        return S7ExitCodeGitOperationFailed;
+    }
+
+    NSString *url = remoteSection[@"url"];
+    if (0 == url.length) {
+        NSAssert(NO, @"WTF?");
+        return S7ExitCodeGitOperationFailed;
+    }
+
     *ppUrl = url;
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 #pragma mark - exchange -
