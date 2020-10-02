@@ -19,10 +19,6 @@
 //  - no other sophisticated things
 //
 
-//@interface S7IniConfig ()
-//@property (nonatomic, strong) NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *dictionaryRepresentation;
-//@end
-
 @implementation S7IniConfig
 
 - (instancetype)initWithParsedConfig:(NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *)parsedConfig {
@@ -97,6 +93,11 @@
                         "skipped ill-formed key-value line '%s'\n",
                         [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
             }
+        }
+        else {
+            fprintf(stderr,
+                    "skipped out of section line '%s'\n",
+                    [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
         }
     }];
 
