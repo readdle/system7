@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)configWithContentsOfFile:(NSString *)filePath;
 + (instancetype)configWithContentsOfString:(NSString *)string;
 
-- (NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *)dictionaryRepresentation;
+@property (nonatomic, readonly, strong) NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *dictionaryRepresentation;
 
 @end
 

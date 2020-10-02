@@ -19,9 +19,9 @@
 //  - no other sophisticated things
 //
 
-@interface S7IniConfig ()
-@property (nonatomic, strong) NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *parsedConfig;
-@end
+//@interface S7IniConfig ()
+//@property (nonatomic, strong) NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *dictionaryRepresentation;
+//@end
 
 @implementation S7IniConfig
 
@@ -33,7 +33,7 @@
         return nil;
     }
 
-    _parsedConfig = parsedConfig;
+    _dictionaryRepresentation = parsedConfig;
 
     return self;
 }
@@ -49,6 +49,58 @@
     }
 
     return [self configWithContentsOfString:fileContents];
+}
+
++ (instancetype)configWithContentsOfString:(NSString *)string {
+    NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *parsedConfig = [self parseConfig:string];
+    return [[S7IniConfig alloc] initWithParsedConfig:parsedConfig];
+}
+
++ (NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *)parseConfig:(NSString *)string {
+    NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSString *> *> *parsedConfig = [NSMutableDictionary new];
+
+    __block NSString *currentSectionTitle = nil;
+
+    [string enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        if (0 == trimmedLine.length) {
+            return;
+        }
+
+        if ([trimmedLine hasPrefix:@"#"] || [trimmedLine hasPrefix:@";"]) {
+            // skip comments
+            return;
+        }
+
+        if ([trimmedLine hasPrefix:@"["]) {
+            NSString *sectionTitle = [self parseSectionHeaderLine:trimmedLine];
+            if (sectionTitle) {
+                currentSectionTitle = sectionTitle;
+                if (nil == parsedConfig[currentSectionTitle]) {
+                    parsedConfig[currentSectionTitle] = [NSMutableDictionary new];
+                }
+            }
+            else {
+                fprintf(stderr,
+                        "skipped ill-formed section line '%s'\n",
+                        [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
+            }
+        }
+        else if (currentSectionTitle) {
+            NSDictionary *kv = [self parseKeyValueLine:trimmedLine];
+            if (kv) {
+                NSAssert(parsedConfig[currentSectionTitle], @"");
+                [parsedConfig[currentSectionTitle] addEntriesFromDictionary:kv];
+            }
+            else {
+                fprintf(stderr,
+                        "skipped ill-formed key-value line '%s'\n",
+                        [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
+            }
+        }
+    }];
+
+    return parsedConfig;
 }
 
 + (NSString *)parseSectionHeaderLine:(NSString *)trimmedLine {
@@ -145,47 +197,6 @@
     }
 
     return @{ key : value };
-}
-
-+ (instancetype)configWithContentsOfString:(NSString *)string {
-    NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSString *> *> *parsedConfig = [NSMutableDictionary new];
-
-    __block NSString *currentSectionTitle = nil;
-
-    [string enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
-        NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-        if (0 == trimmedLine.length) {
-            return;
-        }
-
-        if ([trimmedLine hasPrefix:@"#"] || [trimmedLine hasPrefix:@";"]) {
-            // skip comments
-            return;
-        }
-
-        if ([trimmedLine hasPrefix:@"["]) {
-            NSString *sectionTitle = [self parseSectionHeaderLine:trimmedLine];
-            if (sectionTitle) {
-                currentSectionTitle = sectionTitle;
-                if (nil == parsedConfig[currentSectionTitle]) {
-                    parsedConfig[currentSectionTitle] = [NSMutableDictionary new];
-                }
-            }
-        }
-        else if (currentSectionTitle) {
-            NSDictionary *kv = [self parseKeyValueLine:trimmedLine];
-            if (kv) {
-                NSAssert(parsedConfig[currentSectionTitle], @"");
-                [parsedConfig[currentSectionTitle] addEntriesFromDictionary:kv];
-            }
-        }
-    }];
-
-    return [[S7IniConfig alloc] initWithParsedConfig:parsedConfig];
-}
-
-- (NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *)dictionaryRepresentation {
-    return self.parsedConfig;
 }
 
 @end
