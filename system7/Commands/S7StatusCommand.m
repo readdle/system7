@@ -213,13 +213,15 @@
     __block int error = 0;
 
     dispatch_apply(actualConfig.subrepoDescriptions.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
+        S7SubrepoDescription *subrepoDesc = nil;
         @synchronized (self) {
             if (0 != error) {
                 return;
             }
+
+            subrepoDesc = actualConfig.subrepoDescriptions[i];
         }
 
-        S7SubrepoDescription *subrepoDesc = actualConfig.subrepoDescriptions[i];
         NSString *relativeSubrepoPath = subrepoDesc.path;
         
         NSString *absoluteSubrepoPath = [repo.absolutePath stringByAppendingPathComponent:relativeSubrepoPath];
