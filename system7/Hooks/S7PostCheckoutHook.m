@@ -192,7 +192,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         // switch to a different state. That's the question of general
         // philosophy. I think that getting main repo with non-fitting subrepo
         // is not great. There're valid cases, when I would want to use this approach,
-        // but for now I stick to the strickest one. Example of such case is the
+        // but for now I stick to the strictest one. Example of such case is the
         // checkout of a new branch or a "close relative" branch. Close relative is
         // impossible to deduce from code. New branch might be possible, and I want
         // to investigate it some day.
@@ -239,13 +239,31 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
         if (subrepoGit) {
             BOOL subrepoUrlChanged = NO;
-            const int checkExitCode = [self checkSubrepoUrlChanged:subrepoDesc subrepoGit:subrepoGit urlChanged:&subrepoUrlChanged];
+            NSString *oldUrl = nil;
+            const int checkExitCode = [self checkSubrepoUrlChanged:subrepoDesc
+                                                        subrepoGit:subrepoGit
+                                                        urlChanged:&subrepoUrlChanged
+                                                            oldUrl:&oldUrl];
             if (S7ExitCodeSuccess != checkExitCode) {
                 exitCode = checkExitCode;
                 continue;
             }
 
             if (subrepoUrlChanged) {
+                // for example, we have moved from an official github.com/airbnb/lottie
+                // to our fork at github.com/readdle/lottie
+                // We still clone it to Dependencies/Thirdparty/lottie,
+                // but the remote is absolutely different.
+                //
+                fprintf(stdout,
+                        " detected that subrepo '%s' has migrated:\n"
+                        "  from '%s'\n"
+                        "  to '%s'\n"
+                        "  removing an old version...\n",
+                        [subrepoDesc.path fileSystemRepresentation],
+                        [oldUrl cStringUsingEncoding:NSUTF8StringEncoding],
+                        [subrepoDesc.url cStringUsingEncoding:NSUTF8StringEncoding]);
+
                 NSError *error = nil;
                 if (NO == [[NSFileManager defaultManager] removeItemAtPath:subrepoDesc.path error:&error]) {
                     fprintf(stderr,
@@ -392,19 +410,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 {
     NSMutableIndexSet *indicesOfSubreposWithUncommittedChanges = [NSMutableIndexSet new];
 
-    __auto_type addSubrepoWithUncommittedChanges = ^ void (NSUInteger subrepoIndex) {
-        @synchronized (self) {
-            [indicesOfSubreposWithUncommittedChanges addIndex:subrepoIndex];
-        }
-    };
-
     dispatch_apply(subrepoDescriptions.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
-        S7SubrepoDescription *subrepoDesc = nil;
-        GitRepository *subrepoGit = nil;
-        @synchronized (self) {
-            subrepoDesc = subrepoDescriptions[i];
-            subrepoGit = subrepoDescToGit[subrepoDesc];
-        }
+        S7SubrepoDescription *subrepoDesc = subrepoDescriptions[i];
+        GitRepository *subrepoGit = subrepoDescToGit[subrepoDesc];
 
         NSCAssert(subrepoDesc, @"");
 
@@ -426,9 +434,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                         " uncommited local changes in subrepo '%s'\n"
                         "\033[0m",
                         subrepoDesc.path.fileSystemRepresentation);
-            }
 
-            addSubrepoWithUncommittedChanges(i);
+                [indicesOfSubreposWithUncommittedChanges addIndex:i];
+            }
         }
         else {
             const int resetExitStatus = [subrepoGit resetLocalChanges];
@@ -439,9 +447,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                             " failed to discard uncommited changes in subrepo '%s'\n"
                             "\033[0m",
                             subrepoDesc.path.fileSystemRepresentation);
-                }
 
-                addSubrepoWithUncommittedChanges(i);
+                    [indicesOfSubreposWithUncommittedChanges addIndex:i];
+                }
             }
         }
     });
@@ -449,15 +457,15 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     if (0 == indicesOfSubreposWithUncommittedChanges.count) {
         return S7ExitCodeSuccess;
     }
-    else {
-        *ppIndicesOfSubreposWithUncommittedChanges = indicesOfSubreposWithUncommittedChanges;
-        return S7ExitCodeSubrepoHasLocalChanges;
-    }
+
+    *ppIndicesOfSubreposWithUncommittedChanges = indicesOfSubreposWithUncommittedChanges;
+    return S7ExitCodeSubrepoHasLocalChanges;
 }
 
 + (int)checkSubrepoUrlChanged:(S7SubrepoDescription *)subrepoDesc
                    subrepoGit:(GitRepository *)subrepoGit
                    urlChanged:(BOOL *)urlChanged
+                       oldUrl:(NSString **)oldUrl
 {
     NSString *currentUrl = nil;
     if (0 != [subrepoGit getUrl:&currentUrl]) {
@@ -468,20 +476,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         *urlChanged = NO;
         return S7ExitCodeSuccess;
     }
-
-    // for example, we have moved from an official github.com/airbnb/lottie
-    // to our fork at github.com/readdle/lottie
-    // We still clone it to Dependencies/Thirdparty/lottie,
-    // but the remote is absolutely different.
-    //
-    fprintf(stdout,
-            " detected that subrepo '%s' has migrated:\n"
-            "  from '%s'\n"
-            "  to '%s'\n"
-            "  removing an old version...\n",
-            [subrepoDesc.path fileSystemRepresentation],
-            [currentUrl cStringUsingEncoding:NSUTF8StringEncoding],
-            [subrepoDesc.url cStringUsingEncoding:NSUTF8StringEncoding]);
 
     *urlChanged = YES;
 
