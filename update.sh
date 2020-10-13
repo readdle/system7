@@ -46,7 +46,7 @@ function update() {
         if [ 0 -ne $? ]
         then
             echo "warning: failed to check for s7 updates. The tool is installed, so don't fail the build. But we'll keep trying to check for updates"
-            exit 1
+            exit 0
         fi
 
         CURRENT_REVISION=$(git rev-parse HEAD)
