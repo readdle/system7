@@ -215,13 +215,20 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         if (subreposWithUncommittedChangesIndices.count > 0) {
-            [subreposToCheckout removeObjectsAtIndexes:subreposWithUncommittedChangesIndices];
-
             fprintf(stderr,
                     "\033[31m"
                     "\n"
                     "  subrepos with uncommitted local changes were not updated\n"
-                    "  to prevent possible data loss\n"
+                    "  to prevent possible data loss:\n\n");
+
+            [subreposToCheckout
+             enumerateObjectsAtIndexes:subreposWithUncommittedChangesIndices
+             options:0
+             usingBlock:^(S7SubrepoDescription * _Nonnull subrepoDesc, NSUInteger idx, BOOL * _Nonnull stop) {
+                fprintf(stderr, "    %s\n", [subrepoDesc.path fileSystemRepresentation]);
+             }];
+
+            fprintf(stderr,
                     "\n"
                     "  Use `s7 reset` to discard subrepo changes.\n"
                     "  (see `s7 help reset` for more info)\n"
@@ -229,6 +236,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                     "  Or you can run `git reset REV && git reset --hard REV`\n"
                     "  in subrepo yourself.\n"
                     "\033[0m");
+
+            [subreposToCheckout removeObjectsAtIndexes:subreposWithUncommittedChangesIndices];
         }
     }
 
