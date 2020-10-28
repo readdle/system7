@@ -481,12 +481,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeGitOperationFailed;
     }
 
-    if ([currentUrl isEqualToString:subrepoDesc.url]) {
-        *urlChanged = NO;
-        return S7ExitCodeSuccess;
-    }
-
-    *urlChanged = YES;
+    *urlChanged = ([currentUrl isEqualToString:subrepoDesc.url]) == NO;;
 
     return S7ExitCodeSuccess;
 }
