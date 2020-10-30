@@ -105,6 +105,15 @@
     return self;
 }
 
+#pragma mark - NSCopying -
+
+- (id)copyWithZone:(NSZone *)zone {
+    return [[S7SubrepoDescription alloc] initWithPath:self.path
+                                                  url:self.url
+                                             revision:self.revision
+                                               branch:self.branch];
+}
+
 #pragma mark -
 
 - (BOOL)isEqual:(id)object {
