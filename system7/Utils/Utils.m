@@ -119,7 +119,19 @@ int s7RepoPreconditionCheck(void) {
     if (NO == isCurrentDirectoryS7RepoRoot())
     {
         fprintf(stderr,
-                "abort: not s7 repo root\n");
+                "\033[31m"
+                "abort: not s7 repo root\n"
+                "\033[0m");
+        return S7ExitCodeNotS7Repo;
+    }
+
+    const BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
+    if (NO == controlFileExists) {
+        fprintf(stderr,
+                "\033[31m"
+                "abort: s7 repo is corrupted.\n"
+                "(most likely 's7 init' failed to install git hooks)\n"
+                "\033[0m");
         return S7ExitCodeNotS7Repo;
     }
 

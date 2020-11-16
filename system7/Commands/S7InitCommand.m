@@ -115,17 +115,6 @@
         }
     }
 
-    const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
-    if (NO == controlFileExisted) {
-        if (0 != [[S7Config emptyConfig] saveToFileAtPath:S7ControlFileName]) {
-            fprintf(stderr,
-                    "failed to save %s to disk.\n",
-                    S7ControlFileName.fileSystemRepresentation);
-
-            return S7ExitCodeFileOperationFailed;
-        }
-    }
-
     NSSet<Class<S7Hook>> *hookClasses = [NSSet setWithArray:@[
         [S7PrePushHook class],
         [S7PostCheckoutHook class],
@@ -161,7 +150,20 @@
         return configUpdateExitStatus;
     }
 
+    const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
     if (NO == controlFileExisted) {
+        // create control file at the very end.
+        // existance of .s7control is used as an indicator that s7 repo
+        // is well formed. No other command will run if there's no .s7control
+        //
+        if (0 != [[S7Config emptyConfig] saveToFileAtPath:S7ControlFileName]) {
+            fprintf(stderr,
+                    "failed to save %s to disk.\n",
+                    S7ControlFileName.fileSystemRepresentation);
+
+            return S7ExitCodeFileOperationFailed;
+        }
+
         NSString *currentRevision = nil;
         if (0 != [repo getCurrentRevision:&currentRevision]) {
             return S7ExitCodeGitOperationFailed;
