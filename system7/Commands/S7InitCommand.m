@@ -139,7 +139,9 @@
         hookInstallationExitCode = [self installHook:hookClass];
         if (0 != hookInstallationExitCode) {
             fprintf(stderr,
-                    "error: failed to install `%s` git hook\n",
+                    "\033[31m"
+                    "error: failed to install `%s` git hook\n"
+                    "\033[0m",
                         [hookClass gitHookName].fileSystemRepresentation);
             return hookInstallationExitCode;
         }
@@ -205,7 +207,9 @@
         }
 
         fprintf(stderr,
-                "hook already installed at path %s\n",
+                "\033[31m"
+                "hook already installed at path %s\n"
+                "\033[0m",
                 hookFilePath.fileSystemRepresentation);
         return S7ExitCodeFileOperationFailed;
     }
