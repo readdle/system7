@@ -184,10 +184,14 @@
 
 - (void)testInitOnRepoThatHasNoSheBang {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        [@"дулі-дулі, дулі вам!" writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
+        NSString *existingHookContents = @"дулі-дулі, дулі вам!";
+        [existingHookContents writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
         S7InitCommand *command = [S7InitCommand new];
         XCTAssertEqual(S7ExitCodeFileOperationFailed, [command runWithArguments:@[]]);
+
+        NSString *installedHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertTrue([installedHookContents containsString:existingHookContents]);
     }];
 }
 
