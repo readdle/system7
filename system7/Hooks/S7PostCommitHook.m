@@ -16,10 +16,6 @@
     return @"post-commit";
 }
 
-+ (NSString *)hookFileContents {
-    return hookFileContentsForHookNamed([self gitHookName]);
-}
-
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     fprintf(stdout, "s7: post-commit hook start\n");
     const int result = [self doRunWithArguments:arguments];
