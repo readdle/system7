@@ -205,6 +205,7 @@
         NSString *installedHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
         NSString *expectedHookCallCommandPart = [NSString stringWithFormat:@"s7 %@-hook", [S7PrePushHook gitHookName]];
         XCTAssertTrue([installedHookContents containsString:expectedHookCallCommandPart]);
+        XCTAssertFalse([installedHookContents containsString:@"дулі-дулі"]);
     }];
 }
 
