@@ -115,17 +115,6 @@
         }
     }
 
-    const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
-    if (NO == controlFileExisted) {
-        if (0 != [[S7Config emptyConfig] saveToFileAtPath:S7ControlFileName]) {
-            fprintf(stderr,
-                    "failed to save %s to disk.\n",
-                    S7ControlFileName.fileSystemRepresentation);
-
-            return S7ExitCodeFileOperationFailed;
-        }
-    }
-
     NSSet<Class<S7Hook>> *hookClasses = [NSSet setWithArray:@[
         [S7PrePushHook class],
         [S7PostCheckoutHook class],
@@ -139,7 +128,9 @@
         hookInstallationExitCode = [self installHook:hookClass];
         if (0 != hookInstallationExitCode) {
             fprintf(stderr,
-                    "error: failed to install `%s` git hook\n",
+                    "\033[31m"
+                    "error: failed to install `%s` git hook\n"
+                    "\033[0m",
                         [hookClass gitHookName].fileSystemRepresentation);
             return hookInstallationExitCode;
         }
@@ -159,7 +150,20 @@
         return configUpdateExitStatus;
     }
 
+    const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
     if (NO == controlFileExisted) {
+        // create control file at the very end.
+        // existance of .s7control is used as an indicator that s7 repo
+        // is well formed. No other command will run if there's no .s7control
+        //
+        if (0 != [[S7Config emptyConfig] saveToFileAtPath:S7ControlFileName]) {
+            fprintf(stderr,
+                    "failed to save %s to disk.\n",
+                    S7ControlFileName.fileSystemRepresentation);
+
+            return S7ExitCodeFileOperationFailed;
+        }
+
         NSString *currentRevision = nil;
         if (0 != [repo getCurrentRevision:&currentRevision]) {
             return S7ExitCodeGitOperationFailed;
@@ -196,22 +200,54 @@
 
 - (int)installHook:(Class<S7Hook>)hookClass {
     NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:[hookClass gitHookName]];
-    NSString *contents = [hookClass hookFileContents];
+
+    // there's no guarantie that s7 will be the only one citizen of a hook,
+    // thus we add " || exit $?" – to exit hook properly if s7 hook fails
+    NSString *s7hookCallCommandLine = [NSString
+                                 stringWithFormat:
+                                 @"/usr/local/bin/s7 %@-hook \"$@\" <&0 || exit $?",
+                                 [hookClass gitHookName]];
+
+    NSString *contentsToWrite = [NSString stringWithFormat:@"#!/bin/sh\n\n%@\n", s7hookCallCommandLine];
 
     if (NO == self.forceOverwriteHooks && [NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
         NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
-        if ([contents isEqualToString:existingContents]) {
+        if (NO == [existingContents hasPrefix:@"#!/bin/sh\n"]) {
+            fprintf(stderr,
+                    "\033[31m"
+                    "hook %s already exists and it's not a shell script, so we cannot merge s7 call into it\n"
+                    "\033[0m",
+                    hookFilePath.fileSystemRepresentation);
+
+            return S7ExitCodeFileOperationFailed;
+        }
+
+        if ([existingContents containsString:s7hookCallCommandLine]) {
             return 0;
         }
 
-        fprintf(stderr,
-                "hook already installed at path %s\n",
-                hookFilePath.fileSystemRepresentation);
-        return S7ExitCodeFileOperationFailed;
+        NSString *oldStyleS7HookContents = [NSString
+                                            stringWithFormat:
+                                            @"#!/bin/sh\n"
+                                            "/usr/local/bin/s7 %@-hook \"$@\" <&0",
+                                            [hookClass gitHookName]];
+        if (NO == [existingContents isEqualToString:oldStyleS7HookContents]) {
+            NSString *existingHookBody = [existingContents stringByReplacingOccurrencesOfString:@"#!/bin/sh\n" withString:@""];
+            NSString *mergedHookContents = [NSString stringWithFormat:
+                                            @"#!/bin/sh\n"
+                                            "\n"
+                                            "%@\n"
+                                            "\n"
+                                            "%@",
+                                            s7hookCallCommandLine,
+                                            existingHookBody];
+
+            contentsToWrite = mergedHookContents;
+        }
     }
 
     if (self.installFakeHooks) {
-        contents = @"";
+        contentsToWrite = @"";
     }
 
     NSError *error = nil;
@@ -230,7 +266,7 @@
         }
     }
 
-    if (NO == [contents writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+    if (NO == [contentsToWrite writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
         fprintf(stderr,
                 "failed to save %s to disk. Error: %s\n",
                 hookFilePath.fileSystemRepresentation,

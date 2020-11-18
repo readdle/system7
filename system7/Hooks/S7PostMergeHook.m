@@ -16,10 +16,6 @@
     return @"post-merge";
 }
 
-+ (NSString *)hookFileContents {
-    return hookFileContentsForHookNamed([self gitHookName]);
-}
-
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     fprintf(stdout, "s7: post-merge hook start\n");
     const int result = [self doRunWithArguments:arguments];

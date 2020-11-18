@@ -237,42 +237,6 @@ int helpCommand(NSArray<NSString *> *arguments) {
     });
 }
 
-void upgradeHooksToUsrLocalBin() {
-#ifdef DEBUG
-    NSDateComponents *maximumMigrationDateComponents = [NSDateComponents new];
-    maximumMigrationDateComponents.year = 2020;
-    maximumMigrationDateComponents.month = 8;
-
-    NSDateComponents *todayDateComponents = [[NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian] components:(NSCalendarUnitYear | NSCalendarUnitMonth) fromDate:[NSDate date]];
-
-    if (todayDateComponents.year >= maximumMigrationDateComponents.year &&
-        todayDateComponents.month >= maximumMigrationDateComponents.month)
-    {
-        NSCAssert(NO, @"time to delete this function. If a person haven't used the repo for more than a month, then they will have to migrate it manually. I think month should be enough for everyone in our team.");
-    }
-#endif
-
-    if (NO == isCurrentDirectoryS7RepoRoot()) {
-        return;
-    }
-
-    NSString *anyHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
-    if (nil == anyHookContents || [anyHookContents containsString:@"/usr/local/bin/s7"]) {
-        return;
-    }
-
-    S7InitCommand *initCommand = [S7InitCommand new];
-    [initCommand runWithArguments:@[ @"--force" ]];
-
-    S7Config *mainRepoConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
-    for (NSString *subrepoPath in mainRepoConfig.subrepoPathsSet) {
-        executeInDirectory(subrepoPath, ^int {
-            upgradeHooksToUsrLocalBin();
-            return 0;
-        });
-    }
-}
-
 int main(int argc, const char * argv[]) {
     // Turn off stdout buffering to make sure that the order of output corresponds to the logic we have in code.
     // stderr is not buffered by default. If we don't flush stdout after each fprintf,
@@ -316,10 +280,6 @@ int main(int argc, const char * argv[]) {
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
         fprintf(stderr, "s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
-    }
-
-    if (NO == [commandName isEqualToString:@"help"] && NO == [commandName isEqualToString:@"init"]) {
-        upgradeHooksToUsrLocalBin();
     }
 
     if ([commandName hasSuffix:@"-hook"]) {

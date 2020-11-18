@@ -65,10 +65,6 @@
     return @"pre-push";
 }
 
-+ (NSString *)hookFileContents {
-    return hookFileContentsForHookNamed([self gitHookName]);
-}
-
 - (NSString *)stdinContents {
     if (self.testStdinContents) {
         return self.testStdinContents;

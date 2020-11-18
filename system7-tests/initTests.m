@@ -77,10 +77,12 @@
         ]];
 
         for (Class<S7Hook> hookClass in hookClasses) {
+            NSString *gitHookName = [hookClass gitHookName];
             NSString *actualHookContents = [[NSString alloc]
-                                            initWithData:[NSFileManager.defaultManager contentsAtPath:[@".git/hooks" stringByAppendingPathComponent:[hookClass gitHookName]]]
+                                            initWithData:[NSFileManager.defaultManager contentsAtPath:[@".git/hooks" stringByAppendingPathComponent:gitHookName]]
                                             encoding:NSUTF8StringEncoding];
-            XCTAssertEqualObjects(actualHookContents, [hookClass hookFileContents]);
+            NSString *expectedHookCallCommandPart = [NSString stringWithFormat:@"s7 %@-hook", gitHookName];
+            XCTAssertTrue([actualHookContents containsString:expectedHookCallCommandPart]);
         }
 
         NSString *configContents = [[NSString alloc]
@@ -127,16 +129,73 @@
     }];
 }
 
-- (void)testToInitOnRepoThatHasCustomGitHooks {
+- (void)testInitOnRepoWithOldStyleGitHooks {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        [@"дулі-дулі, дулі вам!" writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
+        NSString *oldStyleHookContents = @"#!/bin/sh\n"
+                                          "/usr/local/bin/s7 pre-push-hook \"$@\" <&0";
+        [oldStyleHookContents writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
+
+        S7InitCommand *command = [S7InitCommand new];
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
+
+        NSString *installedHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
+        NSString *expectedResultingHookContents =
+        @"#!/bin/sh\n"
+        "\n"
+        "/usr/local/bin/s7 pre-push-hook \"$@\" <&0 || exit $?\n";
+
+        XCTAssertEqualObjects(installedHookContents, expectedResultingHookContents);
+    }];
+}
+
+- (void)testInitOnRepoWithExistingGitLFSHook_MustMergeInS7Call {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *gitLFSHookContents =
+        @"#!/bin/sh\n"
+        "command -v git-lfs >/dev/null 2>&1 || { echo >&2 \"\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting .git/hooks/pre-push.\n\"; exit 2; }\n"
+        "git lfs pre-push \"$@\"\n";
+        [gitLFSHookContents writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
+
+        S7InitCommand *command = [S7InitCommand new];
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
+
+        NSString *installedHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
+
+        NSString *expectedResultingHookContents =
+        @"#!/bin/sh\n"
+        "\n"
+        "/usr/local/bin/s7 pre-push-hook \"$@\" <&0 || exit $?\n"
+        "\n"
+        "command -v git-lfs >/dev/null 2>&1 || { echo >&2 \"\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting .git/hooks/pre-push.\n\"; exit 2; }\n"
+        "git lfs pre-push \"$@\"\n";
+
+        XCTAssertEqualObjects(installedHookContents, expectedResultingHookContents);
+    }];
+}
+
+- (void)testInitOnRepoWithNonBinShSheBang {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [@"#!/bin/ruby\nputs \"Hello World\"" writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
         S7InitCommand *command = [S7InitCommand new];
         XCTAssertEqual(S7ExitCodeFileOperationFailed, [command runWithArguments:@[]]);
     }];
 }
 
-- (void)testToInitForceOnRepoThatHasCustomGitHooks {
+- (void)testInitOnRepoThatHasNoSheBang {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        NSString *existingHookContents = @"дулі-дулі, дулі вам!";
+        [existingHookContents writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
+
+        S7InitCommand *command = [S7InitCommand new];
+        XCTAssertEqual(S7ExitCodeFileOperationFailed, [command runWithArguments:@[]]);
+
+        NSString *installedHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertTrue([installedHookContents containsString:existingHookContents]);
+    }];
+}
+
+- (void)testInitForceOnRepoThatHasCustomGitHooks {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         [@"дулі-дулі, дулі вам!" writeToFile:@".git/hooks/pre-push" atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
@@ -144,7 +203,9 @@
         XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[ @"--force" ]]);
 
         NSString *installedHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
-        XCTAssertEqualObjects(installedHookContents, [S7PrePushHook hookFileContents]);
+        NSString *expectedHookCallCommandPart = [NSString stringWithFormat:@"s7 %@-hook", [S7PrePushHook gitHookName]];
+        XCTAssertTrue([installedHookContents containsString:expectedHookCallCommandPart]);
+        XCTAssertFalse([installedHookContents containsString:@"дулі-дулі"]);
     }];
 }
 

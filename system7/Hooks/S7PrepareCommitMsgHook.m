@@ -30,10 +30,6 @@
     return @"prepare-commit-msg";
 }
 
-+ (NSString *)hookFileContents {
-    return hookFileContentsForHookNamed([self gitHookName]);
-}
-
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     fprintf(stdout, "s7: prepare-commit-msg hook start\n");
     const int result = [self doRunWithArguments:arguments];
