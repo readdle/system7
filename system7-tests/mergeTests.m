@@ -467,13 +467,11 @@
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         __block int callNumber = 0;
         [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
-                                                                          S7SubrepoDescription * _Nonnull theirVersion,
-                                                                          S7ConflictResolutionOption possibleOptions)
+                                                                          S7SubrepoDescription * _Nonnull theirVersion)
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
-            S7ConflictResolutionOption expectedResolutionOptions =
-                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
-            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+//            possibleOptions:
+//                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
 
             ++callNumber;
 
@@ -594,13 +592,11 @@
 
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
-                                                                          S7SubrepoDescription * _Nonnull theirVersion,
-                                                                          S7ConflictResolutionOption possibleOptions)
+                                                                          S7SubrepoDescription * _Nonnull theirVersion)
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
-            S7ConflictResolutionOption expectedResolutionOptions =
-                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
-            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+//            possibleOptions:
+//                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
 
             return S7ConflictResolutionOptionMerge;
          }];
@@ -726,13 +722,11 @@
 
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
-                                                                               S7SubrepoDescription * _Nonnull theirVersion,
-                                                                               S7ConflictResolutionOption possibleOptions)
+                                                                               S7SubrepoDescription * _Nonnull theirVersion)
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
-            S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
-            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+//            possibleOptions:
+//                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
 
             return S7ConflictResolutionOptionKeepLocal;
         }];
@@ -833,13 +827,11 @@
 
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
-                                                                               S7SubrepoDescription * _Nonnull theirVersion,
-                                                                               S7ConflictResolutionOption possibleOptions)
+                                                                               S7SubrepoDescription * _Nonnull theirVersion)
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
-            S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
-            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+//            possibleOptions:
+//                S7ConflictResolutionOptionKeepLocal | S7ConflictResolutionOptionKeepRemote | S7ConflictResolutionOptionMerge;
 
             return S7ConflictResolutionOptionKeepRemote;
         }];
@@ -941,15 +933,13 @@
 
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
-                                                                               S7SubrepoDescription * _Nonnull theirVersion,
-                                                                               S7ConflictResolutionOption possibleOptions)
+                                                                               S7SubrepoDescription * _Nonnull theirVersion)
          {
             XCTAssertNil(ourVersion);
             XCTAssertEqualObjects(theirVersion.path, @"Dependencies/ReaddleLib");
 
-            S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionOptionKeepChanged | S7ConflictResolutionOptionDelete;
-            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+//            possibleOptions:
+//                S7ConflictResolutionOptionKeepChanged | S7ConflictResolutionOptionDelete;
 
             return S7ConflictResolutionOptionDelete;
         }];
@@ -1045,15 +1035,13 @@
 
         S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
         [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
-                                                                               S7SubrepoDescription * _Nonnull theirVersion,
-                                                                               S7ConflictResolutionOption possibleOptions)
+                                                                               S7SubrepoDescription * _Nonnull theirVersion)
          {
             XCTAssertNil(ourVersion);
             XCTAssertEqualObjects(theirVersion.path, @"Dependencies/ReaddleLib");
 
-            S7ConflictResolutionOption expectedResolutionOptions =
-            S7ConflictResolutionOptionKeepChanged | S7ConflictResolutionOptionDelete;
-            XCTAssertEqual(expectedResolutionOptions, possibleOptions);
+//            possibleOptions:
+//                S7ConflictResolutionOptionKeepChanged | S7ConflictResolutionOptionDelete;
 
             return S7ConflictResolutionOptionKeepChanged;
         }];

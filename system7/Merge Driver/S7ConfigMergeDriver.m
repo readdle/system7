@@ -23,8 +23,7 @@
     }
 
     [self setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nullable ourVersion,
-                                                              S7SubrepoDescription * _Nullable theirVersion,
-                                                              S7ConflictResolutionOption possibleOptions)
+                                                              S7SubrepoDescription * _Nullable theirVersion)
      {
         void *self __attribute((unused)) __attribute((unavailable));
 
@@ -32,11 +31,6 @@
         char buf[BUF_LEN];
 
         if (ourVersion && theirVersion) {
-            NSCAssert(possibleOptions == (S7ConflictResolutionOptionKeepLocal |
-                                          S7ConflictResolutionOptionKeepRemote |
-                                          S7ConflictResolutionOptionMerge),
-                      @"");
-
             // should write this to stdout or stderr?
             fprintf(stdout,
                     " subrepo '%s' diverged\n"
@@ -72,9 +66,6 @@
         }
         else {
             NSCAssert(ourVersion || theirVersion, @"");
-            NSCAssert(possibleOptions == (S7ConflictResolutionOptionKeepChanged |
-                                          S7ConflictResolutionOptionDelete),
-                      @"");
 
             if (ourVersion) {
                 fprintf(stdout,
@@ -441,8 +432,7 @@ saveResultToFilePath:(NSString *)resultFilePath
                 }
 
                 userDecision = self.resolveConflictBlock(conflict.ourVersion,
-                                                         conflict.theirVersion,
-                                                         possibleConflictResolutionOptions);
+                                                         conflict.theirVersion);
 
                 if (NO == isExactlyOneBitSetInNumber(userDecision)) {
                     continue;
