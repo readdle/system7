@@ -66,7 +66,5 @@ popd > /dev/null
 
 git clone github/rd2 vasya/rd2
 pushd vasya/rd2 > /dev/null
-    assert s7 init
-
     assert test -d Dependencies/RDPDFKit/Dependencies/FormCalc
 popd > /dev/null

@@ -31,8 +31,6 @@ assert git clone '"$S7_ROOT/github/rd2"'
 
 cd rd2
 
-assert s7 init
-
 git checkout -b experiment
 
 echo experiment > file

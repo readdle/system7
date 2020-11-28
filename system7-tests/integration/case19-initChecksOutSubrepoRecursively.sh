@@ -59,9 +59,15 @@ git push
 
 cd "$S7_ROOT"
 
-git clone github/rd2 nik/rd2
+# prevent automatic `s7 init` with `--no-checkout`
+git clone --no-checkout github/rd2 nik/rd2
 
 cd nik/rd2
+
+# disable automatic `s7 init` (aka Bootstrap) by overriding global filter config
+# and checkout manually
+git config --local filter.s7.smudge "cat"
+assert git checkout
 
 assert test ! -d Dependencies
 

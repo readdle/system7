@@ -62,5 +62,9 @@ fi
 #  1. we can use them even if ~/.system7 folder gets removed
 #  2. we update the update system itself
 #
-cp bootstrap.sh "/usr/local/bin/install-s7.sh"
+cp install.sh "/usr/local/bin/install-s7.sh"
 cp update.sh "/usr/local/bin/update-s7.sh"
+
+# register s7 filter smudge that is used to bootstrap (automatically init) s7 repos on clone
+#
+git config --global filter.s7.smudge "s7 init bootstrap"
