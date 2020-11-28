@@ -227,9 +227,17 @@
 
     // according to https://git-scm.com/docs/gitattributes
     //  "filter driver that exits with a non-zero status, is not an error but makes the filter a no-op passthru."
-    // return 1 to make Git read .s7bootstrap from index as is –
-    // we are not here to actually filter anything
-    return 1;
+    // but in reality, if filter exist with non-zero, Git writes:
+    //  "error: external filter 's7 init bootstrap' failed 1"
+    // it doesn't affect the clone process, but looks ugly.
+    // So... we'd have to actually perform the "filter" and exit gracefully
+    //
+    char c;
+    while ((c=getchar()) != EOF) {
+        putchar(c);
+    }
+
+    return 0;
 }
 
 - (BOOL)willBootstrapConflictWithGitLFS {
