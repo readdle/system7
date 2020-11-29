@@ -4,7 +4,7 @@ System 7 is the Git submodules system for mere mortals.
 
 You use System 7 via a CLI tool named `s7`.
 
-Read [Why custom submodules system]("Why custom submodules system.md") to understand why we created this.
+Read [this](Why%20custom%20submodules%20system.md) to understand why we created this.
 
 
 ## Installation
