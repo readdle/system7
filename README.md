@@ -82,7 +82,7 @@ She’s ready to share her work with the team:
 ### Starting work on an existing System 7 repo
 
 Alice has done a great work setting up the project. Now her fellow developers can start their work. Let’s see Bob do this.
-Bob pulls in the latest changes from Alice.
+Bob pulls in the latest changes from Alice:
 
 ```
 [bob @ main-repo] $ git pull
