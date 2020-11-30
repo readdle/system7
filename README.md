@@ -24,11 +24,11 @@ Let's see how to set this up with the help of System 7.
 > further through this text we will use the term subrepo to talk about submodule. We just like subrepo better than submodule
 
 
-### Set up
+### Setting things up
 
 Say Alice is setting up the environment.
 
-First thing to do is to “install” s7 into the main repo. To do this, Alice calls `s7 init`:
+The first thing to do is to “install” s7 into the main repo. To do this, Alice calls `s7 init`:
 
 ```
 [alice @ main-repo] $ s7 init
@@ -44,7 +44,7 @@ The main thing `s7 init` does, is that it creates an `.s7substate` file – the 
 Next, let’s add a subrepo!
 
 
-### Add a subrepo
+### Adding a subrepo
 
 ```
 [alice @ main-repo] $ s7 add Dependencies/PDFKit git@github.com:example/pdfkit.git
@@ -58,16 +58,16 @@ please, don't forget to commit the .s7substate and .gitignore
 If you look into .s7substate now, you will find our first subrepo record there:
 
 ```
-Dependencies/PDFKit = { git@github.com:example/pdfkit.git, 57e14e93de8af59c29ba021d7a4a0f3bb2700a02, master }
+Dependencies/PDFKit = { git@github.com:example/pdfkit.git, 57e14e93de8af59c29ba021d7a4a0f3bb2700a02, main }
 ```
 
 You can see that `s7` has recorded:
-  - relative path to the subrepo directory
-  - the URL to subrepo’s remote
-  - the revision of the subrepo
-  - and the branch of the subrepo.
+ - relative path to the subrepo directory
+ - the URL to subrepo’s remote
+ - the revision of the subrepo
+ - and the branch of the subrepo.
 
-If Alice checks `git status` now, she will find that `s7` has created serveral .s7* files (.s7substate, etc.) and updated (or created) some Git config files (.gitignore, .gitattributes).
+If Alice checks `git status` now, she will find that `s7` has created several .s7* files (.s7substate, etc.) and updated (or created) some Git config files (.gitignore, .gitattributes).
 She’s ready to share her work with the team:
 
 ```
@@ -78,7 +78,7 @@ She’s ready to share her work with the team:
 
 ### Starting work on an existing s7 repo
 
-Alice has done the great work setting up the project. Now her fellow developers can start their work. Let’s see Bob do this.
+Alice has done a great work setting up the project. Now her fellow developers can start their work. Let’s see Bob do this.
 Bob pulls in the latest changes from Alice.
 
 ```
@@ -98,41 +98,55 @@ That's it. Bob is ready to go. He should have main-repo and PDFKit subrepo now.
 > `s7 init` must be run just once in the lifetime of the repository copy – it will install git hooks, and create some 'system' files.
 
 
-### status
+### Day-to-day work
 
-### rebind
+Now, as he has the code, Bob dives in to fix a bug in the PDFKit. He introduces the necessary changes and makes a commit:
 
-### push/pull
+```
+[bob @ PDFKit] $ git commit -am"fix #1234 – incorrect rendering of a particular pdf file"
+```
 
-### merge
+Bob has made changes in PDFKit. Now he should tell s7 that the main-repo should now use his new PDFKit commit.
+
+Let's first take a look at what does `s7` think about the state in the main repo:
+
+```
+[bob @ main-repo] $ s7 status
+Subrepos not staged for commit:
+ not rebound commit(s)  Dependencies/PDFKit
+```
+
+So, `s7` can see that there some commits in PDFKit. It says they are not "rebound". To make the rest of the team get main-repo looking at his latest commit in PDFKit, Bob has to rebind PDFKit in the main repo:
+
+```
+[bob @ main-repo] $ s7 rebind Dependencies/PDFKit
+checking subrepo 'Dependencies/PDFKit'... detected an update:
+ old state '57e14e93de8af59c29ba021d7a4a0f3bb2700a02' (main)
+ new state '445c751e13ab229ff03665e5e046b25b26583742' (main)
+```
+
+If he checks the diff, he will see that .s7substate file has been updated:
+
+```
+[bob @ main-repo] $ git diff
+...
+- Dependencies/PDFKit = { git@github.com:example/pdfkit.git, 57e14e93de8af59c29ba021d7a4a0f3bb2700a02, main }
++ Dependencies/PDFKit = { git@github.com:example/pdfkit.git, 445c751e13ab229ff03665e5e046b25b26583742, main }
+```
+
+Commit. Push: 
+
+```
+[bob @ main-repo] $ git commit -am"up PDFKit with the fix to #1234 ..."
+[bob @ main-repo] $ git push
+```
+
+That's it. If anyone from the team pulls now, they will get the latest version of the main repo and the PDFKit will be updated to the revision just saved by Bob. 
+
+Note that Bob didn't have to go and push PDFKit separately – `s7` took care of that for him. Neither Bob's teammates have to pull PDFKit or do any other manual manipulations – they just run `git pull` and `s7` takes care of the rest.  
 
 ### Getting help
 
-`s7 help` and `s7 help <command>`
+This guide has shown just the basics. There're some other commands `s7` can do and of course, there are some options and arguments you can pass to the commands you've seen.
 
-
-# Здесь рыбу заворачивали
-
-
-Adding subrepos
-To add a subrepo, use `s7 add` command.
-`s7 add [--stage] PATH [URL [BRANCH]]`
-The only required argument for `s7 add` is the path where subrepo will live.
-If you’ve already cloned the subrepo to that PATH, you can run just `s7 add <path>` and s7 will deduce URL and BRANCH from the subrepo Git status.
-If you haven’t clone subrepo, then you must pass at least <path> and <url> parameters. s7 will clone subrepo from <url> to the <path>.
-`s7 add` registers the new subrepo in `.s7substate` and `.gitignore`. These two files must be committed to share the new subrepo and its recorded state with fellow developers. `--stage` option may be used to automatically prepare these file commit with the next `git commit`.
-
-Example:
-
-Bob add a new subrepo:
-	[main-repo] $ s7 add --stage /Dependencies/YAMLParser git@.../yaml-parser.git
-	[main-repo] $ git commit -m”add yaml parser subrepo”
-
-Alice gets Bob’s code that uses the new subrepo:
-	[main-repo] $ git pull
-
-that’s it! No need to run any special commands. s7 will checkout subrepos automatically. (NOTE: there arecases when s7 cannot do this automatically, we’ll discuss them later).
-
-
-Borista suggests to draw diagrams that explain submodules to the newbys
-
+To learn more about `s7` in general, you can run `s7` without any arguments (or `s7 help`). To learn about a particular command, run `s7 help <command>`.
