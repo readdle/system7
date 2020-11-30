@@ -4,16 +4,19 @@ System 7 is the Git submodules system for mere mortals.
 
 You use System 7 via a CLI tool named `s7`.
 
-Read [this](Why%20custom%20submodules%20system.md) to understand why we created this.
+Read [this](Why%20custom%20submodules%20system.md) to understand why we created it.
 
 
 ## Installation
 
 Download the file https://github.com/readdle/system7/blob/master/install.sh and run it.
-It will clone system7 repo to “${HOME}/.system7”, build `s7` and install to `/usr/local/bin/`.
 
-To update s7, run `/usr/local/bin/update-s7.sh`.
+> This command will do the following at your machine:
+>  - download System 7 repo to `${HOME}/.system7`
+>  - build and install three files to `/usr/local/bin/` – `s7`, `update-s7.sh` and `install-s7.sh`
+>  - install `s7 filter` to global Git config
 
+If you want to update `s7` in the future, run `/usr/local/bin/update-s7.sh`.
 
 ## Using S7 by Example
 
@@ -28,14 +31,14 @@ Let's see how to set this up with the help of System 7.
 
 Say Alice is setting up the environment.
 
-The first thing to do is to “install” s7 into the main repo. To do this, Alice calls `s7 init`:
+The first thing to do is to “install” System 7 in the main repo. To do this, Alice calls `s7 init`:
 
 ```
 [alice @ main-repo] $ s7 init
 initialized s7 repo in '/Users/alice/projects/main-repo'
 ```
 
-`s7 init` installs git-hooks necessary for s7 to automate all necessary tasks. For example: push subrepo changes when the main repo is pushed; switch subrepos to the proper revision and branches once the main repo is switched between revisions/branches, etc.
+`s7 init` installs git-hooks necessary for `s7` to automate all necessary tasks. For example: push subrepo changes when the main repo is pushed; switch subrepos to the proper revision and branches once the main repo is switched between revisions/branches, etc.
 
 The main thing `s7 init` does, is that it creates an `.s7substate` file – the config that will contain the list of subrepos and their state.
 
@@ -55,7 +58,7 @@ remote: …
 please, don't forget to commit the .s7substate and .gitignore
 ```
 
-If you look into .s7substate now, you will find our first subrepo record there:
+If you look into `.s7substate` now, you will find our first subrepo record there:
 
 ```
 Dependencies/PDFKit = { git@github.com:example/pdfkit.git, 57e14e93de8af59c29ba021d7a4a0f3bb2700a02, main }
@@ -67,7 +70,7 @@ You can see that `s7` has recorded:
  - the revision of the subrepo
  - and the branch of the subrepo.
 
-If Alice checks `git status` now, she will find that `s7` has created several .s7* files (.s7substate, etc.) and updated (or created) some Git config files (.gitignore, .gitattributes).
+If Alice checks `git status` now, she will find that `s7` has created several `.s7*` files (`.s7substate`, etc.) and updated (or created) some Git config files (.gitignore, .gitattributes).
 She’s ready to share her work with the team:
 
 ```
@@ -76,7 +79,7 @@ She’s ready to share her work with the team:
 [alice @ main-repo] $ git push
 ```
 
-### Starting work on an existing s7 repo
+### Starting work on an existing System 7 repo
 
 Alice has done a great work setting up the project. Now her fellow developers can start their work. Let’s see Bob do this.
 Bob pulls in the latest changes from Alice.
@@ -93,8 +96,8 @@ Or, if he wants to get a fresh copy of the main-repo:
 
 That's it. Bob is ready to go. He should have main-repo and PDFKit subrepo now.
 
-> In some rare cases `s7` might not be able to automatically init s7 in a repo after clone.
-> In such case you would have to run `s7 init` the first time you get a fresh clone of s7 repo.
+> In some rare cases `s7` might not be able to automatically init System 7 in a repo after clone.
+> In such case you would have to run `s7 init` the first time you get a fresh clone of System 7 repo.
 > `s7 init` must be run just once in the lifetime of the repository copy – it will install git hooks, and create some 'system' files.
 
 
@@ -106,7 +109,7 @@ Now, as he has the code, Bob dives in to fix a bug in the PDFKit. He introduces 
 [bob @ PDFKit] $ git commit -am"fix #1234 – incorrect rendering of a particular pdf file"
 ```
 
-Bob has made changes in PDFKit. Now he should tell s7 that the main-repo should now use his new PDFKit commit.
+Bob has made changes in PDFKit. Now he should tell `s7` that the main-repo should now use his new PDFKit commit.
 
 Let's first take a look at what does `s7` think about the state in the main repo:
 
@@ -125,7 +128,7 @@ checking subrepo 'Dependencies/PDFKit'... detected an update:
  new state '445c751e13ab229ff03665e5e046b25b26583742' (main)
 ```
 
-If he checks the diff, he will see that .s7substate file has been updated:
+If he checks the diff, he will see that `.s7substate` file has been updated:
 
 ```
 [bob @ main-repo] $ git diff
