@@ -63,6 +63,7 @@ fi
 #  2. we update the update system itself
 #
 cp install.sh "/usr/local/bin/install-s7.sh"
+cp uninstall.sh "/usr/local/bin/uninstall-s7.sh"
 cp update.sh "/usr/local/bin/update-s7.sh"
 
 # register s7 filter smudge that is used to bootstrap (automatically init) s7 repos on clone
