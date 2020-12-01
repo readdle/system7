@@ -32,24 +32,6 @@ assert git clone '"$S7_ROOT/github/rd2"'
 cd rd2
 
 assert test -d Dependencies/ReaddleLib
+assert test -f Dependencies/ReaddleLib/RDMath.h
 
-
-
-cd "$S7_ROOT/pastey/rd2"
-
-pushd Dependencies/ReaddleLib > /dev/null
-  echo "matrix" >> RDMath.h
-  git commit -am"neo"
-popd > /dev/null
-
-assert s7 rebind --stage
-
-git commit -m"'up ReaddleLib'"
-assert git push
-
-
-
-cd "$S7_ROOT/nik/rd2"
-
-git pull
-assert grep '"matrix"' Dependencies/ReaddleLib/RDMath.h > /dev/null
+assert s7 stat

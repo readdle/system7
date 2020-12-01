@@ -65,6 +65,10 @@
     help_puts("                   in subrepos. Detached commit hashes are printed");
     help_puts("                   to console and also saved to this file.");
     help_puts("");
+    help_puts("     .s7bootstrap: used to automatically run `s7 init` in a newly");
+    help_puts("                   cloned repo, freeing user from the need to run");
+    help_puts("                   `s7 init` manually.");
+    help_puts("");
     help_puts("    Installed/modified Git hooks/configuration files:");
     help_puts("");
     help_puts("     .gitignore:   all registered subrepos are added to .gitignore.");
@@ -97,13 +101,22 @@
         return S7ExitCodeNotGitRepository;
     }
 
+    BOOL bootstrap = NO;
+
     for (NSString *argument in arguments) {
         if ([argument isEqualToString:@"-f"] || [argument isEqualToString:@"--force"]) {
             self.forceOverwriteHooks = YES;
         }
+        else if ([argument isEqualToString:@"--bootstrap"]) {
+            bootstrap = YES;
+        }
         else {
             return S7ExitCodeUnrecognizedOption;
         }
+    }
+
+    if (bootstrap) {
+        return [self bootstrap];
     }
 
     BOOL isDirectory = NO;
@@ -148,6 +161,11 @@
     const int configUpdateExitStatus = [self installS7ConfigMergeDriver];
     if (0 != configUpdateExitStatus) {
         return configUpdateExitStatus;
+    }
+
+    const int bootstrapFileCreationExitCode = [self createBootstrapFile];
+    if (0 != bootstrapFileCreationExitCode) {
+        return bootstrapFileCreationExitCode;
     }
 
     const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
@@ -198,17 +216,81 @@
     return S7ExitCodeSuccess;
 }
 
-- (int)installHook:(Class<S7Hook>)hookClass {
-    NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:[hookClass gitHookName]];
+- (int)bootstrap {
+    if (NO == [self willBootstrapConflictWithGitLFS]) {
+        // we may still fail to install bootstrap, for example, if post-checkout hook exists
+        // and it's not a shell script (where we can merge in)
+        [self
+         installHook:@"post-checkout"
+         commandLine:[self bootstrapCommandLine]];
+    }
 
+    // according to https://git-scm.com/docs/gitattributes
+    //  "filter driver that exits with a non-zero status, is not an error but makes the filter a no-op passthru."
+    // but in reality, if filter exist with non-zero, Git writes:
+    //  "error: external filter 's7 init bootstrap' failed 1"
+    // it doesn't affect the clone process, but looks ugly.
+    // So... we'd have to actually perform the "filter" and exit gracefully
+    //
+    if (NO == self.runFakeFilter) {
+        char c;
+        while ((c=getchar()) != EOF) {
+            putchar(c);
+        }
+    }
+
+    return 0;
+}
+
+- (BOOL)willBootstrapConflictWithGitLFS {
+    NSError *error = nil;
+    NSString *gitattributesContent = [[NSString alloc] initWithContentsOfFile:@".gitattributes" encoding:NSUTF8StringEncoding error:&error];
+    if (nil != error) {
+        // Such situation would be really unexpected – how would Git find out
+        // that it should filter .s7bootstrap if there's no .gitattributes?
+        // Maybe something wrong with the permissions?
+        // Anyway, if we cannot read .gitattributes, then we better avoid bootstrap.
+        //
+        fprintf(stderr, "s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return YES;
+    }
+
+    if ([gitattributesContent containsString:@"filter=lfs"]) {
+        // this repo contains some LFS files.
+        // If LFS hook is NOT installed, then we do not install bootstrap hook
+        // not to cause LFS hook install failure. In such case user will have to
+        // run `s7 init` manually 🤷‍♂️
+        // If LFS hook IS installed, we can still merge-in bootstrap command into it.
+        //
+        if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks/post-checkout"]) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+- (NSString *)bootstrapCommandLine {
+    return @"/usr/local/bin/s7 init";
+}
+
+- (int)installHook:(Class<S7Hook>)hookClass {
     // there's no guarantie that s7 will be the only one citizen of a hook,
     // thus we add " || exit $?" – to exit hook properly if s7 hook fails
-    NSString *s7hookCallCommandLine = [NSString
-                                 stringWithFormat:
-                                 @"/usr/local/bin/s7 %@-hook \"$@\" <&0 || exit $?",
-                                 [hookClass gitHookName]];
+    NSString *commandLine = [NSString
+                             stringWithFormat:
+                             @"/usr/local/bin/s7 %@-hook \"$@\" <&0 || exit $?",
+                             [hookClass gitHookName]];
 
-    NSString *contentsToWrite = [NSString stringWithFormat:@"#!/bin/sh\n\n%@\n", s7hookCallCommandLine];
+    return [self installHook:[hookClass gitHookName]
+                 commandLine:commandLine];
+}
+
+- (int)installHook:(NSString *)hookName commandLine:(NSString *)commandLine {
+    NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:hookName];
+
+    NSString *contentsToWrite = [NSString stringWithFormat:@"#!/bin/sh\n\n%@\n", commandLine];
 
     if (NO == self.forceOverwriteHooks && [NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
         NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
@@ -222,7 +304,7 @@
             return S7ExitCodeFileOperationFailed;
         }
 
-        if ([existingContents containsString:s7hookCallCommandLine]) {
+        if ([existingContents containsString:commandLine]) {
             return 0;
         }
 
@@ -230,16 +312,22 @@
                                             stringWithFormat:
                                             @"#!/bin/sh\n"
                                             "/usr/local/bin/s7 %@-hook \"$@\" <&0",
-                                            [hookClass gitHookName]];
+                                            hookName];
         if (NO == [existingContents isEqualToString:oldStyleS7HookContents]) {
-            NSString *existingHookBody = [existingContents stringByReplacingOccurrencesOfString:@"#!/bin/sh\n" withString:@""];
+            NSString *existingHookBody = [existingContents stringByReplacingOccurrencesOfString:@"#!/bin/sh\n"
+                                                                                     withString:@""];
+
+            // 'uninstall' bootstrap command
+            existingHookBody = [existingHookBody stringByReplacingOccurrencesOfString:[self bootstrapCommandLine]
+                                                                           withString:@""];
+
             NSString *mergedHookContents = [NSString stringWithFormat:
                                             @"#!/bin/sh\n"
                                             "\n"
                                             "%@\n"
                                             "\n"
                                             "%@",
-                                            s7hookCallCommandLine,
+                                            commandLine,
                                             existingHookBody];
 
             contentsToWrite = mergedHookContents;
@@ -360,6 +448,72 @@
     }
 
     return 0;
+}
+
+- (int)createBootstrapFile {
+    if (self.installFakeHooks) {
+        return S7ExitCodeSuccess;
+    }
+
+    const BOOL fileExisted = [[NSFileManager defaultManager] fileExistsAtPath:S7BootstrapFileName];
+    if (NO == fileExisted) {
+        NSString *bootstrapFileContents =
+        @"This file is used to automatically run `s7 init` when an existing s7 repo is cloned.\n"
+         "You clone a repo and all subrepos are cloned automatically, and there's no need to\n"
+         "remember that you should call `s7 init` manually.\n"
+         "\n"
+         "In case you are curious, here's how it works:\n"
+         " 0. on installation, s7 registers as the filter in the global git config.\n"
+         "    See https://git-scm.com/docs/gitattributes [filter] for more info on filters.\n"
+         "\n"
+         " 1. when s7 is first set up in a repo, it creates .s7bootstrap (this file)\n"
+         "    and modifies repo's .gitattributes to tell Git that .s7bootstrap should be \"filtered\" with s7.\n"
+         "\n"
+         " 2. once `git clone` is complete, Git checks out files into a working tree.\n"
+         "    .s7bootstrap is also checked out and s7 filter is called.\n"
+         "    This is the backdoor we will use to call `s7 init` automatically.\n"
+         "\n"
+         " 3. s7 filter cannot call `s7 init` right away as there's no guarantee that other\n"
+         "    files have been checked out by this time (for example, .s7substate).\n"
+         "    Thus, s7 filter installs a temporary post-checkout hook.\n"
+         "\n"
+         " 4. after all files have been checked out, post-checkout hook is called,\n"
+         "    and it finally calls `s7 init`.\n"
+         "\n"
+         "\n"
+         "Are there any possible alternatives to this process? Sure:\n"
+         "  - call `s7 init` manually :) You may still have to do this if bootstrap fails. Read more below.\n"
+         "  - implement `s7 clone` command. I think this is too easy to misuse – one will run `git clone`\n"
+         "    just because of muscle memory, see no subrepos and curse. Plus, this is one more command to remember.\n"
+         "  - templates to use with `git clone --template ...`. Same issues as with custom clone command,\n"
+         "    but this one looks even more complex – some new terms... templates (wat?!), you'd have to remember\n"
+         "    the path to those templates. Too complex.\n"
+         "\n"
+         "\n"
+         "NOTE:\n"
+         " s7 won't install its bootstrap hook if:\n"
+         "  - post-checkout hook exists and it's not a shell script (where we can merge in).\n"
+         "    This is theoretically possible if a user ran clone with custom templates\n"
+         "  - there's *no post-checkout hook yet*, but s7 can see that the repo uses Git LFS,\n"
+         "    thus it can predict that LFS *will* be installing its hooks. If s7 installs\n"
+         "    its bootstrap post-checkout, then Git LFS will fail to install its post-checkout –\n"
+         "    not the situation we want a user to deal with.\n"
+         ;
+
+        if (NO == [[NSFileManager defaultManager] createFileAtPath:S7BootstrapFileName
+                                                          contents:[bootstrapFileContents dataUsingEncoding:NSUTF8StringEncoding]
+                                                        attributes:nil]) {
+            fprintf(stderr, "error: failed to create %s file\n", S7BootstrapFileName.fileSystemRepresentation);
+            return S7ExitCodeFileOperationFailed;
+        }
+    }
+
+    const int gitattributesUpdateExitCode = addLineToGitAttributes([NSString stringWithFormat:@"%@ filter=s7", S7BootstrapFileName]);
+    if (0 != gitattributesUpdateExitCode) {
+        return gitattributesUpdateExitCode;
+    }
+
+    return S7ExitCodeSuccess;
 }
 
 int addLineToGitAttributes(NSString *lineToAppend) {

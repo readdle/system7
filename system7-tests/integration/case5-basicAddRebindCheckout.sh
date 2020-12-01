@@ -31,8 +31,4 @@ assert git clone '"$S7_ROOT/github/rd2"'
 
 cd rd2
 
-assert s7 init
-
-git checkout -- .
-
 assert test -d Dependencies/ReaddleLib

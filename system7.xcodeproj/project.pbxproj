@@ -71,6 +71,7 @@
 		BEE672C92523B72200DB09BC /* S7IniConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE672C72523B72200DB09BC /* S7IniConfig.m */; };
 		BEE672CF2523B76500DB09BC /* iniParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE672CE2523B76500DB09BC /* iniParserTests.m */; };
 		BEE928A12456DA6500BD6B86 /* Git.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE928A02456DA6500BD6B86 /* Git.m */; };
+		BEFAF7A125718AB7000D90C3 /* initBootstrapTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEFAF7A025718AB7000D90C3 /* initBootstrapTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -159,6 +160,7 @@
 		BEE672CE2523B76500DB09BC /* iniParserTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iniParserTests.m; sourceTree = "<group>"; };
 		BEE9289F2456DA6500BD6B86 /* Git.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Git.h; sourceTree = "<group>"; };
 		BEE928A02456DA6500BD6B86 /* Git.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Git.m; sourceTree = "<group>"; };
+		BEFAF7A025718AB7000D90C3 /* initBootstrapTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = initBootstrapTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -261,6 +263,7 @@
 				BE8218882452C1DE00E878A8 /* configParserTests.m */,
 				BEBD16942455824400E81673 /* diffTests.m */,
 				BE3A29F124607234004A2B31 /* initTests.m */,
+				BEFAF7A025718AB7000D90C3 /* initBootstrapTests.m */,
 				BE3A29F324607419004A2B31 /* addTests.m */,
 				BE3892102463049300394CA8 /* removeTests.m */,
 				BE4BB43B24615CFD00545358 /* rebindTests.m */,
@@ -478,6 +481,7 @@
 				BEBD16952455824400E81673 /* diffTests.m in Sources */,
 				BE389215246304F200394CA8 /* S7RemoveCommand.m in Sources */,
 				BE50AA01246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
+				BEFAF7A125718AB7000D90C3 /* initBootstrapTests.m in Sources */,
 				BEE672CF2523B76500DB09BC /* iniParserTests.m in Sources */,
 				BE1079C12466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
 				BED36BE7246E809000D6EB1C /* S7PostCommitHook.m in Sources */,

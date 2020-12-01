@@ -39,7 +39,7 @@ assert git clone '"$S7_ROOT/github/rd2"'
 
 cd rd2
 
-assert s7 init
+assert test -d Dependencies/RDPDFKit
 
 assert s7 rm Dependencies/RDPDFKit
 

@@ -42,8 +42,6 @@ assert git clone '"$S7_ROOT/github/rd2"'
 
 cd rd2
 
-assert s7 init
-
 # just a tag v1 was pushed, so no 'matrix' should be available at the moment
 grep '"matrix"' Dependencies/ReaddleLib/RDMath.h > /dev/null
 assert test 0 -ne $?

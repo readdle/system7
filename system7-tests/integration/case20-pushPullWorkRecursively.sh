@@ -63,10 +63,6 @@ git clone github/rd2 nik/rd2
 
 cd nik/rd2
 
-assert test ! -d Dependencies
-
-assert s7 init
-
 assert test -d Dependencies/RDPDFKit/Dependencies/FormCalc
 assert test AST = `cat Dependencies/RDPDFKit/Dependencies/FormCalc/Parser.c`
 
