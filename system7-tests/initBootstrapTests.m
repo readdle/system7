@@ -30,8 +30,9 @@
 
 - (void)runBootstrap {
     S7InitCommand *initBootstrapCommand = [S7InitCommand new];
-    const int exitCode = [initBootstrapCommand runWithArguments:@[@"bootstrap"]];
-    XCTAssertEqual(1, exitCode);
+    initBootstrapCommand.runFakeFilter = YES;
+    const int exitCode = [initBootstrapCommand runWithArguments:@[@"--bootstrap"]];
+    XCTAssertEqual(0, exitCode);
 }
 
 - (BOOL)doesPostCheckoutHookContainInitCall {

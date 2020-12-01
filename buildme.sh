@@ -67,4 +67,4 @@ cp update.sh "/usr/local/bin/update-s7.sh"
 
 # register s7 filter smudge that is used to bootstrap (automatically init) s7 repos on clone
 #
-git config --global filter.s7.smudge "s7 init bootstrap"
+git config --global filter.s7.smudge "s7 init --bootstrap"

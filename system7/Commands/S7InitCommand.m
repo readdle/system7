@@ -107,7 +107,7 @@
         if ([argument isEqualToString:@"-f"] || [argument isEqualToString:@"--force"]) {
             self.forceOverwriteHooks = YES;
         }
-        else if ([argument isEqualToString:@"bootstrap"]) {
+        else if ([argument isEqualToString:@"--bootstrap"]) {
             bootstrap = YES;
         }
         else {
@@ -232,9 +232,11 @@
     // it doesn't affect the clone process, but looks ugly.
     // So... we'd have to actually perform the "filter" and exit gracefully
     //
-    char c;
-    while ((c=getchar()) != EOF) {
-        putchar(c);
+    if (NO == self.runFakeFilter) {
+        char c;
+        while ((c=getchar()) != EOF) {
+            putchar(c);
+        }
     }
 
     return 0;
