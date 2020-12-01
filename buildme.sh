@@ -63,4 +63,5 @@ fi
 #  2. we update the update system itself
 #
 cp bootstrap.sh "/usr/local/bin/install-s7.sh"
+cp uninstall.sh "/usr/local/bin/uninstall-s7.sh"
 cp update.sh "/usr/local/bin/update-s7.sh"
