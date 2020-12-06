@@ -704,20 +704,22 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     fprintf(stdout,
             "\033[33m"
-            "Warning: you are leaving %2$d commit(s) behind, not connected to\n"
-            "any of your branches:\n"
+            "Warning: you are leaving %d commit(s) behind, not connected to\n"
+            "any of your pushed branches in %s:\n"
             "\n"
-            "  %1$s detached\n"
+            "  %s detached\n"
             "\n"
             "If you want to keep it by creating a new branch, this may be a good time\n"
             "to do so with:\n"
             "\n"
-            " git branch <new-branch-name> %1$s\n"
+            " git branch <new-branch-name> %s\n"
             "\n"
-            "Detached commit hash was also saved to %3$s\n"
+            "Detached commit hash was also saved to %s\n"
             "\033[0m",
-            [currentRevision cStringUsingEncoding:NSUTF8StringEncoding],
             numberOfOrphanedCommits,
+            subrepoDesc.path.fileSystemRepresentation,
+            [currentRevision cStringUsingEncoding:NSUTF8StringEncoding],
+            [currentRevision cStringUsingEncoding:NSUTF8StringEncoding],
             S7BakFileName.fileSystemRepresentation);
 
     if (_warnAboutDetachingCommitsHook) {
