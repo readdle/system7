@@ -47,6 +47,9 @@
 		BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218882452C1DE00E878A8 /* configParserTests.m */; };
 		BE82188E2452C1ED00E878A8 /* S7Config.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218802452C16A00E878A8 /* S7Config.m */; };
 		BEBD16952455824400E81673 /* diffTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBD16942455824400E81673 /* diffTests.m */; };
+		BEBE40C42576D04D00E39755 /* deinitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBE40C32576D04D00E39755 /* deinitTests.m */; };
+		BEBE40C92576D0B900E39755 /* S7DeinitCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBE40C82576D0B900E39755 /* S7DeinitCommand.m */; };
+		BEBE40CA2576D0B900E39755 /* S7DeinitCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBE40C82576D0B900E39755 /* S7DeinitCommand.m */; };
 		BED36BE0246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BDF246D8A1700D6EB1C /* S7PostCheckoutHook.m */; };
 		BED36BE1246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BDF246D8A1700D6EB1C /* S7PostCheckoutHook.m */; };
 		BED36BE3246D8A4B00D6EB1C /* postCheckoutHookTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BE2246D8A4B00D6EB1C /* postCheckoutHookTests.m */; };
@@ -136,6 +139,9 @@
 		BE8218882452C1DE00E878A8 /* configParserTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = configParserTests.m; sourceTree = "<group>"; };
 		BE82188A2452C1DE00E878A8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BEBD16942455824400E81673 /* diffTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = diffTests.m; sourceTree = "<group>"; };
+		BEBE40C32576D04D00E39755 /* deinitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = deinitTests.m; sourceTree = "<group>"; };
+		BEBE40C72576D0B900E39755 /* S7DeinitCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7DeinitCommand.h; sourceTree = "<group>"; };
+		BEBE40C82576D0B900E39755 /* S7DeinitCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7DeinitCommand.m; sourceTree = "<group>"; };
 		BED36BDE246D8A1700D6EB1C /* S7PostCheckoutHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PostCheckoutHook.h; sourceTree = "<group>"; };
 		BED36BDF246D8A1700D6EB1C /* S7PostCheckoutHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PostCheckoutHook.m; sourceTree = "<group>"; };
 		BED36BE2246D8A4B00D6EB1C /* postCheckoutHookTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = postCheckoutHookTests.m; sourceTree = "<group>"; };
@@ -276,6 +282,7 @@
 				BE0173E024864DF300BA4B2F /* resetTests.m */,
 				BE394D382486AD7D00ED6E05 /* checkoutTests.m */,
 				BEE672CE2523B76500DB09BC /* iniParserTests.m */,
+				BEBE40C32576D04D00E39755 /* deinitTests.m */,
 			);
 			path = "system7-tests";
 			sourceTree = "<group>";
@@ -312,6 +319,8 @@
 				BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */,
 				BE394D3A2486ADB500ED6E05 /* S7CheckoutCommand.h */,
 				BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */,
+				BEBE40C72576D0B900E39755 /* S7DeinitCommand.h */,
+				BEBE40C82576D0B900E39755 /* S7DeinitCommand.m */,
 			);
 			path = Commands;
 			sourceTree = "<group>";
@@ -447,6 +456,7 @@
 				BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
+				BEBE40C92576D0B900E39755 /* S7DeinitCommand.m in Sources */,
 				BE172CD224657CA700B57557 /* S7Diff.m in Sources */,
 				BE389214246304F200394CA8 /* S7RemoveCommand.m in Sources */,
 				BE5B752E248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */,
@@ -486,6 +496,7 @@
 				BE1079C12466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
 				BED36BE7246E809000D6EB1C /* S7PostCommitHook.m in Sources */,
 				BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
+				BEBE40C42576D04D00E39755 /* deinitTests.m in Sources */,
 				BED60FBB245AC222008EA752 /* Git.m in Sources */,
 				BE3A29F224607234004A2B31 /* initTests.m in Sources */,
 				BE3A29E924604D1B004A2B31 /* S7StatusCommand.m in Sources */,
@@ -505,6 +516,7 @@
 				BE3A29E524604C10004A2B31 /* statusTests.m in Sources */,
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,
 				24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */,
+				BEBE40CA2576D0B900E39755 /* S7DeinitCommand.m in Sources */,
 				BE3A29F02460712F004A2B31 /* S7InitCommand.m in Sources */,
 				BED60E172458811A008EA752 /* Utils.m in Sources */,
 				BE28CB332472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */,
@@ -669,6 +681,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.readdle.system7-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -687,6 +700,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.readdle.system7-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

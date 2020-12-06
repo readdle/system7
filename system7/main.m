@@ -11,6 +11,7 @@
 #import "S7Types.h"
 
 #import "S7InitCommand.h"
+#import "S7DeinitCommand.h"
 #import "S7AddCommand.h"
 #import "S7RemoveCommand.h"
 #import "S7RebindCommand.h"
@@ -93,6 +94,7 @@ void printHelp() {
     help_puts("  help      show help for a given command or this a overview");
     help_puts("");
     help_puts("  init      create all necessary config files/hooks in the git repo");
+    help_puts("  deinit    removes all traces of s7 from the repo");
     help_puts("");
     help_puts("  add       add a new subrepository");
     help_puts("");
@@ -139,6 +141,7 @@ Class commandClassByName(NSString *commandName) {
 
         NSSet<Class<S7Command>> *commandClasses = [NSSet setWithArray:@[
             [S7InitCommand class],
+            [S7DeinitCommand class],
             [S7AddCommand class],
             [S7RemoveCommand class],
             [S7RebindCommand class],
