@@ -71,6 +71,31 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeInvalidArgument;
     }
 
+    if (branchSwitchFlag && [fromRevision isEqualToString:toRevision]) {
+        // Don't do anything to subrepos in case of branch switch that doesn't change the revision.
+        // This is possible in two situations:
+        //  1. you create an new branch with `git switch -c <branch-name>` or `git checkout -b <branch-name>`
+        //  2. you switch between two branches that point to the same revision
+        //
+        // I've stumbled on the first scenario way too many times:
+        //  - I've made some changes in subrepo. Made a branch in subrepo. Comitted it. Maybe even pushed
+        //  - returned to the main repo. Made accompanying changes. And only then remember that I didn't
+        //    create a new branch in the main repo. Created a new branch with `git checkout -b <branch-name>` and –
+        //    shoot! – post-checkout hook reset subrepo to the state saved in .s7substate (I haven't rebound yet).
+        //
+        // I don't think (and keep fingers crossed) that the second scenario (switch between two branches
+        // that point to the same revision) is that common. Hope I won't break someone's scenario and expectations
+        // by changing introducing this behaviour. The other argument I have is – you are not running `git reset` –
+        // you are switching branches, so you won't be surprised by Git keeping changes to other files (if possible),
+        // so why would you be surprised that s7 would leave subrepos intact?
+        //
+        // There's no way to distinct a new branch from an existing branch switch scenarios in post-checkout hook:
+        // in both cases the branch already exists by the time the hook is called. There's not environment variable
+        // or argument that could help either.
+        //
+        return S7ExitCodeSuccess;
+    }
+
     return [self.class checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];
 }
 
