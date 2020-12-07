@@ -225,12 +225,12 @@
 }
 
 - (int)bootstrap {
-    if (NO == [self willBootstrapConflictWithGitLFS]) {
+    if ([self shouldInstallBootstrap]) {
         // we may still fail to install bootstrap, for example, if post-checkout hook exists
         // and it's not a shell script (where we can merge in)
         [self
          installHook:@"post-checkout"
-         commandLine:[self bootstrapCommandLine]];
+         commandLine:[[self class] bootstrapCommandLine]];
     }
 
     // according to https://git-scm.com/docs/gitattributes
@@ -248,6 +248,24 @@
     }
 
     return 0;
+}
+
+- (BOOL)shouldInstallBootstrap {
+    if ([self willBootstrapConflictWithGitLFS]) {
+        return NO;
+    }
+
+    if ([NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName]) {
+        // If repo contains .s7control, then user has already done some work in it
+        // which implies that s7 IS initialized in the repo.
+        // If we install bootstrap at such repo, then it will install bootstrap into
+        // post-checkout hook, but the actual `s7 init` won't be called in the process
+        // of checkout, as .s7control existss
+        //
+        return NO;
+    }
+
+    return YES;
 }
 
 - (BOOL)willBootstrapConflictWithGitLFS {
@@ -279,7 +297,7 @@
     return NO;
 }
 
-- (NSString *)bootstrapCommandLine {
++ (NSString *)bootstrapCommandLine {
     return @"/usr/local/bin/s7 init";
 }
 
@@ -326,7 +344,7 @@
                                                                                      withString:@""];
 
             // 'uninstall' bootstrap command
-            existingHookBody = [existingHookBody stringByReplacingOccurrencesOfString:[self bootstrapCommandLine]
+            existingHookBody = [existingHookBody stringByReplacingOccurrencesOfString:[[self class] bootstrapCommandLine]
                                                                            withString:@""];
 
             NSString *mergedHookContents = [NSString stringWithFormat:

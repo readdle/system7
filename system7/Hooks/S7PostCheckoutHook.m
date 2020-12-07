@@ -38,6 +38,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeNotGitRepository;
     }
 
+    [self uninstallBootstrapInfection];
+
     NSString *fromRevision = arguments[0];
     NSString *toRevision = arguments[1];
     BOOL branchSwitchFlag = [arguments[2] isEqualToString:@"1"];
@@ -786,6 +788,25 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 
     return result;
+}
+
+- (void)uninstallBootstrapInfection {
+    // pastey:
+    // Temporary hotfix to mitigate bootstrap hook infection spread.
+    // This function is here to fix the consequences of bootstrap spread in innocent subrepos.
+    // This function can be removed after Jan 7, 2021
+    //
+    NSString *hookFilePath = @".git/hooks/post-checkout";
+
+    NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
+
+    // 'uninstall' bootstrap command
+    NSString *updatedContents = [existingContents stringByReplacingOccurrencesOfString:[[S7InitCommand class] bootstrapCommandLine]
+                                                                           withString:@""];
+
+    if ([updatedContents isEqualToString:existingContents]) {
+        [updatedContents writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+    }
 }
 
 @end
