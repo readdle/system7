@@ -774,7 +774,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             S7InitCommand *initCommand = [S7InitCommand new];
             // do not automatically create .s7bootstrap in subrepos. This makes uncomitted local changes
             // in subrepos. Especially inconvinient when you switch to some old revision.
-            // Let user decide which repo should contain .s7bootstrap, by explecit invocation of
+            // Let user decide which repo should contain .s7bootstrap, by explicit invocation of
             // `s7 init` and add of .s7bootstap to the repo.
             //
             return [initCommand runWithArguments:@[ @"--no-bootstrap" ]];
