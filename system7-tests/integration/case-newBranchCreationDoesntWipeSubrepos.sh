@@ -20,20 +20,18 @@ assert s7 rebind --stage
 
 assert git commit -m '"add ReaddleLib subrepo"'
 
+pushd Dependencies/ReaddleLib > /dev/null
+  git checkout -b experiment
+  echo experiment >> RDMath.h
+  git commit -am"experiment"
+  SUBREPO_EXPERIMENT_REVISION=$(git rev-parse HEAD)
+popd > /dev/null
+
+# made an experiment in subrepo and remembered that you forgot to create a new branch in the main repo
 echo
 git checkout -b experiment
 
-echo "experiment" > file.cpp
-git add file.cpp
-git commit -m"experiment"
-
 pushd Dependencies/ReaddleLib > /dev/null
-  echo experiment > RDMath.h
+  assert test experiment = $(git branch --show-current)
+  assert test $SUBREPO_EXPERIMENT_REVISION = $(git rev-parse HEAD)
 popd > /dev/null
-
-echo
-git checkout master
-
-assert test 1 -eq $?
-assert test experiment = `cat Dependencies/ReaddleLib/RDMath.h`
-assert test ! -f file.cpp # but Git still switched to master. Only subrepos are not in sync

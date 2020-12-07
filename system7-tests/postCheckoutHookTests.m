@@ -192,15 +192,12 @@
 
     __block NSString *nikCreatedReaddleLibRevision = nil;
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
-        NSString *prevRevision = nil;
-        [repo getCurrentRevision:&prevRevision];
-
         [repo pull];
 
         NSString *currentRevision = nil;
         [repo getCurrentRevision:&currentRevision];
 
-        s7checkout(prevRevision, currentRevision);
+        s7checkout([GitRepository nullRevision], currentRevision);
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(readdleLibSubrepoGit);
@@ -260,15 +257,12 @@
     __block NSString *readdleLibRevisionThatWeShouldCheckoutInRD2 = nil;
     __block NSString *readdleLibRevisionOnMasterPushedSeparately = nil;
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
-        NSString *prevRevision = nil;
-        [repo getCurrentRevision:&prevRevision];
-
         [repo pull];
 
         NSString *currentRevision = nil;
         [repo getCurrentRevision:&currentRevision];
 
-        s7checkout(prevRevision, currentRevision);
+        s7checkout([GitRepository nullRevision], currentRevision);
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(readdleLibSubrepoGit);
@@ -342,15 +336,15 @@
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
-        NSString *prevRevision = nil;
-        [repo getCurrentRevision:&prevRevision];
-
         [repo pull];
 
         NSString *currentRevision = nil;
         [repo getCurrentRevision:&currentRevision];
 
-        s7checkout(prevRevision, currentRevision);
+        s7checkout([GitRepository nullRevision], currentRevision);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
     }];
 
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {

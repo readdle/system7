@@ -289,15 +289,12 @@
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
-        NSString *prevRevision = nil;
-        [repo getCurrentRevision:&prevRevision];
-
         [repo pull];
 
         NSString *rd2RevisionAfterPull = nil;
         [repo getCurrentRevision:&rd2RevisionAfterPull];
 
-        s7checkout(prevRevision, rd2RevisionAfterPull);
+        s7checkout([GitRepository nullRevision], rd2RevisionAfterPull);
 
 
         NSString *subrepoPath = @"Dependencies/RDSFTPOnlineClient";
