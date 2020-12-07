@@ -804,7 +804,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     NSString *updatedContents = [existingContents stringByReplacingOccurrencesOfString:[[S7InitCommand class] bootstrapCommandLine]
                                                                            withString:@""];
 
-    if ([updatedContents isEqualToString:existingContents]) {
+    if (NO == [updatedContents isEqualToString:existingContents]) {
         [updatedContents writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
     }
 }
