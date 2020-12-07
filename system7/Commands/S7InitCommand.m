@@ -90,9 +90,11 @@
     help_puts("");
     help_puts("options:");
     help_puts("");
-    help_puts(" --force -f   Forcibly overwrite any existing hooks with s7 hooks. Use this option");
-    help_puts("              if s7 init fails because of existing hooks but you don't care");
-    help_puts("              about their current contents.");
+    help_puts(" --force -f        Forcibly overwrite any existing hooks with s7 hooks. Use this option");
+    help_puts("                   if s7 init fails because of existing hooks but you don't care");
+    help_puts("                   about their current contents.");
+    help_puts("");
+    help_puts(" --no-bootstrap    Do not create .s7bootstrap file.");
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
@@ -101,6 +103,7 @@
         return S7ExitCodeNotGitRepository;
     }
 
+    BOOL createBootstrapFile = YES;
     BOOL bootstrap = NO;
 
     for (NSString *argument in arguments) {
@@ -109,6 +112,9 @@
         }
         else if ([argument isEqualToString:@"--bootstrap"]) {
             bootstrap = YES;
+        }
+        else if ([argument isEqualToString:@"--no-bootstrap"]) {
+            createBootstrapFile = NO;
         }
         else {
             return S7ExitCodeUnrecognizedOption;
@@ -163,9 +169,11 @@
         return configUpdateExitStatus;
     }
 
-    const int bootstrapFileCreationExitCode = [self createBootstrapFile];
-    if (0 != bootstrapFileCreationExitCode) {
-        return bootstrapFileCreationExitCode;
+    if (createBootstrapFile) {
+        const int bootstrapFileCreationExitCode = [self createBootstrapFile];
+        if (0 != bootstrapFileCreationExitCode) {
+            return bootstrapFileCreationExitCode;
+        }
     }
 
     const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
