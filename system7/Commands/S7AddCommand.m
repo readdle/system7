@@ -310,7 +310,7 @@ NS_ASSUME_NONNULL_BEGIN
             executeInDirectory(path, ^int{
                 S7InitCommand *initCommand = [S7InitCommand new];
                 initCommand.installFakeHooks = self.installFakeHooks;
-                const int initExitCode = [initCommand runWithArguments:@[]];
+                const int initExitCode = [initCommand runWithArguments:@[ @"--no-bootstrap" ]];
                 if (0 != initExitCode) {
                     return initExitCode;
                 }

@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL installFakeHooks;
 @property (nonatomic, assign) BOOL runFakeFilter;
 
++ (NSString *)bootstrapCommandLine;
+
 @end
 
 NS_ASSUME_NONNULL_END
