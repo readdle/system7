@@ -26,7 +26,7 @@
     help_puts("s7 status [-n]");
     printCommandAliases(self);
     help_puts("");
-    help_puts("show changed subrepos. By default, also prints main repo `git status`;");
+    help_puts("show changed subrepos.");
     help_puts("");
     help_puts("  By default, also prints main repo `git status` (unless -n is passed).");
     help_puts("");

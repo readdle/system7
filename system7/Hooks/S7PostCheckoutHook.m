@@ -81,8 +81,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         //
         // I've stumbled on the first scenario way too many times:
         //  - I've made some changes in subrepo. Made a branch in subrepo. Comitted it. Maybe even pushed
-        //  - returned to the main repo. Made accompanying changes. And only then remember that I didn't
-        //    create a new branch in the main repo. Created a new branch with `git checkout -b <branch-name>` and –
+        //  - returned to the main repo. Made accompanying changes. And only then remembered that I hadn't
+        //    created a new branch in the main repo. Created a new branch with `git checkout -b <branch-name>` and –
         //    shoot! – post-checkout hook reset subrepo to the state saved in .s7substate (I haven't rebound yet).
         //
         // I don't think (and keep fingers crossed) that the second scenario (switch between two branches
@@ -800,7 +800,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
 
-    // 'uninstall' bootstrap command
     NSString *updatedContents = [existingContents stringByReplacingOccurrencesOfString:[[S7InitCommand class] bootstrapCommandLine]
                                                                            withString:@""];
 

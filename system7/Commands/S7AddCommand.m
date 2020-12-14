@@ -174,13 +174,13 @@ NS_ASSUME_NONNULL_BEGIN
             url = actualRemoteUrl;
         }
         else if (NO == [actualRemoteUrl isEqualToString:url]) {
-            // if user gave us url, then we should compare it with the url from an existing repo he also gave us
+            // if user gave us @url, then we should compare it with the url from an existing repo at the @path argument
             do {
                 if (NO == [url hasPrefix:@"ssh:"] && NO == [url hasPrefix:@"git@"]) {
                     NSCAssert(NO == [url hasPrefix:@"file:"],
                               @"'file' protocol in url-form is not implemented. You are welcome to add it if you need it");
 
-                    // there's a chance that this is the same local url in absolute and relative form
+                    // there's a chance that this is the same local url in absolute and relative form.
                     // 'actualRemoteUrl' returned by 'git remote get-url origin' is always absolute
                     if ([url hasPrefix:@"./"]) {
                         // can also use 'standartizePath', but have no need at the moment
@@ -229,12 +229,12 @@ NS_ASSUME_NONNULL_BEGIN
             if (isEmptyRepo) {
                 // if we allowed to add an empty subrepo, then such bad things will be possible:
                 //  1. someone adds an empty subrepo
-                //  2. pushes it (he won't be able to push, for starters,
-                //     but let's imagine, he's a cool hacker and he does push main repo with
+                //  2. pushes it (they won't be able to push, for starters,
+                //     but let's imagine, that person's a cool hacker and they do push main repo with
                 //     .s7substate pointing to an empty repo)
                 //  3. someone else clones the subrepo as a free-standing repo, and pushes some
                 //     changes to it.
-                //  4. some third innocent developer pulls our main repo, with subrepo pointing
+                //  4. some third innocent developer pulls the main repo, with subrepo pointing
                 //     to an empty subrepo. We would have to clone the subrepo (it would clone
                 //     with the changes from (3) by default). Say, we are smart and we would tell
                 //     git... what? there's no way to force git to checkout NULL revision. We could
@@ -259,9 +259,9 @@ NS_ASSUME_NONNULL_BEGIN
             }
             else {
                 // detached HEAD is an evil. If someone could share subrepo in a detached HEAD,
-                // then he would share all pleasures of detached HEAD with others.
-                // Besides, I want to see how he pushes the detached HEAD. Like this:
-                //  `git push origin HEAD:master`? Fuck this hacker.
+                // then that person would share all pleasures of detached HEAD with others.
+                // Besides, I want to see how that person pushes the detached HEAD. Like this:
+                //  `git push origin HEAD:master`?
                 //
                 // Branch is required. No discussions.
                 //

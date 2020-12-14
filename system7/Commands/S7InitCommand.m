@@ -203,7 +203,7 @@
         //      -- s7 reset / git checkout -- .s7substate
         //  2. make init run checkout on user's behalf to make setup easier
         //
-        // I stuck to the second variant. Only if that's a first init (control file didn't exist)
+        // I stuck to the second variant. Only if that's a first init (control file didn't exist).
         // This would make end user's experience better
         //
         const int checkoutExitStatus = [S7PostCheckoutHook checkoutSubreposForRepo:repo
@@ -236,7 +236,7 @@
     // according to https://git-scm.com/docs/gitattributes
     //  "filter driver that exits with a non-zero status, is not an error but makes the filter a no-op passthru."
     // but in reality, if filter exist with non-zero, Git writes:
-    //  "error: external filter 's7 init bootstrap' failed 1"
+    //  "error: external filter '...' failed 1"
     // it doesn't affect the clone process, but looks ugly.
     // So... we'd have to actually perform the "filter" and exit gracefully
     //
@@ -260,7 +260,7 @@
         // which implies that s7 IS initialized in the repo.
         // If we install bootstrap at such repo, then it will install bootstrap into
         // post-checkout hook, but the actual `s7 init` won't be called in the process
-        // of checkout, as .s7control existss
+        // of checkout, as .s7control exists
         //
         return NO;
     }
