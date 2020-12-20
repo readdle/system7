@@ -33,7 +33,8 @@
         if (ourVersion && theirVersion) {
             // should write this to stdout or stderr?
             fprintf(stdout,
-                    " subrepo '%s' diverged\n"
+                    "\n"
+                    " subrepo '%s' has diverged\n"
                     "  local revision: %s\n"
                     "  remote revision: %s\n"
                     "  you can (m)erge, keep (l)ocal or keep (r)emote.\n"
