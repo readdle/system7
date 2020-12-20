@@ -9,8 +9,9 @@
 #import "S7PostCheckoutHook.h"
 
 #import "S7Diff.h"
-#import "S7InitCommand.h"
 #import "Utils.h"
+#import "S7InitCommand.h"
+#import "S7BootstrapCommand.h"
 
 static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberOfCommits) = nil;
 
@@ -800,7 +801,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
 
-    NSString *updatedContents = [existingContents stringByReplacingOccurrencesOfString:[[S7InitCommand class] bootstrapCommandLine]
+    NSString *updatedContents = [existingContents stringByReplacingOccurrencesOfString:[[S7BootstrapCommand class] bootstrapCommandLine]
                                                                            withString:@""];
 
     if (NO == [updatedContents isEqualToString:existingContents]) {

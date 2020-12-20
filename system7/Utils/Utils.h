@@ -18,6 +18,8 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
 
 int addLineToGitIgnore(NSString *lineToAppend);
 
+int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
+
 BOOL isExactlyOneBitSetInNumber(uint32_t bits);
 
 BOOL isCurrentDirectoryS7RepoRoot(void);

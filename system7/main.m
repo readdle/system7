@@ -17,6 +17,7 @@
 #import "S7StatusCommand.h"
 #import "S7ResetCommand.h"
 #import "S7CheckoutCommand.h"
+#import "S7BootstrapCommand.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -91,6 +92,7 @@ Class commandClassByName(NSString *commandName) {
             [S7StatusCommand class],
             [S7ResetCommand class],
             [S7CheckoutCommand class],
+            [S7BootstrapCommand class]
         ]];
 
         for (Class<S7Command> commandClass in commandClasses) {
