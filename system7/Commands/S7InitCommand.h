@@ -13,9 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface S7InitCommand : NSObject <S7Command>
 
 @property (nonatomic, assign) BOOL installFakeHooks;
-@property (nonatomic, assign) BOOL runFakeFilter;
-
-+ (NSString *)bootstrapCommandLine;
 
 @end
 

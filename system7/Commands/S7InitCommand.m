@@ -16,6 +16,7 @@
 #import "S7PostCommitHook.h"
 #import "S7PostMergeHook.h"
 #import "S7PrepareCommitMsgHook.h"
+#import "S7BootstrapCommand.h"
 
 @interface S7InitCommand ()
 
@@ -104,14 +105,10 @@
     }
 
     BOOL createBootstrapFile = YES;
-    BOOL bootstrap = NO;
 
     for (NSString *argument in arguments) {
         if ([argument isEqualToString:@"-f"] || [argument isEqualToString:@"--force"]) {
             self.forceOverwriteHooks = YES;
-        }
-        else if ([argument isEqualToString:@"--bootstrap"]) {
-            bootstrap = YES;
         }
         else if ([argument isEqualToString:@"--no-bootstrap"]) {
             createBootstrapFile = NO;
@@ -119,10 +116,6 @@
         else {
             return S7ExitCodeUnrecognizedOption;
         }
-    }
-
-    if (bootstrap) {
-        return [self bootstrap];
     }
 
     BOOL isDirectory = NO;
@@ -224,83 +217,6 @@
     return S7ExitCodeSuccess;
 }
 
-- (int)bootstrap {
-    if ([self shouldInstallBootstrap]) {
-        // we may still fail to install bootstrap, for example, if post-checkout hook exists
-        // and it's not a shell script (where we can merge in)
-        [self
-         installHook:@"post-checkout"
-         commandLine:[[self class] bootstrapCommandLine]];
-    }
-
-    // according to https://git-scm.com/docs/gitattributes
-    //  "filter driver that exits with a non-zero status, is not an error but makes the filter a no-op passthru."
-    // but in reality, if filter exist with non-zero, Git writes:
-    //  "error: external filter '...' failed 1"
-    // it doesn't affect the clone process, but looks ugly.
-    // So... we'd have to actually perform the "filter" and exit gracefully
-    //
-    if (NO == self.runFakeFilter) {
-        char c;
-        while ((c=getchar()) != EOF) {
-            putchar(c);
-        }
-    }
-
-    return 0;
-}
-
-- (BOOL)shouldInstallBootstrap {
-    if ([self willBootstrapConflictWithGitLFS]) {
-        return NO;
-    }
-
-    if ([NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName]) {
-        // If repo contains .s7control, then user has already done some work in it
-        // which implies that s7 IS initialized in the repo.
-        // If we install bootstrap at such repo, then it will install bootstrap into
-        // post-checkout hook, but the actual `s7 init` won't be called in the process
-        // of checkout, as .s7control exists
-        //
-        return NO;
-    }
-
-    return YES;
-}
-
-- (BOOL)willBootstrapConflictWithGitLFS {
-    NSError *error = nil;
-    NSString *gitattributesContent = [[NSString alloc] initWithContentsOfFile:@".gitattributes" encoding:NSUTF8StringEncoding error:&error];
-    if (nil != error) {
-        // Such situation would be really unexpected – how would Git find out
-        // that it should filter .s7bootstrap if there's no .gitattributes?
-        // Maybe something wrong with the permissions?
-        // Anyway, if we cannot read .gitattributes, then we better avoid bootstrap.
-        //
-        fprintf(stderr, "s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return YES;
-    }
-
-    if ([gitattributesContent containsString:@"filter=lfs"]) {
-        // this repo contains some LFS files.
-        // If LFS hook is NOT installed, then we do not install bootstrap hook
-        // not to cause LFS hook install failure. In such case user will have to
-        // run `s7 init` manually 🤷‍♂️
-        // If LFS hook IS installed, we can still merge-in bootstrap command into it.
-        //
-        if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks/post-checkout"]) {
-            return YES;
-        }
-    }
-
-    return NO;
-}
-
-+ (NSString *)bootstrapCommandLine {
-    return @"/usr/local/bin/s7 init";
-}
-
 - (int)installHook:(Class<S7Hook>)hookClass {
     // there's no guarantie that s7 will be the only one citizen of a hook,
     // thus we add " || exit $?" – to exit hook properly if s7 hook fails
@@ -309,111 +225,7 @@
                              @"/usr/local/bin/s7 %@-hook \"$@\" <&0 || exit $?",
                              [hookClass gitHookName]];
 
-    return [self installHook:[hookClass gitHookName]
-                 commandLine:commandLine];
-}
-
-- (int)installHook:(NSString *)hookName commandLine:(NSString *)commandLine {
-    NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:hookName];
-
-    NSString *contentsToWrite = [NSString stringWithFormat:@"#!/bin/sh\n\n%@\n", commandLine];
-
-    if (NO == self.forceOverwriteHooks && [NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
-        NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
-        if (NO == [existingContents hasPrefix:@"#!/bin/sh\n"]) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "hook %s already exists and it's not a shell script, so we cannot merge s7 call into it\n"
-                    "\033[0m",
-                    hookFilePath.fileSystemRepresentation);
-
-            return S7ExitCodeFileOperationFailed;
-        }
-
-        if ([existingContents containsString:commandLine]) {
-            return 0;
-        }
-
-        NSString *oldStyleS7HookContents = [NSString
-                                            stringWithFormat:
-                                            @"#!/bin/sh\n"
-                                            "/usr/local/bin/s7 %@-hook \"$@\" <&0",
-                                            hookName];
-        if (NO == [existingContents isEqualToString:oldStyleS7HookContents]) {
-            NSString *existingHookBody = [existingContents stringByReplacingOccurrencesOfString:@"#!/bin/sh\n"
-                                                                                     withString:@""];
-
-            // 'uninstall' bootstrap command
-            existingHookBody = [existingHookBody stringByReplacingOccurrencesOfString:[[self class] bootstrapCommandLine]
-                                                                           withString:@""];
-
-            NSString *mergedHookContents = [NSString stringWithFormat:
-                                            @"#!/bin/sh\n"
-                                            "\n"
-                                            "%@\n"
-                                            "\n"
-                                            "%@",
-                                            commandLine,
-                                            existingHookBody];
-
-            contentsToWrite = mergedHookContents;
-        }
-    }
-
-    if (self.installFakeHooks) {
-        contentsToWrite = @"";
-    }
-
-    NSError *error = nil;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks"]) {
-        if (NO == [NSFileManager.defaultManager
-                   createDirectoryAtPath:@".git/hooks"
-                   withIntermediateDirectories:NO
-                   attributes:nil
-                   error:&error])
-        {
-            fprintf(stderr,
-                    "'.git/hooks' directory doesn't exist. Failed to create it. Error: %s\n",
-                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-
-            return S7ExitCodeFileOperationFailed;
-        }
-    }
-
-    if (NO == [contentsToWrite writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        fprintf(stderr,
-                "failed to save %s to disk. Error: %s\n",
-                hookFilePath.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-
-        return S7ExitCodeFileOperationFailed;
-    }
-
-    NSUInteger posixPermissions = [NSFileManager.defaultManager attributesOfItemAtPath:hookFilePath error:&error].filePosixPermissions;
-    if (error) {
-        fprintf(stderr,
-                "failed to read %s posix permissions. Error: %s\n",
-                hookFilePath.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-
-        return S7ExitCodeFileOperationFailed;
-    }
-
-    posixPermissions |= 0111;
-
-    if (NO == [NSFileManager.defaultManager setAttributes:@{ NSFilePosixPermissions : @(posixPermissions) }
-                                             ofItemAtPath:hookFilePath
-                                                    error:&error])
-    {
-        fprintf(stderr,
-                "failed to make hook %s executable. Error: %s\n",
-                hookFilePath.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-
-        return S7ExitCodeFileOperationFailed;
-    }
-
-    return 0;
+    return installHook([hookClass gitHookName],commandLine, self.forceOverwriteHooks, self.installFakeHooks);
 }
 
 - (int)installS7ConfigMergeDriver {
