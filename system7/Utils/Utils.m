@@ -116,6 +116,12 @@ BOOL isCurrentDirectoryS7RepoRoot(void) {
     return [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory] && (NO == isDirectory);
 }
 
+BOOL isS7Repo(GitRepository *repo) {
+    NSString *configFilePath = [repo.absolutePath stringByAppendingPathComponent:S7ConfigFileName];
+    BOOL isDirectory = NO;
+    return [NSFileManager.defaultManager fileExistsAtPath:configFilePath isDirectory:&isDirectory] && (NO == isDirectory);
+}
+
 int s7RepoPreconditionCheck(void) {
     if (NO == isCurrentDirectoryS7RepoRoot())
     {
