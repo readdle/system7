@@ -74,8 +74,4 @@ git switch -
 
 assert s7 stat
 
-#s7 co
-#
-#s7 stat
-
 assert test AST = `cat Dependencies/RDPDFKit/Dependencies/FormCalc/Parser.c`
