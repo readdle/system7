@@ -23,6 +23,7 @@ int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, 
 BOOL isExactlyOneBitSetInNumber(uint32_t bits);
 
 BOOL isCurrentDirectoryS7RepoRoot(void);
+BOOL isS7Repo(GitRepository *repo);
 int s7RepoPreconditionCheck(void);
 int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
 

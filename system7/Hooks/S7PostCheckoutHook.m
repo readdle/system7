@@ -542,7 +542,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeGitOperationFailed;
     }
 
-    if (clean && [NSFileManager.defaultManager fileExistsAtPath:[expectedSubrepoStateDesc.path stringByAppendingPathComponent:S7ConfigFileName]]) {
+    if (clean && isS7Repo(subrepoGit)) {
         // if subrepo is an s7 repo itself, then reset it's subrepos first
         // as otherwise checkout would refuse to reset sub-subrepos' content
         //
@@ -571,6 +571,30 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                                                     revision:currentRevision
                                                     branch:currentBranch];
     if ([actualSubrepoStateDesc isEqual:expectedSubrepoStateDesc]) {
+        // even if the subrepo _is_ in the right state,
+        // if it's an s7 repo itself, it's subpores might be not in the right state,
+        // thus we must check them too
+        //
+        if (isS7Repo(subrepoGit)) {
+            S7Config *subrepoConfig = nil;
+            const int getConfigExitStatus = getConfig(subrepoGit, expectedSubrepoStateDesc.revision, &subrepoConfig);
+            if (0 != getConfigExitStatus) {
+                return getConfigExitStatus;
+            }
+
+            const int checkoutExitStatus = executeInDirectory(expectedSubrepoStateDesc.path, ^int{
+                return [S7PostCheckoutHook
+                        checkoutSubreposForRepo:subrepoGit
+                        fromConfig:subrepoConfig
+                        toConfig:subrepoConfig
+                        clean:clean];
+            });
+
+            if (S7ExitCodeSuccess != checkoutExitStatus) {
+                return checkoutExitStatus;
+            }
+        }
+
         return S7ExitCodeSuccess;
     }
 
@@ -626,7 +650,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             // TODO: raise flag and complain
         }
 
-        const BOOL configFileExists = [NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]];
+        const BOOL configFileExists = isS7Repo(subrepoGit);
         const BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ControlFileName]];
         if (configFileExists && NO == controlFileExists) {
             // handling the case when a nested subrepo is added to an existing subrepo
