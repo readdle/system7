@@ -153,3 +153,19 @@ Note that Bob didn't have to go and push PDFKit separately – `s7` took care of
 This guide has shown just the basics. There're some other commands `s7` can do and of course, there are some options and arguments you can pass to the commands you've seen.
 
 To learn more about `s7` in general, you can run `s7` without any arguments (or `s7 help`). To learn about a particular command, run `s7 help <command>`.
+
+## Contributing
+Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Authors
+ - Pavlo Shkrabliuk
+ - Nikita Savko
+ - Serhii Alpieiev
+
+## License
+This project is licensed under the MIT License - see the LICENSE.md file for details
+
+## Acknowledgments
+Hat tip to the Mecurial community for their brilliant product that inspired us.
+Special thanks to Nik Savko, Serhii Alpieiev, Andrew Podrugin and Vasyl Tkachuk for all code review suggestions and support.
+Thanks to the whole rd2 team who were first to use `s7`. 

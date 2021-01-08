@@ -37,7 +37,7 @@ An ideal subrepositories system we would like to use, meets the following requir
  - human-friendly CLI interface
  - no detached HEADs. The system we want must remember the branch where the subrepo commit belongs.
 
-System 7 was born in a rush – we had like a month left for mirgation deadline.
+System 7 was born in a rush – we had like a month left for migration deadline.
 
 Here're some ideas an assumptions we made, while building it.
 
@@ -55,17 +55,21 @@ Hg updates subrepos automatically if one performs `hg commit` without specifying
 
 #### Some assumptions we made while building System 7
 
+System 7 follows the philosophy of subrepos/submodules. We do not claim that this is the only possible way to organize your project dependencies. Some people like monorepo, some like Carthage, some Cocoapods, etc. One can actually use all of the above in a single project. Everyone chooses what's best for them and every approach has its pros and cons.
+
 We use `s7` for de-facto centralized commercial repos that use single (GitHub) server and branch-based pull requests. We are not using forks for our private repos, we are not using other kinds of remotes except `origin`.
 Thus: `s7` always assumes that there's just one remote and it's named `origin`
 
 We do not play the game of naming local branches differently from remote branches, so `s7` always assumes that `origin/branch-name` is tracked by local branch `branch-name`
+
+As `s7` had been developed under the pressure of the deadline, we had no time to make it cross-platform. To be honest, I don't think we would ever develop `s7` if there was no pressure of an urgent migration to Git. As our team develops at Mac OS, `s7` is the Mac-only. 
 
 There's such thing as octopus merge (one can merge more than two heads at a time).
 I haven't found a way to detect and prohibit this stuff.
 Custom merge driver isn't called in case of octopus.
 All merge hooks can be bypassed with `--no-verify`, so I don't rely on them;
 The only option was pre-commit hook, but I think you know the result.
-One more note on octopus – I tried to merge two branches into master. Two of three brances changed
+One more note on octopus – I tried to merge two branches into master. Two of three branches changed
 the same file (`.s7substate` in my experiment, but I think it doesn't really matter) – octopus strategy
 failed and fell back to the default merge of... I don't know what – the result was like I didn't merge
 anything, but the file had a conflict :joy:
