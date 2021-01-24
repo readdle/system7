@@ -102,7 +102,7 @@
     //
     // I even implemented it, but decided not to publish.
     //  1. I thought HG behaves like this, but that's not true
-    //  2. I think such behavior break too many normal flows.
+    //  2. I think such behavior would break too many normal flows.
     //     Eg. I've made some changes in a subrepo, then made an unrelated
     //     fix in main repo and want to push it. Should we prohibit this?
     //     I don't think so.

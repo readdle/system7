@@ -372,7 +372,6 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 }
 
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
-    // check if we are tracking this branch already
     if ([self isBranchTrackingRemoteBranch:branchName]) {
         return [self checkoutExistingLocalBranch:branchName];
     }

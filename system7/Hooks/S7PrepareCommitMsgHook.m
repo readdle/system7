@@ -101,7 +101,7 @@
     //
     //   git checkout REV_20            # .s7control and .s7substate would be in sync
     //   git reset --hard REV_100500    # .s7control left from REV_20
-    //   git merge something            # pisya
+    //   git merge something            # trouble...
     //
     //
     // I don't think we have the right to update subrepos automatically in this hook:

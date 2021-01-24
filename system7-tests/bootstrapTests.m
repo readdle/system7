@@ -1,5 +1,5 @@
 //
-//  initBootstrapTests.m
+//  bootstrapTests.m
 //  system7-tests
 //
 //  Created by Pavlo Shkrabliuk on 27.11.2020.
@@ -8,15 +8,15 @@
 
 #import <XCTest/XCTest.h>
 
-#import "S7InitCommand.h"
+#import "S7BootstrapCommand.h"
 
 #import "TestReposEnvironment.h"
 
-@interface initBootstrapTests : XCTestCase
+@interface bootstrapTests : XCTestCase
 @property (nonatomic, strong) TestReposEnvironment *env;
 @end
 
-@implementation initBootstrapTests
+@implementation bootstrapTests
 
 - (void)setUp {
     self.env = [[TestReposEnvironment alloc] initWithTestCaseName:self.className];
@@ -29,9 +29,9 @@
 // these tests are pure emulation – filter is not really called by Git
 
 - (void)runBootstrap {
-    S7InitCommand *initBootstrapCommand = [S7InitCommand new];
-    initBootstrapCommand.runFakeFilter = YES;
-    const int exitCode = [initBootstrapCommand runWithArguments:@[@"--bootstrap"]];
+    S7BootstrapCommand *command = [S7BootstrapCommand new];
+    command.runFakeFilter = YES;
+    const int exitCode = [command runWithArguments:@[]];
     XCTAssertEqual(0, exitCode);
 }
 

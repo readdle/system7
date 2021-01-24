@@ -23,11 +23,11 @@
     help_puts("s7 remove [OPTION] PATH...");
     printCommandAliases(self);
     help_puts("");
-    help_puts("Remove the specified subrepos");
+    help_puts("Remove the specified subrepo(s)");
     help_puts("");
     help_puts("options:");
     help_puts("");
-    help_puts(" -f --force  remove subrepo directory even if it contain uncommited/not pushed");
+    help_puts(" -f --force  remove subrepo directory even if it contains uncommitted/not pushed");
     help_puts("             local changes");
 }
 

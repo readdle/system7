@@ -18,6 +18,7 @@
 #import "S7StatusCommand.h"
 #import "S7ResetCommand.h"
 #import "S7CheckoutCommand.h"
+#import "S7BootstrapCommand.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -28,60 +29,6 @@
 #import "S7ConfigMergeDriver.h"
 
 #import "HelpPager.h"
-
-// Why separate command? What alternatives did I consider?
-// 0. — git submodules – also known as sobmodules – sadly well known piece of crap
-//    — git-subtree and git-subrepo – both seemed promissing until I found out
-//      that both save subrepo's history in... parent (!) repo. What do they drink?
-// 1. no bash scripts – bash script for such tasks is always a big pain in the ass
-// 2. no python – I could have written in python, but I just know C better
-// 3. I looked for some plugin system in git – didn't find one
-// 4. considered forking git itself. First, I had pre-vomit hiccups at the very thought of it.
-//    Second, too many GUIs I know, are bundling their own version of git, so my fork will be useless.
-// 5. thus I stopped at separate command + few git hooks
-//
-// I was thinking of the way to do all subrepos managing stuff almost automatic as it's done
-// in HG.
-// I can automate pull and checkout. I can* automate clone. (*with the use of ugly --template hack or global templates).
-// But I see no way to intrude into commit process. HG updates subrepos automatically if one performs `hg commit` without
-// specifying particular paths. The only thing like that in git is `git commit -a`. There's `pre-commit` hook,
-// and maybe I could detect '-a', but hook documentation is as crappy as the whole git (and its documentation).
-// For now, I think that we will start with manual rebind of subrepos and commit of .s7substate as any other file.
-//
-// We use s7 for de-facto centralized commercial repos that use single (GitHub) server and branch-based
-// pull requests. We are not using forks, we are not using other kinds of remotes except 'origin'.
-// Thus: s7 always assumes that there's just one remote and it's named 'origin'
-//
-// Second assumption: we do not play the game of naming local branches differently from remote branches,
-// so s7 always assumes that `origin/branch-name` is tracked by local branch `branch-name`
-//
-// Third assumption: there's such thing as octopus merge (one can merge more than two heads at a time).
-// I haven't found a way to detect and prohibit this stuff.
-// Custom merge driver isn't called in case of octopus (did I say I strongly hate git?);
-// All merge hooks can be bypassed with --no-verify, so I don't rely on them;
-// The only option was pre-commit hook, but I think you know the result.
-// One more note on octopus – I tried to merge two branches into master. Two of three brances changed
-// the same file (.s7substate in my experiment, but I think it doesn't really matter) – octopus strategy
-// failed and fell back to the default merge of... I don't know what – the result was like I didn't merge
-// anything, but the file had a conflict :joy:
-// The result looked like this:
-//    * 6667738 (HEAD -> master) merge octopus (`git merge test test2`)
-//    * 7ff4dca me too
-//    * 7221d84 up subrepos
-//    | * 4a9db5b (test2) up file (changed a different file at branch test2)
-//    |/
-//    | * edd53c0 (test) up subrepos
-//    |/
-//    * 4ebe9c8 <doesn't matter>
-//    ~
-//
-// A note about `git reset`. This beast doesn't call any hooks, so there's no chance for s7 to update
-// subrepos automatically. The only way to help user I came up with is to save a copy of .s7substate into
-// not tracked file .s7control. If actual config is not equal to the one saved in .s7control, then
-// we can throw a build error from our project (like cocoapods do when pods are not in sync).
-// This trick is also used by the `post-checkout` hook to understand if user updated an unrelated file
-// or our precious .s7substate.
-//
 
 void printHelp() {
     help_puts("");
@@ -148,6 +95,7 @@ Class commandClassByName(NSString *commandName) {
             [S7StatusCommand class],
             [S7ResetCommand class],
             [S7CheckoutCommand class],
+            [S7BootstrapCommand class]
         ]];
 
         for (Class<S7Command> commandClass in commandClasses) {
