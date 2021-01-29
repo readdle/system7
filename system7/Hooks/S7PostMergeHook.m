@@ -17,7 +17,7 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: post-merge hook start\n");
+    fprintf(stdout, "\ns7: post-merge hook start\n");
     const int result = [self doRunWithArguments:arguments];
     fprintf(stdout, "s7: post-merge hook complete\n");
     return result;

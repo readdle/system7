@@ -22,7 +22,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: post-checkout hook start\n");
+    fprintf(stdout, "\ns7: post-checkout hook start\n");
     const int result = [self doRunWithArguments:arguments];
     fprintf(stdout, "s7: post-checkout hook complete\n");
     return result;
@@ -417,7 +417,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         BOOL isDirectory = NO;
         if ([NSFileManager.defaultManager fileExistsAtPath:subrepoDesc.path isDirectory:&isDirectory] && isDirectory) {
             fprintf(stdout,
-                    " checking out subrepo '%s'\n",
+                    " \033[34m==>\033[0m \033[1mchecking out subrepo '%s'\033[0m\n",
                     [subrepoDesc.path fileSystemRepresentation]);
 
             GitRepository *subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoDesc.path];
