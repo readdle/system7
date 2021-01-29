@@ -42,6 +42,7 @@
 		BE50AA01246C2CB800DBB618 /* S7PrePushHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */; };
 		BE5B752E248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */; };
 		BE5B752F248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */; };
+		BE734D2025C34EAD00660FBA /* S7VersionCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE734D1F25C34EAD00660FBA /* S7VersionCommand.m */; };
 		BE8218782452BA7300E878A8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218772452BA7300E878A8 /* main.m */; };
 		BE8218812452C16A00E878A8 /* S7Config.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218802452C16A00E878A8 /* S7Config.m */; };
 		BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218882452C1DE00E878A8 /* configParserTests.m */; };
@@ -130,6 +131,8 @@
 		BE55A2F024AB803300AA735F /* system7-tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "system7-tests.xctestplan"; sourceTree = "<group>"; };
 		BE5B752C248947AD008E7378 /* S7PrepareCommitMsgHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PrepareCommitMsgHook.h; sourceTree = "<group>"; };
 		BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PrepareCommitMsgHook.m; sourceTree = "<group>"; };
+		BE734D1E25C34EAD00660FBA /* S7VersionCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7VersionCommand.h; sourceTree = "<group>"; };
+		BE734D1F25C34EAD00660FBA /* S7VersionCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7VersionCommand.m; sourceTree = "<group>"; };
 		BE8218742452BA7300E878A8 /* s7 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = s7; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE8218772452BA7300E878A8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		BE82187F2452C16A00E878A8 /* S7Config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Config.h; sourceTree = "<group>"; };
@@ -318,6 +321,8 @@
 				BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */,
 				BE90D38E258F470900186E86 /* S7BootstrapCommand.h */,
 				BE90D38F258F470900186E86 /* S7BootstrapCommand.m */,
+				BE734D1E25C34EAD00660FBA /* S7VersionCommand.h */,
+				BE734D1F25C34EAD00660FBA /* S7VersionCommand.m */,
 			);
 			path = Commands;
 			sourceTree = "<group>";
@@ -453,6 +458,7 @@
 				BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */,
+				BE734D2025C34EAD00660FBA /* S7VersionCommand.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
 				BE172CD224657CA700B57557 /* S7Diff.m in Sources */,
 				BE389214246304F200394CA8 /* S7RemoveCommand.m in Sources */,
