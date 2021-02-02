@@ -46,7 +46,7 @@
     printCommandAliases(self);
     help_puts("");
     help_puts("    Removes all traces of s7 from the repo.");
-    help_puts("    Deletes all .s7*-files.");
+    help_puts("    Deletes all .s7* files.");
     help_puts("    Scrapes s7 calls out from git hooks, and removes a hook altogether");
     help_puts("    if s7 was the only citizen of that hook.");
     help_puts("    Removes s7-related stuff from .gitignore, .git/config and .gitattributes.");
