@@ -9,6 +9,14 @@ Read [this](Why%20custom%20submodules%20system.md) to understand why we created 
 
 ## Installation
 
+### Homebrew
+
+`brew install readdle/readdle/s7`. To get upgrades later, run `brew upgrade s7`.
+
+After `s7` is installed, we recommend to run `git config --global filter.s7.smudge "s7 bootstrap"`. This is optional, but will save you some extra keystrokes when you get a fresh clone of an s7-driven repo.
+
+### HEAD/Development version install script
+
 Download the file https://github.com/readdle/system7/blob/master/install.sh and run it.
 
 > This command will do the following at your machine:
