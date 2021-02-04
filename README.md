@@ -4,7 +4,7 @@ System 7 is the Git submodules system for mere mortals.
 
 You use System 7 via a CLI tool named `s7`.
 
-Read [this](Why%20custom%20submodules%20system.md) to understand why we created it.
+⚠️ Important note: System 7 was originally developed by Mac/iOS development team for their practical needs, thus `s7` is Mac OS only. Please, read [this](Why%20custom%20submodules%20system.md) to understand why we created it.
 
 
 ## Installation
