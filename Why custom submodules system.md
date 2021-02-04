@@ -44,7 +44,7 @@ Here're some ideas an assumptions we made, while building it.
 Why separate command? What alternatives did I consider? Why Objective-C?
 1. No shell scripts – shell script for such tasks is always a big pain in the ass
 2. No Python – I could have written in python, but I just know C better. If we have to port System 7 to other platforms, I would most likely rewrite it in python.
-3. No Swift. I don't like it. I don't want to rewrite this app every year as the language "evaluates".
+3. We choose Objective-C for this project because the language itself is very stable and compiles fast. 
 4. I looked for some plugin system in Git – didn't find one.
 5. Considered forking Git itself. Too many GUIs I know, are bundling their own version of `git`, so my fork will be useless.
 6. Thus I stopped at separate command + few Git hooks.
