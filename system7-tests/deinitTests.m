@@ -24,46 +24,44 @@
     self.env = [[TestReposEnvironment alloc] initWithTestCaseName:self.className];
 }
 
-#define assertRepoAtPWDIsFreeFromS7() \
-do {                                                                            \
-    NSFileManager *fileManager = NSFileManager.defaultManager;                  \
-    XCTAssertFalse([fileManager fileExistsAtPath:S7BakFileName]);               \
-    XCTAssertFalse([fileManager fileExistsAtPath:S7BootstrapFileName]);         \
-    XCTAssertFalse([fileManager fileExistsAtPath:S7ControlFileName]);           \
-    XCTAssertFalse([fileManager fileExistsAtPath:S7ConfigFileName]);            \
-                                                                                \
-    if ([fileManager fileExistsAtPath:@".gitignore"]) {                         \
-        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];    \
-        XCTAssertFalse([gitignoreContents containsString:S7ControlFileName]);   \
-        XCTAssertFalse([gitignoreContents containsString:S7BakFileName]);       \
-    }                                                                           \
-                                                                                \
-    if ([fileManager fileExistsAtPath:@".gitattributes"]) {                     \
-        NSString *gitattributesContents = [NSString stringWithContentsOfFile:@".gitattributes" encoding:NSUTF8StringEncoding error:nil]; \
-        XCTAssertFalse([gitattributesContents containsString:@"s7"]);           \
-    }                                                                           \
-                                                                                \
-    if ([fileManager fileExistsAtPath:@".git/config"]) {                        \
-        NSString *configContents = [NSString stringWithContentsOfFile:@".git/config" encoding:NSUTF8StringEncoding error:nil];  \
-        XCTAssertFalse([configContents containsString:@"s7"]);                  \
-    }                                                                           \
-                                                                                \
-    NSArray<NSString *> *hookFileNames = @[                                     \
-        @"post-checkout",                                                       \
-        @"post-commit",                                                         \
-        @"post-merge",                                                          \
-        @"prepare-commit-msg",                                                  \
-        @"pre-push"                                                             \
-    ];                                                                          \
-    for (NSString *hookName in hookFileNames) {                                 \
-        NSString *hookFilePath = [NSString stringWithFormat:@".git/hooks/%@", hookName];    \
-        if ([fileManager fileExistsAtPath:hookFilePath]) {                                  \
-            NSString *hookFileContents = [NSString stringWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];  \
-            XCTAssertFalse([hookFileContents containsString:@"s7"]);            \
-        }                                                                       \
-    }                                                                           \
-}                                                                               \
-while(0);
+void assertRepoAtPWDIsFreeFromS7() {
+    NSFileManager *fileManager = NSFileManager.defaultManager;
+    XCTAssertFalse([fileManager fileExistsAtPath:S7BakFileName]);
+    XCTAssertFalse([fileManager fileExistsAtPath:S7BootstrapFileName]);
+    XCTAssertFalse([fileManager fileExistsAtPath:S7ControlFileName]);
+    XCTAssertFalse([fileManager fileExistsAtPath:S7ConfigFileName]);
+
+    if ([fileManager fileExistsAtPath:@".gitignore"]) {
+        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertFalse([gitignoreContents containsString:S7ControlFileName]);
+        XCTAssertFalse([gitignoreContents containsString:S7BakFileName]);
+    }
+
+    if ([fileManager fileExistsAtPath:@".gitattributes"]) {
+        NSString *gitattributesContents = [NSString stringWithContentsOfFile:@".gitattributes" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertFalse([gitattributesContents containsString:@"s7"]);
+    }
+
+    if ([fileManager fileExistsAtPath:@".git/config"]) {
+        NSString *configContents = [NSString stringWithContentsOfFile:@".git/config" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertFalse([configContents containsString:@"s7"]);
+    }
+
+    NSArray<NSString *> *hookFileNames = @[
+        @"post-checkout",
+        @"post-commit",                                                         
+        @"post-merge",                                                          
+        @"prepare-commit-msg",
+        @"pre-push"
+    ];
+    for (NSString *hookName in hookFileNames) {
+        NSString *hookFilePath = [NSString stringWithFormat:@".git/hooks/%@", hookName];
+        if ([fileManager fileExistsAtPath:hookFilePath]) {
+            NSString *hookFileContents = [NSString stringWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
+            XCTAssertFalse([hookFileContents containsString:@"s7"]);
+        }
+    }
+}
 
 NSString *stringByRemovingEmptyLines(NSString *string) {
     NSMutableArray *resultLines = [NSMutableArray new];
@@ -110,8 +108,16 @@ BOOL areStringEqualIgnoringEmptyLines(NSString *yellow, NSString *blue) {
         S7InitCommand *initCommand = [S7InitCommand new];
         XCTAssertEqual(0, [initCommand runWithArguments:@[]]);
 
+        s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+
+        NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertNotEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location, NSNotFound);
+
         S7DeinitCommand *deinitCommand = [S7DeinitCommand new];
         XCTAssertEqual(S7ExitCodeSuccess, [deinitCommand runWithArguments:@[]]);
+
+        gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore" encoding:NSUTF8StringEncoding error:nil];
+        XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location, NSNotFound);
 
         assertRepoAtPWDIsFreeFromS7();
     }];

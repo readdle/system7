@@ -64,6 +64,13 @@
 
     int result = S7ExitCodeSuccess;
 
+    NSMutableSet<NSString *> *linesToRemoveFromGitIgnore = [NSMutableSet new];
+
+    S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+    for (S7SubrepoDescription *subrepoDesc in parsedConfig.subrepoDescriptions) {
+        [linesToRemoveFromGitIgnore addObject:subrepoDesc.path];
+    }
+
     for (NSString *fileName in @[ S7BakFileName, S7BootstrapFileName, S7ControlFileName, S7ConfigFileName ]) {
         if (NO == [NSFileManager.defaultManager fileExistsAtPath:fileName]) {
             continue;
@@ -80,11 +87,12 @@
         }
     }
 
-    const int gitignoreUpdateResult =
-    removeLinesFromGitIgnore([NSSet setWithArray:@[
-                                S7BakFileName,
-                                S7ControlFileName,
-                            ]]);
+    [linesToRemoveFromGitIgnore addObjectsFromArray:@[
+        S7BakFileName,
+        S7ControlFileName,
+    ]];
+
+    const int gitignoreUpdateResult = removeLinesFromGitIgnore(linesToRemoveFromGitIgnore);
     if (S7ExitCodeSuccess != gitignoreUpdateResult) {
         result = gitignoreUpdateResult;
     }
