@@ -17,6 +17,9 @@ int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void));
 int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __autoreleasing * _Nonnull ppConfig);
 
 int addLineToGitIgnore(NSString *lineToAppend);
+int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove);
+
+int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove);
 
 int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
 

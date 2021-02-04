@@ -42,9 +42,7 @@
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
     NSMutableArray<S7SubrepoDescription *> *newDescriptionsArray = [parsedConfig.subrepoDescriptions mutableCopy];
-    NSMutableString *newGitIgnoreContents = [NSMutableString stringWithContentsOfFile:@".gitignore"
-                                                                          encoding:NSUTF8StringEncoding
-                                                                             error:nil];
+    NSMutableSet<NSString *> *pathsToRemoveFromGitignore = [NSMutableSet new];
 
     BOOL force = NO;
     BOOL anySubrepoHadLocalChanges = NO;
@@ -107,25 +105,17 @@
             }
         }
 
-        [newGitIgnoreContents
-         replaceOccurrencesOfString:[path stringByAppendingString:@"\n"]
-         withString:@""
-         options:0
-         range:NSMakeRange(0, newGitIgnoreContents.length)];
-    }
-
-    NSError *error = nil;
-    if (NO == [newGitIgnoreContents writeToFile:@".gitignore" atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        fprintf(stderr,
-                "abort: failed to save updated .gitignore\n"
-                "error: %s\n",
-                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
-        return S7ExitCodeFileOperationFailed;
+        [pathsToRemoveFromGitignore addObject:path];
     }
 
     S7Config *newConfig = [[S7Config alloc] initWithSubrepoDescriptions:newDescriptionsArray];
 
     SAVE_UPDATED_CONFIG_TO_MAIN_AND_CONTROL_FILE(newConfig);
+
+    const int gitignoreUpdateResult = removeLinesFromGitIgnore(pathsToRemoveFromGitignore);
+    if (S7ExitCodeSuccess != gitignoreUpdateResult) {
+        return gitignoreUpdateResult;
+    }
 
     if (anySubrepoHadLocalChanges) {
         return S7ExitCodeSubrepoHasLocalChanges;

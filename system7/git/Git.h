@@ -38,6 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isBareRepo;
 - (void)printStatus;
 
+- (int)removeLocalConfigSection:(NSString *)section;
+
 - (int)fetch;
 - (int)pull;
 - (int)merge;

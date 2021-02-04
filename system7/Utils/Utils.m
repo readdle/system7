@@ -111,6 +111,97 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     return 0;
 }
 
+int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove) {
+    BOOL isDirectory = NO;
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".gitignore" isDirectory:&isDirectory]) {
+        return S7ExitCodeSuccess;
+    }
+
+    if (isDirectory) {
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    NSError *error = nil;
+    NSString *gitignoreContents = [NSString stringWithContentsOfFile:@".gitignore"
+                                                            encoding:NSUTF8StringEncoding
+                                                               error:&error];
+    if (nil == gitignoreContents || error) {
+        fprintf(stderr, "failed to remove lines from .gitignore. File read failed. Error: %s\n",
+                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    NSMutableString *newContents = [[NSMutableString alloc] initWithCapacity:gitignoreContents.length];
+    [gitignoreContents enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        if (NO == [linesToRemove containsObject:line]) {
+            [newContents appendString:line];
+            [newContents appendString:@"\n"];
+        }
+    }];
+
+    if (NO == [newContents writeToFile:@".gitignore" atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        fprintf(stderr,
+                "abort: failed to save updated .gitignore\n"
+                "error: %s\n",
+                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    return S7ExitCodeSuccess;
+}
+
+int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove) {
+    BOOL isDirectory = NO;
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".gitattributes" isDirectory:&isDirectory]) {
+        return S7ExitCodeSuccess;
+    }
+
+    if (isDirectory) {
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    NSMutableArray<NSString *> *linesToRemovePrefixes = [[NSMutableArray alloc] initWithCapacity:filesToRemove.count];
+    for (NSString *fileToRemove in filesToRemove) {
+        [linesToRemovePrefixes addObject:[NSString stringWithFormat:@"%@ ", fileToRemove]];
+    }
+
+    NSError *error = nil;
+    NSString *existingContents = [NSString stringWithContentsOfFile:@".gitattributes"
+                                                           encoding:NSUTF8StringEncoding
+                                                              error:&error];
+    if (nil == existingContents || error) {
+        fprintf(stderr, "failed to remove files from .gitattributes. File read failed. Error: %s\n",
+                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    NSMutableString *newContents = [[NSMutableString alloc] initWithCapacity:existingContents.length];
+    [existingContents enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        BOOL removeLine = NO;
+        for (NSString *lineToRemovePrefix in linesToRemovePrefixes) {
+            if ([line hasPrefix:lineToRemovePrefix]) {
+                removeLine = YES;
+                break;
+            }
+        }
+
+        if (NO == removeLine) {
+            [newContents appendString:line];
+            [newContents appendString:@"\n"];
+        }
+    }];
+
+    if (NO == [newContents writeToFile:@".gitattributes" atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        fprintf(stderr,
+                "abort: failed to save updated .gitattributes\n"
+                "error: %s\n",
+                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeFileOperationFailed;
+    }
+
+    return S7ExitCodeSuccess;
+}
+
 BOOL isCurrentDirectoryS7RepoRoot(void) {
     BOOL isDirectory = NO;
     return [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory] && (NO == isDirectory);

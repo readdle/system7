@@ -333,6 +333,20 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
            stdErrOutput:NULL];
 }
 
+#pragma mark - config -
+
+- (int)removeLocalConfigSection:(NSString *)section {
+    int gitExitCode = [[self class] runGitInRepoAtPath:self.absolutePath
+                                         withArguments:@[ @"config", @"--local", @"--remove-section", section ]
+                                          stdOutOutput:nil
+                                          stdErrOutput:nil];
+    if (128 == gitExitCode) {
+        // no such section can be considered as a success in this case
+        return 0;
+    }
+    return gitExitCode;
+}
+
 #pragma mark - branches -
 
 - (BOOL)isBranchTrackingRemoteBranch:(NSString *)branchName {
@@ -1022,6 +1036,8 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 }
 
 @end
+
+#pragma mark - utils for tests -
 
 @implementation GitRepository (Tests)
 
