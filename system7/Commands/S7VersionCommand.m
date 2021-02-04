@@ -10,8 +10,8 @@
 
 #import "HelpPager.h"
 
-static const char VERSION_NUMBER[] = "0.9";
-static const char VERSION_DATE[] = "2021-01-29";
+static const char VERSION_NUMBER[] = "1.0";
+static const char VERSION_DATE[] = "2021-02-04";
 
 @implementation S7VersionCommand
 
