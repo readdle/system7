@@ -206,7 +206,10 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     //     GIT_DIR is in the main repo. In our case `cat-file` resulted workin in the main repo.
     //     Sure, it could find the commit from the subrepo in the main repo.
     //
-    // Maybe I could unset GIT_DIR in every hook we write. This would be 
+    // Maybe I could unset GIT_DIR in every hook we write. This would be less centralized
+    // and more error prone, as if we add any new hook, we would have to remember about
+    // GIT_DIR issue.
+    //
     NSString *dotGitDirPath = self.isBareRepo
                                 ? self.absolutePath
                                 : [self.absolutePath stringByAppendingPathComponent:@".git"];
