@@ -78,6 +78,7 @@
 		BEE672CF2523B76500DB09BC /* iniParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE672CE2523B76500DB09BC /* iniParserTests.m */; };
 		BEE928A12456DA6500BD6B86 /* Git.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE928A02456DA6500BD6B86 /* Git.m */; };
 		BEFAF7A125718AB7000D90C3 /* bootstrapTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEFAF7A025718AB7000D90C3 /* bootstrapTests.m */; };
+		CE5BB61F25FA63A8002596B9 /* gitPackedRefsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CE5BB61E25FA63A8002596B9 /* gitPackedRefsTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -174,6 +175,7 @@
 		BEE9289F2456DA6500BD6B86 /* Git.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Git.h; sourceTree = "<group>"; };
 		BEE928A02456DA6500BD6B86 /* Git.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Git.m; sourceTree = "<group>"; };
 		BEFAF7A025718AB7000D90C3 /* bootstrapTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = bootstrapTests.m; sourceTree = "<group>"; };
+		CE5BB61E25FA63A8002596B9 /* gitPackedRefsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = gitPackedRefsTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -290,6 +292,7 @@
 				BE394D382486AD7D00ED6E05 /* checkoutTests.m */,
 				BEE672CE2523B76500DB09BC /* iniParserTests.m */,
 				BEBE40C32576D04D00E39755 /* deinitTests.m */,
+				CE5BB61E25FA63A8002596B9 /* gitPackedRefsTests.m */,
 			);
 			path = "system7-tests";
 			sourceTree = "<group>";
@@ -412,7 +415,7 @@
 		BE82186C2452BA7300E878A8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1160;
+				LastUpgradeCheck = 1240;
 				ORGANIZATIONNAME = Readdle;
 				TargetAttributes = {
 					BE8218732452BA7300E878A8 = {
@@ -527,6 +530,7 @@
 				BE394D392486AD7D00ED6E05 /* checkoutTests.m in Sources */,
 				BEE1CD03246A9F6F00E2CC3B /* controlTests.m in Sources */,
 				BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
+				CE5BB61F25FA63A8002596B9 /* gitPackedRefsTests.m in Sources */,
 				BE3A29E524604C10004A2B31 /* statusTests.m in Sources */,
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,
 				24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */,
@@ -569,6 +573,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -632,6 +637,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;

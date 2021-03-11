@@ -351,7 +351,9 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         }
     }
 
-    return YES;
+    // refs/heads might be empty because of recent garbage collection or pack-refs, in which case
+    // all references were moved to .git/packed-refs.
+    return ([self findPackedReferenceMatchingPattern:@"[0-9a-z]{40}" reference:nil] == NO);
 }
 
 - (void)printStatus {
@@ -507,8 +509,15 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         NSString *refPath = bareRepo
             ? [self.absolutePath stringByAppendingPathComponent:ref]
             : [[self.absolutePath stringByAppendingPathComponent:@".git"] stringByAppendingPathComponent:ref];
-
-        if (NO == [NSFileManager.defaultManager fileExistsAtPath:refPath]) {
+        
+        BOOL referenceExists = [[NSFileManager defaultManager] fileExistsAtPath:refPath];
+        
+        if (NO == referenceExists) {
+            NSString *const referencePattern = [NSString stringWithFormat:@"[0-9a-f]{40}\\s+%@", ref];
+            referenceExists = [self findPackedReferenceMatchingPattern:referencePattern reference:nil];
+        }
+        
+        if (NO == referenceExists) {
             *isEmptyRepo = YES;
             return 0;
         }
@@ -714,12 +723,22 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                                  initWithContentsOfFile:refPath
                                  encoding:NSUTF8StringEncoding
                                  error:&error];
-        if (nil == refContents) {
-            *ppRevision = [self.class nullRevision];
-            return 0;
+        if (refContents) {
+            revision = [refContents stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
         }
-
-        revision = [refContents stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        else {
+            NSString *const referencePattern = [NSString stringWithFormat:@"^[0-9a-f]{40}\\s+%@$", ref];
+            NSString *matchingReference = nil;
+            [self findPackedReferenceMatchingPattern:referencePattern reference:&matchingReference];
+            
+            if (matchingReference) {
+                revision = [matchingReference substringToIndex:40];
+            }
+            else {
+                *ppRevision = [GitRepository nullRevision];
+                return 0;
+            }
+        }
     }
     else {
         // detached HEAD
@@ -783,6 +802,41 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                                   stdOutOutput:NULL
                                   stdErrOutput:NULL];
     return exitStatus;
+}
+
+- (BOOL)findPackedReferenceMatchingPattern:(NSString *)pattern reference:(NSString **)referencePtr {
+    // always returns nil in bare repo
+    NSString *const referencesFilePath = [self.absolutePath stringByAppendingPathComponent:@".git/packed-refs"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:referencesFilePath] == NO) {
+        return NO;
+    }
+    
+    BOOL found = NO;
+    FILE *const referencesFile = fopen(referencesFilePath.fileSystemRepresentation, "r");
+    const size_t bufferLength = 512;
+    char *const buffer = calloc(bufferLength, sizeof(char));
+    
+    while (fgets(buffer, bufferLength, referencesFile) != NULL) {
+        NSUInteger length = strlen(buffer);
+        if (length > 0 && buffer[length - 1] == '\n') {
+            --length;
+        }
+        
+        NSString *const line = [[NSString alloc] initWithBytesNoCopy:buffer length:length encoding:NSUTF8StringEncoding freeWhenDone:NO];
+        
+        if (0 == [line rangeOfString:pattern options:NSRegularExpressionSearch | NSCaseInsensitiveSearch].location) {
+            found = YES;
+            if (referencePtr) {
+                *referencePtr = [NSString stringWithUTF8String:buffer];
+            }
+            break;
+        }
+    }
+    
+    free(buffer);
+    fclose(referencesFile);
+    
+    return found;
 }
 
 #pragma mark - remote -
