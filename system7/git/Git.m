@@ -164,7 +164,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 {
     // Local helper method to run simple git commands.
     //
-    // Easier to use and read than -runGitInRepoAtPath:withArguments:,
+    // Easier to use and read than -runGitWithArguments:,
     // which accepts an array of arguments.
     //
     // User must be cautios though – as this methods splits command into arguments
@@ -180,21 +180,48 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     NSAssert(NO == [arguments.firstObject isEqualToString:@"git"],
              @"please, don't use git command itself – just arguments to git");
 
-    return [self.class runGitInRepoAtPath:self.absolutePath
-                            withArguments:arguments
-                             stdOutOutput:ppStdOutOutput
-                             stdErrOutput:ppStdErrOutput];
+    return [self runGitWithArguments:arguments
+                        stdOutOutput:ppStdOutOutput
+                        stdErrOutput:ppStdErrOutput];
 }
 
-+ (int)runGitInRepoAtPath:(NSString *)repoPath
-            withArguments:(NSArray<NSString *> *)arguments
-             stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
-             stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+- (int)runGitWithArguments:(NSArray<NSString *> *)arguments
+              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
 {
+    // pastey:
+    // we must add `--git-dir` option to every command we run to fix the following issue.
+    //  - clone main repo with .s7bootstrap
+    //  - bootstrap hook launches `s7 init`
+    //  - init clones a subrepo
+    //  - we try to make sure that the repo is in the right state and call `git cat-file -e <hash>`
+    //  - cat-file returns 1 (i.e. revision doesn't exist)
+    // This didn't happen to _all_ subrepos – just some random ones.
+    //
+    // I've spent like 4 hours trying to figure out what the heck was going on. Andrew came to
+    // rescue me and we found out that the reason was the following:
+    //  1. bootstrap hook is ran with GIT_DIR env. variable set to the path of the main repo
+    //  2. s7 starts cloning subrepos (GIT_DIR set for the hook in main repo is still there)
+    //  3. s7 calls `git cat-file -e <hash>` and Git is confused, working dir is in subrepo,
+    //     GIT_DIR is in the main repo. In our case `cat-file` resulted workin in the main repo.
+    //     Sure, it could find the commit from the subrepo in the main repo.
+    //
+    // Maybe I could unset GIT_DIR in every hook we write. This would be less centralized
+    // and more error prone, as if we add any new hook, we would have to remember about
+    // GIT_DIR issue.
+    //
+    NSString *dotGitDirPath = self.isBareRepo
+                                ? self.absolutePath
+                                : [self.absolutePath stringByAppendingPathComponent:@".git"];
+    NSString *gitDirOption = [@"--git-dir=" stringByAppendingString:dotGitDirPath];
+    NSArray<NSString *> *defaultArguments = @[ gitDirOption ];
+
+    arguments = [defaultArguments arrayByAddingObjectsFromArray:arguments];
+
     NSTask *task = [NSTask new];
-    [task setLaunchPath:[self envGitExecutablePath]];
+    [task setLaunchPath:[self.class envGitExecutablePath]];
     [task setArguments:arguments];
-    task.currentDirectoryURL = [NSURL fileURLWithPath:repoPath];
+    task.currentDirectoryURL = [NSURL fileURLWithPath:self.absolutePath];
 
     // https://stackoverflow.com/questions/49184623/nstask-race-condition-with-readabilityhandler-block
     // we must use semaphore to make sure we finish reading from pipes properly once task finished it's execution.
@@ -220,12 +247,12 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     };
     
     __autoreleasing NSString * __stdOutOutputGuarantee;
-    if ([self envGitTraceEnabled] && nil == ppStdOutOutput) {
+    if ([self.class envGitTraceEnabled] && nil == ppStdOutOutput) {
         ppStdOutOutput = &__stdOutOutputGuarantee;
     }
     
     __autoreleasing NSString *__stdErrOutputGuarantee;
-    if ([self envGitTraceEnabled] && nil == ppStdErrOutput) {
+    if ([self.class envGitTraceEnabled] && nil == ppStdErrOutput) {
         ppStdErrOutput = &__stdErrOutputGuarantee;
     }
 
@@ -336,10 +363,9 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 #pragma mark - config -
 
 - (int)removeLocalConfigSection:(NSString *)section {
-    int gitExitCode = [[self class] runGitInRepoAtPath:self.absolutePath
-                                         withArguments:@[ @"config", @"--local", @"--remove-section", section ]
-                                          stdOutOutput:nil
-                                          stdErrOutput:nil];
+    int gitExitCode = [self runGitWithArguments:@[ @"config", @"--local", @"--remove-section", section ]
+                                   stdOutOutput:nil
+                                   stdErrOutput:nil];
     if (128 == gitExitCode) {
         // no such section can be considered as a success in this case
         return 0;
@@ -981,9 +1007,8 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     NSString *fileContents = nil;
     NSString *devNull = nil;
     NSString *spell = [NSString stringWithFormat:@"%@:%@", revision, filePath];
-    *exitStatus = [self.class
-                   runGitInRepoAtPath:self.absolutePath
-                   withArguments:@[ @"show", spell ]
+    *exitStatus = [self
+                   runGitWithArguments:@[ @"show", spell ]
                    stdOutOutput:&fileContents
                    stdErrOutput:&devNull];
     return fileContents;
@@ -1007,9 +1032,8 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     //
     
     NSString *statusOutput = nil;
-    const int statusExitCode = [self.class
-                                runGitInRepoAtPath:self.absolutePath
-                                withArguments:@[ @"status", @"--porcelain", @"--untracked-files=normal" ]
+    const int statusExitCode = [self
+                                runGitWithArguments:@[ @"status", @"--porcelain", @"--untracked-files=normal" ]
                                 stdOutOutput:&statusOutput
                                 stdErrOutput:NULL];
     if (0 != statusExitCode) {
@@ -1022,17 +1046,15 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 - (int)add:(NSArray<NSString *> *)filePaths {
     NSArray<NSString *> *args = [@[@"add", @"--"] arrayByAddingObjectsFromArray:filePaths];
-    return [self.class runGitInRepoAtPath:self.absolutePath
-                            withArguments:args
-                             stdOutOutput:NULL
-                             stdErrOutput:NULL];
+    return [self runGitWithArguments:args
+                        stdOutOutput:NULL
+                        stdErrOutput:NULL];
 }
 
 - (int)commitWithMessage:(NSString *)message {
-    return [self.class runGitInRepoAtPath:self.absolutePath
-                            withArguments:@[ @"commit", [NSString stringWithFormat:@"-m'%@'", message] ]
-                             stdOutOutput:NULL
-                             stdErrOutput:NULL];
+    return [self runGitWithArguments:@[ @"commit", [NSString stringWithFormat:@"-m'%@'", message] ]
+                        stdOutOutput:NULL
+                        stdErrOutput:NULL];
 }
 
 @end
