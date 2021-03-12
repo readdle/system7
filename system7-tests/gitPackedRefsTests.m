@@ -38,8 +38,7 @@
         
         NSString *revision2;
         XCTAssertEqual([repo getCurrentRevision:&revision2], 0);
-        XCTAssertNotNil(revision2);
-        XCTAssertNotEqualObjects(revision2, [GitRepository nullRevision]);
+        XCTAssertEqualObjects(revision1, revision2);
     }];
 }
 
@@ -56,8 +55,7 @@
         
         NSString *branch2;
         [repo getCurrentBranch:&branch2 isDetachedHEAD:&noop isEmptyRepo:&noop];
-        XCTAssertNotNil(branch2);
-        XCTAssertEqualObjects(branch2, @"master");
+        XCTAssertEqualObjects(branch1, branch2);
     }];
 }
 
