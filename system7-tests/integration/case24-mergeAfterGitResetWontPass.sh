@@ -33,11 +33,17 @@ cd rd2
 
 git checkout -b experiment
 
-echo experiment > file
-git add file
-git commit -m"experiment"
+pushd Dependencies/ReaddleLib > /dev/null
+  echo faster-sqrt > RDMath.h
+  git add RDMath.h
+  git commit -m"faster sqrt"
+popd > /dev/null
+
+assert s7 rebind --stage
+assert git commit -m '"up ReaddleLib"'
 
 git push -u origin experiment
+
 
 cd "$S7_ROOT/pastey/rd2"
 
@@ -49,4 +55,5 @@ git checkout $PRE_READDLE_LIB_TIMES
 git reset --hard $MODERN_TIMES
 
 git merge --no-ff --no-edit origin/experiment
-assert test 0 -ne $?
+assert test -d Dependencies/ReaddleLib
+assert test faster-sqrt = `cat Dependencies/ReaddleLib/RDMath.h`

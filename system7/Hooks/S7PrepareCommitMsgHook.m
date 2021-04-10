@@ -81,75 +81,9 @@
         }
 
         return [postRevertConfig saveToFileAtPath:S7ControlFileName];
-
     }
 
-    const BOOL isMergeCommit = [arguments containsObject:@"merge"];
-    if (NO == isMergeCommit) {
-        return 0;
-    }
-
-    if ([S7StatusCommand areSubreposInSync]) {
-        return 0;
-    }
-
-    // In 'post-merge' hook we rely on .s7control. We decide which subrepos to update, calculating
-    // diff between .s7control and .s7substate.
-    //
-    // If control is not in sync with the main config, then the result of subrepos checkout would be
-    // unpredictable. One possible scenario:
-    //
-    //   git checkout REV_20            # .s7control and .s7substate would be in sync
-    //   git reset --hard REV_100500    # .s7control left from REV_20
-    //   git merge something            # trouble...
-    //
-    //
-    // I don't think we have the right to update subrepos automatically in this hook:
-    //  1. it means that developer hasn't checked the result of what he's committing
-    //  2. doing such task in pre-commit hook just doesn't feel right to me
-    //
-
-    fprintf(stderr,
-            "\033[31m"
-            "Subrepos not in sync.\n"
-            "This might be the result of:\n"
-            " - conflicting merge\n"
-            " - git reset\n"
-            "\n"
-            "This commit may result in undefined subrepos state.\n"
-            "\n"
-            "How to recover:\n"
-            "\n"
-            " Case 1:   I didn't perform `git reset REV`. It was `git merge`/`git pull`\n"
-            "           that failed due to conflicts.\n"
-            "\n"
-            " Solution: run `s7 checkout`. It would sync subrepos.\n"
-            "           After that you'll be able to commit.\n"
-            "           S7 didn't run it automatically as no git-hooks are called\n"
-            "           in case of merge conflict.\n"
-            "\n"
-            "\n"
-            " Case 2:   I DID run `git reset REV` to \"checkout\" a different revision\n"
-            "           and then ran `git merge`/`git pull`.\n"
-            "\n"
-            " Solution: you'd have to rollback this merge and return to the clean REV.\n"
-            "           If you used `git reset --hard REV` before, then you can use it\n"
-            "           once again. After that, run `s7 checkout`\n"
-            "\n"
-            "           I would recommend to reset local changes and checkout\n"
-            "           a REV you want to in a proper way – using `git checkout REV`\n"
-            "           (optionally, with '-b <branch-name>')\n"
-            "           If you use `git checkout`, then s7 will checkout subrepos\n"
-            "           automatically.\n"
-            "\n"
-            "           After you have clean REV and subrepos are in sync, you can\n"
-            "           merge what you were trying to merge\n"
-            "\n"
-            "You can always check if subrepos are in sync, using `s7 status`.\n"
-            "\033[0m");
-
-    // hook exit code is not propagated as git command exit code,
-    // so there's no need or sense to return special S7ExitCode here
-    return 1;
+    return 0;
 }
+
 @end
