@@ -160,14 +160,13 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                       toConfig:(S7Config *)toConfig
                          clean:(BOOL)clean
 {
-    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToAdd = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
-    NSDictionary<NSString *, S7SubrepoDescription *> *subreposToUpdate = nil;
+    NSDictionary<NSString *, S7SubrepoDescription *> *dummy = nil;
     diffConfigs(fromConfig,
                 toConfig,
                 &subreposToDelete,
-                &subreposToUpdate,
-                &subreposToAdd);
+                &dummy,
+                &dummy);
 
     int exitCode = S7ExitCodeSuccess;
 

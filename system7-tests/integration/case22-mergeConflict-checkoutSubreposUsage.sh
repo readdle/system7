@@ -59,9 +59,15 @@ cmp .s7substate .s7control
 assert test 0 -ne $? # subrepos not in sync
 assert test sqrt = `cat Dependencies/ReaddleLib/RDMath.h`
 
+grep '"experiment"' Dependencies/ReaddleLib/RDMath.h > /dev/null
+assert test 0 -ne $? # subrepo was not updated, thus doesn't contain 'experiment'
 
-# manually update subrepos
-assert s7 checkout
+echo
+echo "resolve conflict in favour of our changes"
+
+echo other > main.m
+git add main.m
+assert git commit -am'"finalize merge"'
 
 # now ReaddleLib must be up-to-date
 assert cmp .s7substate .s7control # now, must be in sync
