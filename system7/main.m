@@ -31,7 +31,7 @@
 
 #import "HelpPager.h"
 
-void printHelp() {
+void printHelp(void) {
     help_puts("");
     help_puts("\033[1mSYNOPSIS\033[0m");
     help_puts("");
