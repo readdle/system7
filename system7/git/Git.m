@@ -965,6 +965,12 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         return getBranchExitStatus;
     }
 
+    if (nil == currentBranchName) {
+        fprintf(stderr,
+                "failed to push. No current branch in the repository.\n");
+        return S7ExitCodeGitOperationFailed;
+    }
+
     return [self pushBranch:currentBranchName];
 }
 
@@ -1057,7 +1063,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return result;
 }
 
-- (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus {
+- (nullable NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus {
     NSString *fileContents = nil;
     NSString *devNull = nil;
     NSString *spell = [NSString stringWithFormat:@"%@:%@", revision, filePath];

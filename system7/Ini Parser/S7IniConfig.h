@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
-+ (instancetype)configWithContentsOfFile:(NSString *)filePath;
++ (nullable instancetype)configWithContentsOfFile:(NSString *)filePath;
 + (instancetype)configWithContentsOfString:(NSString *)string;
 
 @property (nonatomic, readonly, strong) NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *dictionaryRepresentation;

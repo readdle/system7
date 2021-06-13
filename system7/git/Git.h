@@ -81,7 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
                                                file:(nullable NSString *)file
                                          exitStatus:(int *)exitStatus;
 
-- (NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;
+- (nullable NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;
 
 - (BOOL)hasUncommitedChanges;
 
