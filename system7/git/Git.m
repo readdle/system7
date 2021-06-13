@@ -401,6 +401,17 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 - (int)checkoutRemoteTrackingBranch:(NSString *)branchName {
     if ([self isBranchTrackingRemoteBranch:branchName]) {
+        BOOL dummy = NO;
+        NSString *currentBranch = nil;
+        [self getCurrentBranch:&currentBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
+        if ([currentBranch isEqualToString:branchName]) {
+            // do nothing if we are already at the right branch. This is cheaper* than launching git process
+            // that will tell us that we are already at this branch anyway
+            //
+            //   * cheaper 'cause currently getCurrentBranch is implemented by means of HEAD+refs parsing
+            return S7ExitCodeSuccess;
+        }
+
         return [self checkoutExistingLocalBranch:branchName];
     }
         
@@ -422,6 +433,24 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return [self runGitCommand:[NSString stringWithFormat:@"checkout --track origin/%@", branchName]
                              stdOutOutput:NULL
                              stdErrOutput:NULL];
+}
+
+- (int)ensureBranchIsTrackingCorrespondingRemoteBranchIfItExists:(NSString *)branchName {
+    if ([self isBranchTrackingRemoteBranch:branchName]) {
+        return S7ExitCodeSuccess;
+    }
+
+    if (NO == [self doesBranchExist:branchName]) {
+        fprintf(stderr, "failed to setup remote branch tracking: local branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
+        return S7ExitCodeInvalidArgument;
+    }
+
+    if (NO == [self doesBranchExist:[NSString stringWithFormat:@"origin/%@", branchName]]) {
+        return S7ExitCodeSuccess;
+    }
+
+    NSString *const command = [NSString stringWithFormat:@"branch --set-upstream-to=origin/%1$@ %1$@", branchName];
+    return [self runGitCommand:command stdOutOutput:nil stdErrOutput:nil];
 }
 
 - (int)deleteRemoteBranch:(NSString *)branchName {
