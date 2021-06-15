@@ -599,7 +599,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
         fprintf(stdout,
-                "\033[34m  >\033[0m fetching '%s'\n",
+                "  fetching '%s'\n",
                 [expectedSubrepoStateDesc.path fileSystemRepresentation]);
 
         if (0 != [subrepoGit fetch]) {
