@@ -625,7 +625,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     // `git checkout -B branch revision`
     // this also makes checkout recursive if subrepo is a S7 repo itself
     if (0 != [subrepoGit forceCheckoutLocalBranch:expectedSubrepoStateDesc.branch revision:expectedSubrepoStateDesc.revision]) {
-        // TODO: raise flag and complain
+        return S7ExitCodeGitOperationFailed;
     }
 
     const BOOL configFileExists = isS7Repo(subrepoGit);
