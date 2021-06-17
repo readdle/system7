@@ -269,6 +269,10 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     for (S7SubrepoDescription *subrepoDesc in subreposToCheckout) {
         GitRepository *subrepoGit = subrepoDescToGit[subrepoDesc];
 
+        fprintf(stdout,
+                "\033[34m>\033[0m \033[1mchecking out subrepo '%s'\033[0m\n",
+                [subrepoDesc.path fileSystemRepresentation]);
+
         if (subrepoGit) {
             BOOL subrepoUrlChanged = NO;
             NSString *oldUrl = nil;
@@ -384,7 +388,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 }
             }
 
-            fprintf(stdout, "removing subrepo '%s'\n", subrepoPath.fileSystemRepresentation);
+            fprintf(stdout, "\033[31m>\033[0m \033[1mremoving subrepo '%s'\033[0m\n", subrepoPath.fileSystemRepresentation);
 
             NSError *error = nil;
             if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoPath error:&error]) {
@@ -415,10 +419,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
         BOOL isDirectory = NO;
         if ([NSFileManager.defaultManager fileExistsAtPath:subrepoDesc.path isDirectory:&isDirectory] && isDirectory) {
-            fprintf(stdout,
-                    " \033[34m==>\033[0m \033[1mchecking out subrepo '%s'\033[0m\n",
-                    [subrepoDesc.path fileSystemRepresentation]);
-
             GitRepository *subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoDesc.path];
             if (nil == subrepoGit) {
                 [corruptedSubrepoRepositoryIndices addIndex:i];
@@ -463,7 +463,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 // use fprintf in synchronized to make sure output of several parallel operation doesn't get mixed
                 fprintf(stderr,
                         "\033[31m"
-                        " uncommited local changes in subrepo '%s'\n"
+                        "  uncommited local changes in subrepo '%s'\n"
                         "\033[0m",
                         subrepoDesc.path.fileSystemRepresentation);
 
@@ -476,7 +476,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 @synchronized (self) {
                     fprintf(stderr,
                             "\033[31m"
-                            " failed to discard uncommited changes in subrepo '%s'\n"
+                            "  failed to discard uncommited changes in subrepo '%s'\n"
                             "\033[0m",
                             subrepoDesc.path.fileSystemRepresentation);
 
@@ -529,7 +529,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             NSAssert(NO, @"");
             fprintf(stderr,
                     "\033[31m"
-                    " unexpected subrepo '%s' state. Failed to detect current branch.\n"
+                    "  unexpected subrepo '%s' state. Failed to detect current branch.\n"
                     "\033[0m",
                     expectedSubrepoStateDesc.path.fileSystemRepresentation);
             return S7ExitCodeGitOperationFailed;
@@ -599,7 +599,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
         fprintf(stdout,
-                " fetching '%s'\n",
+                "  fetching '%s'\n",
                 [expectedSubrepoStateDesc.path fileSystemRepresentation]);
 
         if (0 != [subrepoGit fetch]) {
@@ -609,7 +609,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
             fprintf(stderr,
                     "\033[31m"
-                    " revision '%s' does not exist in '%s'\n"
+                    "  revision '%s' does not exist in '%s'\n"
                     "\033[0m",
                     [expectedSubrepoStateDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
                     [expectedSubrepoStateDesc.path fileSystemRepresentation]);
@@ -618,43 +618,25 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
     }
 
-    BOOL shouldCheckout = NO;
-    if ([subrepoGit doesBranchExist:[@"origin/" stringByAppendingString:expectedSubrepoStateDesc.branch]]) {
-        if (0 != [subrepoGit checkoutRemoteTrackingBranch:expectedSubrepoStateDesc.branch]) {
-            return S7ExitCodeGitOperationFailed;
-        }
+    fprintf(stdout,
+            "  switching to %s\n",
+            [expectedSubrepoStateDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
-        NSString *currentBranchHeadRevision = nil;
-        if (0 != [subrepoGit getCurrentRevision:&currentBranchHeadRevision]) {
-            return S7ExitCodeGitOperationFailed;
-        }
-
-        if (NO == [expectedSubrepoStateDesc.revision isEqualToString:currentBranchHeadRevision]) {
-            shouldCheckout = YES;
-        }
-    }
-    else {
-        shouldCheckout = YES;
+    // `git checkout -B branch revision`
+    // this also makes checkout recursive if subrepo is a S7 repo itself
+    if (0 != [subrepoGit forceCheckoutLocalBranch:expectedSubrepoStateDesc.branch revision:expectedSubrepoStateDesc.revision]) {
+        return S7ExitCodeGitOperationFailed;
     }
 
-    if (shouldCheckout) {
-        fprintf(stdout,
-                " checkout '%s' to %s\n",
-                expectedSubrepoStateDesc.path.fileSystemRepresentation,
-                [expectedSubrepoStateDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
+    const BOOL configFileExists = isS7Repo(subrepoGit);
+    const BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ControlFileName]];
+    if (configFileExists && NO == controlFileExists) {
+        // handling the case when a nested subrepo is added to an existing subrepo
+        *shouldInitSubrepo = YES;
+    }
 
-        // `git checkout -B branch revision`
-        // this also makes checkout recursive if subrepo is a S7 repo itself
-        if (0 != [subrepoGit forceCheckoutLocalBranch:expectedSubrepoStateDesc.branch revision:expectedSubrepoStateDesc.revision]) {
-            // TODO: raise flag and complain
-        }
-
-        const BOOL configFileExists = isS7Repo(subrepoGit);
-        const BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ControlFileName]];
-        if (configFileExists && NO == controlFileExists) {
-            // handling the case when a nested subrepo is added to an existing subrepo
-            *shouldInitSubrepo = YES;
-        }
+    if (0 != [subrepoGit ensureBranchIsTrackingCorrespondingRemoteBranchIfItExists:expectedSubrepoStateDesc.branch]) {
+        return S7ExitCodeGitOperationFailed;
     }
 
     [self warnAboutDetachingIfNeeded:currentRevision subrepoDesc:expectedSubrepoStateDesc subrepoGit:subrepoGit];
@@ -664,8 +646,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
 + (int)cloneSubrepo:(S7SubrepoDescription *)subrepoDesc subrepoGit:(GitRepository **)ppSubrepoGit {
     fprintf(stdout,
-            " cloning subrepo '%s' from '%s'\n",
-            [subrepoDesc.path fileSystemRepresentation],
+            "  cloning from '%s'\n",
             [subrepoDesc.url fileSystemRepresentation]);
 
     int cloneExitStatus = 0;
@@ -690,7 +671,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         if (nil == subrepoGit || 0 != cloneExitStatus) {
             fprintf(stderr,
                     "\033[31m"
-                    " failed to clone subrepo '%s'\n"
+                    "  failed to clone subrepo '%s'\n"
                     "\033[0m",
                     [subrepoDesc.path fileSystemRepresentation]);
             return S7ExitCodeGitOperationFailed;

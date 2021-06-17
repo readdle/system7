@@ -24,7 +24,7 @@
     self.env = [[TestReposEnvironment alloc] initWithTestCaseName:self.className];
 }
 
-void assertRepoAtPWDIsFreeFromS7() {
+void assertRepoAtPWDIsFreeFromS7(void) {
     NSFileManager *fileManager = NSFileManager.defaultManager;
     XCTAssertFalse([fileManager fileExistsAtPath:S7BakFileName]);
     XCTAssertFalse([fileManager fileExistsAtPath:S7BootstrapFileName]);
