@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "S7Options.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -32,6 +33,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, strong) GitRepository *nikRd2Repo;
 
 - (GitRepository *)initializeRemoteRepoAtRelativePath:(NSString *)relativePath;
+
+- (GitRepository *)initializeLocalRepoAtRelativePath:(NSString *)relativePath
+                 addCommandAllowedTransportProtocols:(NSSet<S7OptionsTransportProtocolName> *)allowedTransportProtocols;
 
 - (void)touch:(NSString *)filePath;
 - (void)makeDir:(NSString *)filePath;

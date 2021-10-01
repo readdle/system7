@@ -94,8 +94,40 @@
 #pragma mark -
 
 - (GitRepository *)initializeRemoteRepoAtRelativePath:(NSString *)relativePath {
+    return [self initializeRemoteRepoAtRelativePath:relativePath s7OptionsIniContents:nil];
+}
+
+- (GitRepository *)initializeRemoteRepoAtRelativePath:(NSString *)relativePath
+                                 s7OptionsIniContents:(nullable NSString *)s7OptionsIniContents
+{
     NSString *absoluteFilePath = [self.root stringByAppendingPathComponent:relativePath];
 
+    void (^performChangesInBareRepoAtPath)(NSString *, void (^)(GitRepository *)) =
+    ^(NSString *bareRepoPath, void (^changes)(GitRepository *tmpRepo)) {
+        NSString *tmpCloneRepoPath = [[NSTemporaryDirectory()
+                                       stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template-tmp-clone"]
+                                       stringByAppendingPathComponent:self.testCaseName];
+        
+        if ([[NSFileManager defaultManager] fileExistsAtPath:tmpCloneRepoPath]) {
+            if (NO == [[NSFileManager defaultManager] removeItemAtPath:tmpCloneRepoPath error:nil]) {
+                NSCParameterAssert(NO);
+            }
+        }
+        
+        int gitCloneExitStatus = 0;
+        GitRepository *tmpRepo = [GitRepository cloneRepoAtURL:bareRepoPath
+                                               destinationPath:tmpCloneRepoPath
+                                                    exitStatus:&gitCloneExitStatus];
+        NSCParameterAssert(tmpRepo);
+        NSCParameterAssert(0 == gitCloneExitStatus);
+
+        changes(tmpRepo);
+
+        if (NO == [NSFileManager.defaultManager removeItemAtPath:tmpCloneRepoPath error:nil]) {
+            NSCParameterAssert(NO);
+        }
+    };
+    
     static NSString *templateRepoPath = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -122,32 +154,15 @@
             };
         }
 
-        NSString *tmpCloneRepoPath = [[NSTemporaryDirectory()
-                                       stringByAppendingPathComponent:@"com.readdle.system7-tests.generic-template-tmp-clone"]
-                                       stringByAppendingPathComponent:self.testCaseName];
-        
-        if ([[NSFileManager defaultManager] fileExistsAtPath:tmpCloneRepoPath]) {
-            if (NO == [[NSFileManager defaultManager] removeItemAtPath:tmpCloneRepoPath error:nil]) {
-                NSCParameterAssert(NO);
-            }
-        }
-
         // make repo non-empty by default
-        int gitCloneExitStatus = 0;
-        GitRepository *tmpRepo = [GitRepository cloneRepoAtURL:templateRepoPath destinationPath:tmpCloneRepoPath exitStatus:&gitCloneExitStatus];
-        NSCParameterAssert(tmpRepo);
-        NSCParameterAssert(0 == gitCloneExitStatus);
-
-        [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
-        [tmpRepo add:@[@".gitignore"]];
-        [tmpRepo commitWithMessage:@"add .gitignore"];
-        [tmpRepo pushCurrentBranch];
-
-        if (NO == [NSFileManager.defaultManager removeItemAtPath:tmpCloneRepoPath error:nil]) {
-            NSCParameterAssert(NO);
-        }
+        performChangesInBareRepoAtPath(templateRepoPath, ^(GitRepository *tmpRepo) {
+            [tmpRepo createFile:@".gitignore" withContents:@"# add files you want to ignore here\n"];
+            [tmpRepo add:@[@".gitignore"]];
+            [tmpRepo commitWithMessage:@"add .gitignore"];
+            [tmpRepo pushCurrentBranch];
+        });
     });
-
+    
     NSString *repoParentDirPath = [absoluteFilePath stringByDeletingLastPathComponent];
 
     NSError *error = nil;
@@ -161,8 +176,49 @@
 
     GitRepository *repo = [[GitRepository alloc] initWithRepoPath:absoluteFilePath bare:YES];
     NSAssert(repo, @"");
-
+    
+    if (s7OptionsIniContents.length > 0) {
+        performChangesInBareRepoAtPath(absoluteFilePath, ^(GitRepository *tmpRepo) {
+            [tmpRepo createFile:S7OptionsFileName withContents:s7OptionsIniContents];
+            [tmpRepo add:@[S7OptionsFileName]];
+            [tmpRepo commitWithMessage:@"add s7 options file"];
+            [tmpRepo pushCurrentBranch];
+        });
+    }
+    
     return repo;
+}
+
+- (GitRepository *)initializeLocalRepoAtRelativePath:(NSString *)relativePath
+                 addCommandAllowedTransportProtocols:(NSSet<S7OptionsTransportProtocolName> *)allowedTransportProtocols
+{
+    NSString *s7OptionsContents =
+    [NSString stringWithFormat:
+     @"[add]\n"
+     "transport-protocols = %@",
+     [allowedTransportProtocols.allObjects componentsJoinedByString:@", "]];
+    
+    GitRepository *remoteRepo = [self initializeRemoteRepoAtRelativePath:[NSString stringWithFormat:@"github/%@",
+                                                                          relativePath.lastPathComponent]
+                                                    s7OptionsIniContents:s7OptionsContents];
+    
+    NSAssert(remoteRepo, @"Failed to create remote repo.");
+    
+    __block GitRepository *localRepo;
+    
+    executeInDirectory(self.root, ^int{
+        int gitCloneExitStatus = 0;
+        
+        localRepo = [GitRepository cloneRepoAtURL:remoteRepo.absolutePath
+                                  destinationPath:relativePath
+                                       exitStatus:&gitCloneExitStatus];
+        
+        NSAssert(nil != localRepo, @"Failed to create local repo.");
+        NSAssert(0 == gitCloneExitStatus, @"Git clone failed.");
+        return gitCloneExitStatus;
+    });
+    
+    return localRepo;
 }
 
 - (GitRepository *)githubRd2Repo {

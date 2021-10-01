@@ -12,3 +12,4 @@ NSString * const S7ConfigFileName = @".s7substate";
 NSString * const S7ControlFileName = @".s7control";
 NSString * const S7BakFileName = @".s7bak";
 NSString * const S7BootstrapFileName = @".s7bootstrap";
+NSString * const S7OptionsFileName = @".s7options";
