@@ -155,14 +155,23 @@ static BOOL isSSHURLString(NSString *urlString) {
     if (urlStringHasScheme(urlString, @"ssh")) {
         return YES;
     }
+    
+    const NSUInteger schemeSeparatorLocation = [urlString rangeOfString:@"://"].location;
+    
+    if (NSNotFound != schemeSeparatorLocation) {
+        return NO;
+    }
 
-    const NSInteger firstColonIndex = [urlString rangeOfString:@":"].location;
+    const NSUInteger firstColonIndex = [urlString rangeOfString:@":"].location;
     
     if (NSNotFound == firstColonIndex) {
         return NO;
     }
     
-    return NSNotFound == [urlString rangeOfString:@"/" options:0 range:NSMakeRange(0, firstColonIndex)].location;
+    const NSUInteger slashLocationBeforeColon =
+    [urlString rangeOfString:@"/" options:0 range:NSMakeRange(0, firstColonIndex)].location;
+    
+    return NSNotFound == slashLocationBeforeColon;
 }
 
 static BOOL isGitURLString(NSString *urlString) {

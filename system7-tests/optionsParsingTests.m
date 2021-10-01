@@ -203,4 +203,14 @@
     XCTAssertFalse([options urlStringMatchesAllowedTransportProtocols:sshURLString]);
 }
 
+- (void)testHTTPSURLDoesNotMatchSSHTransportProtocol {
+    S7IniConfig *config = [S7IniConfig configWithContentsOfString:
+                           @"[add]\n"
+                           "transport-protocols = ssh"];
+    S7Options *options = [[S7Options alloc] initWithIniConfig:config];
+    NSString *httpsURLString = @"https://user@host.xz/path/to/repo.git/";
+    
+    XCTAssertFalse([options urlStringMatchesAllowedTransportProtocols:httpsURLString]);
+}
+
 @end
