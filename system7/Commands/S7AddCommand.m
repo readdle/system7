@@ -144,7 +144,7 @@ NS_ASSUME_NONNULL_BEGIN
         
         if (nil != options && NO == [options urlStringMatchesAllowedTransportProtocols:url]) {
             fprintf(stderr,
-                    "URL '%s' does not match allowed transport protocols: %s.\n",
+                    "URL '%s' does not match allowed transport protocol(s): %s.\n",
                     [url cStringUsingEncoding:NSUTF8StringEncoding],
                     [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
                      cStringUsingEncoding:NSUTF8StringEncoding]);
@@ -188,7 +188,7 @@ NS_ASSUME_NONNULL_BEGIN
         
         if (nil != options && NO == [options urlStringMatchesAllowedTransportProtocols:actualRemoteUrl]) {
             fprintf(stderr,
-                    "cloned subrepo URL '%s' does not match allowed transport protocols: %s.\n",
+                    "cloned subrepo URL '%s' does not match allowed transport protocol(s): %s.\n",
                     [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
                     [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
                      cStringUsingEncoding:NSUTF8StringEncoding]);
