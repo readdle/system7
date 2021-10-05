@@ -111,7 +111,7 @@
         XCTAssertEqual(0, cloneExitStatus);
 
         S7AddCommand *command = [S7AddCommand new];
-        XCTAssertEqual(S7ExitCodeGitOperationFailed, [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]]);
+        XCTAssertEqual(S7ExitCodeInvalidArgument, [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]]);
     });
 }
 

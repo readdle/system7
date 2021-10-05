@@ -192,7 +192,7 @@ NS_ASSUME_NONNULL_BEGIN
                     [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
                     [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
                      cStringUsingEncoding:NSUTF8StringEncoding]);
-            return S7ExitCodeGitOperationFailed;
+            return S7ExitCodeInvalidArgument;
         }
 
         if (nil == url) {

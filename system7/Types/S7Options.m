@@ -113,7 +113,11 @@ static NSString * const S7OptionsAddCommandAllowedTransportProtocols = @"transpo
             [errorMessage appendFormat:@" '%@'", protocol];
         }
         
-        fprintf(stderr, "%s\n", [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
+        fprintf(stderr,
+                "\033[31m"
+                "%s\n"
+                "\033[0m",
+                [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
         _allowedTransportProtocols = self.class.supportedTransportProtocols;
         return _allowedTransportProtocols;
     }
