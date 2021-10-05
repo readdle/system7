@@ -8,6 +8,7 @@
 
 #import "S7AddCommand.h"
 #import "S7Config.h"
+#import "S7Options.h"
 #import "Git.h"
 #import "Utils.h"
 #import "S7InitCommand.h"
@@ -126,12 +127,27 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
 
+    S7Options *options = nil;
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:S7OptionsFileName]) {
+        options = [[S7Options alloc] initWithContentsOfFile:S7OptionsFileName];
+    }
+    
     GitRepository *gitSubrepo = nil;
 
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]) {
         if (0 == url.length) {
             NSLog(@"ERROR: failed to add subrepo. Non-empty url expected.");
+            return S7ExitCodeInvalidArgument;
+        }
+        
+        if (nil != options && NO == [options urlStringMatchesAllowedTransportProtocols:url]) {
+            fprintf(stderr,
+                    "URL '%s' does not match allowed transport protocol(s): %s.\n",
+                    [url cStringUsingEncoding:NSUTF8StringEncoding],
+                    [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
+                     cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeInvalidArgument;
         }
 
@@ -168,6 +184,15 @@ NS_ASSUME_NONNULL_BEGIN
         NSString *actualRemoteUrl = nil;
         if (0 != [gitSubrepo getUrl:&actualRemoteUrl]) {
             return S7ExitCodeGitOperationFailed;
+        }
+        
+        if (nil != options && NO == [options urlStringMatchesAllowedTransportProtocols:actualRemoteUrl]) {
+            fprintf(stderr,
+                    "cloned subrepo URL '%s' does not match allowed transport protocol(s): %s.\n",
+                    [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
+                    [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
+                     cStringUsingEncoding:NSUTF8StringEncoding]);
+            return S7ExitCodeInvalidArgument;
         }
 
         if (nil == url) {

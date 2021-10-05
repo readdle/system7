@@ -95,6 +95,52 @@
     });
 }
 
+- (void)testAddAlreadyClonedRepoWithNotAllowedTransportProtocol {
+    GitRepository *localRepo = [self.env initializeLocalRepoAtRelativePath:@"user/projects/rd2"
+                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7OptionsTransportProtocolNameSSH]];
+    
+    executeInDirectory(localRepo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
+        int cloneExitStatus = 0;
+        GitRepository *readdleLibRepo = [GitRepository
+                                         cloneRepoAtURL:self.env.githubReaddleLibRepo.absolutePath
+                                         destinationPath:@"Dependencies/ReaddleLib"
+                                         exitStatus:&cloneExitStatus];
+        XCTAssertNotNil(readdleLibRepo);
+        XCTAssertEqual(0, cloneExitStatus);
+
+        S7AddCommand *command = [S7AddCommand new];
+        XCTAssertEqual(S7ExitCodeInvalidArgument, [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]]);
+    });
+}
+
+- (void)testAddRepoWithURLWhichDoesNotMatchAllowedTransportProtocol {
+    GitRepository *localRepo = [self.env initializeLocalRepoAtRelativePath:@"user/projects/rd2"
+                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7OptionsTransportProtocolNameSSH]];
+    
+    executeInDirectory(localRepo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
+        S7AddCommand *command = [S7AddCommand new];
+        const int addResult = [command runWithArguments:@[ @"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];
+        XCTAssertEqual(S7ExitCodeInvalidArgument, addResult);
+    });
+}
+
+- (void)testAddRepoWithURLWhichMatchesAllowedTransportProtocol {
+    GitRepository *localRepo = [self.env initializeLocalRepoAtRelativePath:@"user/projects/rd2"
+                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7OptionsTransportProtocolNameLocal]];
+    
+    executeInDirectory(localRepo.absolutePath, ^int {
+        s7init_deactivateHooks();
+
+        S7AddCommand *command = [S7AddCommand new];
+        const int addResult = [command runWithArguments:@[ @"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];
+        XCTAssertEqual(0, addResult);
+    });
+}
+
 - (void)testAddRepoWithUrlAndPath {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
         s7init_deactivateHooks();

@@ -15,6 +15,7 @@ extern NSString * const S7ConfigFileName;
 extern NSString * const S7ControlFileName;
 extern NSString * const S7BakFileName;
 extern NSString * const S7BootstrapFileName;
+extern NSString * const S7OptionsFileName;
 
 typedef enum {
     S7ExitCodeSuccess = 0,
