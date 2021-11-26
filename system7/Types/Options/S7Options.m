@@ -12,13 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// apodrugin@readdle.com
-// We can't use path with tilde (i.e. '~/.s7options'), because when 's7' is run using 'sudo', then
-// tilde expansion using -[NSString stringByExpandingTildeInPath] works incorrectly
-// and returns '/var/root' instead of current user home directory.
-// NSHomeDirectory() also doesn't work.
-#define S7GlobalOptionsFilePath [[NSString stringWithUTF8String:getenv("HOME")] stringByAppendingPathComponent:S7OptionsFileName]
-NSString * const S7SystemOptionsFilePath = @"/etc/s7options";
+NSString * const S7UserOptionsFilePath = @"~/.s7options";
 
 
 @interface S7Options()
@@ -40,14 +34,15 @@ NSString * const S7SystemOptionsFilePath = @"/etc/s7options";
     NSMutableArray<id<S7OptionsProtocol>> *optionsChain = [NSMutableArray arrayWithCapacity:2];
     
     __auto_type addIniConfigOptionsIfPossible = ^(NSString *iniOptionsFilePath) {
-        if ([[NSFileManager defaultManager] fileExistsAtPath:iniOptionsFilePath]) {
-            [optionsChain addObject:[[S7IniConfigOptions alloc] initWithContentsOfFile:iniOptionsFilePath]];
+        NSString *fullPath = iniOptionsFilePath.stringByExpandingTildeInPath;
+        
+        if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
+            [optionsChain addObject:[[S7IniConfigOptions alloc] initWithContentsOfFile:fullPath]];
         }
     };
 
     addIniConfigOptionsIfPossible(S7OptionsFileName);
-    addIniConfigOptionsIfPossible(S7GlobalOptionsFilePath);
-    addIniConfigOptionsIfPossible(S7SystemOptionsFilePath);
+    addIniConfigOptionsIfPossible(S7UserOptionsFilePath);
     
     [optionsChain addObject:[S7DefaultOptions new]];
     _optionsChain = optionsChain;
