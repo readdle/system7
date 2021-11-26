@@ -9,9 +9,15 @@
 /* Begin PBXBuildFile section */
 		2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
 		24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
-		6D73D3B1270702D0009AE0B9 /* S7Options.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B0270702D0009AE0B9 /* S7Options.m */; };
-		6D73D3B327070E9A009AE0B9 /* optionsParsingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B227070E9A009AE0B9 /* optionsParsingTests.m */; };
-		6D73D3B42707121F009AE0B9 /* S7Options.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B0270702D0009AE0B9 /* S7Options.m */; };
+		6D73D3B1270702D0009AE0B9 /* S7IniConfigOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */; };
+		6D73D3B327070E9A009AE0B9 /* iniConfigOptionsParsingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B227070E9A009AE0B9 /* iniConfigOptionsParsingTests.m */; };
+		6DD4A82D2750DAB00050F3FD /* S7DefaultOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DD4A82C2750DAB00050F3FD /* S7DefaultOptions.m */; };
+		6DD4A8302750DC3B0050F3FD /* S7TransportProtocolName.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DD4A82F2750DC3B0050F3FD /* S7TransportProtocolName.m */; };
+		6DD4A8332750E3070050F3FD /* S7Options.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DD4A8322750E3070050F3FD /* S7Options.m */; };
+		6DD4A8372750E8A40050F3FD /* S7TransportProtocolName.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DD4A82F2750DC3B0050F3FD /* S7TransportProtocolName.m */; };
+		6DD4A8382750E8A40050F3FD /* S7DefaultOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DD4A82C2750DAB00050F3FD /* S7DefaultOptions.m */; };
+		6DD4A8392750E8A40050F3FD /* S7IniConfigOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */; };
+		6DD4A83A2750E8A40050F3FD /* S7Options.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DD4A8322750E3070050F3FD /* S7Options.m */; };
 		BE0173E124864DF300BA4B2F /* resetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E024864DF300BA4B2F /* resetTests.m */; };
 		BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
 		BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */; };
@@ -99,9 +105,16 @@
 /* Begin PBXFileReference section */
 		2465939A24CA336700EFC5A0 /* HelpPager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HelpPager.h; sourceTree = "<group>"; };
 		2465939B24CA336700EFC5A0 /* HelpPager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HelpPager.m; sourceTree = "<group>"; };
-		6D73D3AF270702D0009AE0B9 /* S7Options.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Options.h; sourceTree = "<group>"; };
-		6D73D3B0270702D0009AE0B9 /* S7Options.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7Options.m; sourceTree = "<group>"; };
-		6D73D3B227070E9A009AE0B9 /* optionsParsingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = optionsParsingTests.m; path = "system7-tests/optionsParsingTests.m"; sourceTree = SOURCE_ROOT; };
+		6D73D3AF270702D0009AE0B9 /* S7IniConfigOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7IniConfigOptions.h; sourceTree = "<group>"; };
+		6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7IniConfigOptions.m; sourceTree = "<group>"; };
+		6D73D3B227070E9A009AE0B9 /* iniConfigOptionsParsingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = iniConfigOptionsParsingTests.m; path = "system7-tests/iniConfigOptionsParsingTests.m"; sourceTree = SOURCE_ROOT; };
+		6DD4A8282750DA0F0050F3FD /* S7OptionsProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7OptionsProtocol.h; sourceTree = "<group>"; };
+		6DD4A82B2750DAB00050F3FD /* S7DefaultOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7DefaultOptions.h; sourceTree = "<group>"; };
+		6DD4A82C2750DAB00050F3FD /* S7DefaultOptions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7DefaultOptions.m; sourceTree = "<group>"; };
+		6DD4A82E2750DC3B0050F3FD /* S7TransportProtocolName.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7TransportProtocolName.h; sourceTree = "<group>"; };
+		6DD4A82F2750DC3B0050F3FD /* S7TransportProtocolName.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7TransportProtocolName.m; sourceTree = "<group>"; };
+		6DD4A8312750E3070050F3FD /* S7Options.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Options.h; sourceTree = "<group>"; };
+		6DD4A8322750E3070050F3FD /* S7Options.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7Options.m; sourceTree = "<group>"; };
 		BE0173E024864DF300BA4B2F /* resetTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = resetTests.m; sourceTree = "<group>"; };
 		BE0173E224864EBF00BA4B2F /* S7ResetCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7ResetCommand.h; sourceTree = "<group>"; };
 		BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7ResetCommand.m; sourceTree = "<group>"; };
@@ -202,6 +215,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6DD4A8272750D88E0050F3FD /* Options */ = {
+			isa = PBXGroup;
+			children = (
+				6DD4A82E2750DC3B0050F3FD /* S7TransportProtocolName.h */,
+				6DD4A82F2750DC3B0050F3FD /* S7TransportProtocolName.m */,
+				6DD4A8282750DA0F0050F3FD /* S7OptionsProtocol.h */,
+				6DD4A8312750E3070050F3FD /* S7Options.h */,
+				6DD4A8322750E3070050F3FD /* S7Options.m */,
+				6DD4A82B2750DAB00050F3FD /* S7DefaultOptions.h */,
+				6DD4A82C2750DAB00050F3FD /* S7DefaultOptions.m */,
+				6D73D3AF270702D0009AE0B9 /* S7IniConfigOptions.h */,
+				6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */,
+			);
+			path = Options;
+			sourceTree = "<group>";
+		};
 		BE28CB2F2472C13C00DCA875 /* Merge Driver */ = {
 			isa = PBXGroup;
 			children = (
@@ -282,7 +311,7 @@
 				BE82188A2452C1DE00E878A8 /* Info.plist */,
 				BE38910524616A4100394CA8 /* S7Tests.pch */,
 				BE8218882452C1DE00E878A8 /* configParserTests.m */,
-				6D73D3B227070E9A009AE0B9 /* optionsParsingTests.m */,
+				6D73D3B227070E9A009AE0B9 /* iniConfigOptionsParsingTests.m */,
 				BEBD16942455824400E81673 /* diffTests.m */,
 				BE3A29F124607234004A2B31 /* initTests.m */,
 				BEFAF7A025718AB7000D90C3 /* bootstrapTests.m */,
@@ -357,8 +386,7 @@
 				BE1079BF2466C557002A2A45 /* S7SubrepoDescription.m */,
 				BE82187F2452C16A00E878A8 /* S7Config.h */,
 				BE8218802452C16A00E878A8 /* S7Config.m */,
-				6D73D3AF270702D0009AE0B9 /* S7Options.h */,
-				6D73D3B0270702D0009AE0B9 /* S7Options.m */,
+				6DD4A8272750D88E0050F3FD /* Options */,
 			);
 			path = Types;
 			sourceTree = "<group>";
@@ -473,7 +501,7 @@
 				BED36BE0246D8A1700D6EB1C /* S7PostCheckoutHook.m in Sources */,
 				BEE928A12456DA6500BD6B86 /* Git.m in Sources */,
 				BE3A29EF2460712F004A2B31 /* S7InitCommand.m in Sources */,
-				6D73D3B1270702D0009AE0B9 /* S7Options.m in Sources */,
+				6D73D3B1270702D0009AE0B9 /* S7IniConfigOptions.m in Sources */,
 				BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
 				BEE672C82523B72200DB09BC /* S7IniConfig.m in Sources */,
 				BED36BEA246E904E00D6EB1C /* S7PostMergeHook.m in Sources */,
@@ -481,6 +509,7 @@
 				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */,
 				BE734D2025C34EAD00660FBA /* S7VersionCommand.m in Sources */,
+				6DD4A8302750DC3B0050F3FD /* S7TransportProtocolName.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
 				BEBE40C92576D0B900E39755 /* S7DeinitCommand.m in Sources */,
 				BE172CD224657CA700B57557 /* S7Diff.m in Sources */,
@@ -494,7 +523,9 @@
 				BED60E162458811A008EA752 /* Utils.m in Sources */,
 				BED60FB9245ABB43008EA752 /* S7RebindCommand.m in Sources */,
 				BE1079C02466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
+				6DD4A82D2750DAB00050F3FD /* S7DefaultOptions.m in Sources */,
 				BED36BE6246E809000D6EB1C /* S7PostCommitHook.m in Sources */,
+				6DD4A8332750E3070050F3FD /* S7Options.m in Sources */,
 				2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */,
 				BE394D3C2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 			);
@@ -509,9 +540,11 @@
 				BE172C4924642C3B00B57557 /* mergeTests.m in Sources */,
 				BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */,
 				BE3A29F424607419004A2B31 /* addTests.m in Sources */,
-				6D73D3B327070E9A009AE0B9 /* optionsParsingTests.m in Sources */,
+				6D73D3B327070E9A009AE0B9 /* iniConfigOptionsParsingTests.m in Sources */,
+				6DD4A83A2750E8A40050F3FD /* S7Options.m in Sources */,
 				BE0173E124864DF300BA4B2F /* resetTests.m in Sources */,
 				BE5B752F248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */,
+				6DD4A8382750E8A40050F3FD /* S7DefaultOptions.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
 				BED36BED246E908300D6EB1C /* mergeAlgorithmTests.m in Sources */,
 				BEE1CD0A246AEE9E00E2CC3B /* S7Command.m in Sources */,
@@ -520,6 +553,7 @@
 				BE50AA01246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
 				BEFAF7A125718AB7000D90C3 /* bootstrapTests.m in Sources */,
 				BEE672CF2523B76500DB09BC /* iniParserTests.m in Sources */,
+				6DD4A8372750E8A40050F3FD /* S7TransportProtocolName.m in Sources */,
 				BE1079C12466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
 				BED36BE7246E809000D6EB1C /* S7PostCommitHook.m in Sources */,
 				BE0173E524864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
@@ -531,7 +565,6 @@
 				BE172CD324657CA700B57557 /* S7Diff.m in Sources */,
 				BED36BEB246E904E00D6EB1C /* S7PostMergeHook.m in Sources */,
 				BE90D391258F470900186E86 /* S7BootstrapCommand.m in Sources */,
-				6D73D3B42707121F009AE0B9 /* S7Options.m in Sources */,
 				BED36BE3246D8A4B00D6EB1C /* postCheckoutHookTests.m in Sources */,
 				BE1079BD2466C516002A2A45 /* S7SubrepoDescriptionConflict.m in Sources */,
 				BE4BB43C24615CFD00545358 /* rebindTests.m in Sources */,
@@ -544,6 +577,7 @@
 				BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 				CE5BB61F25FA63A8002596B9 /* gitPackedRefsTests.m in Sources */,
 				BE3A29E524604C10004A2B31 /* statusTests.m in Sources */,
+				6DD4A8392750E8A40050F3FD /* S7IniConfigOptions.m in Sources */,
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,
 				24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */,
 				BEBE40CA2576D0B900E39755 /* S7DeinitCommand.m in Sources */,

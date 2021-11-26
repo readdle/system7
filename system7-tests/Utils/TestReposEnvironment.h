@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "S7Options.h"
+#import "S7IniConfigOptions.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (GitRepository *)initializeRemoteRepoAtRelativePath:(NSString *)relativePath;
 
 - (GitRepository *)initializeLocalRepoAtRelativePath:(NSString *)relativePath
-                 addCommandAllowedTransportProtocols:(NSSet<S7OptionsTransportProtocolName> *)allowedTransportProtocols;
+                 addCommandAllowedTransportProtocols:(NSSet<S7TransportProtocolName> *)allowedTransportProtocols;
 
 - (void)touch:(NSString *)filePath;
 - (void)makeDir:(NSString *)filePath;

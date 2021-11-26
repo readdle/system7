@@ -127,12 +127,7 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
 
-    S7Options *options = nil;
-    
-    if ([[NSFileManager defaultManager] fileExistsAtPath:S7OptionsFileName]) {
-        options = [[S7Options alloc] initWithContentsOfFile:S7OptionsFileName];
-    }
-    
+    S7Options *options = [S7Options new];
     GitRepository *gitSubrepo = nil;
 
     BOOL isDirectory = NO;
@@ -142,7 +137,7 @@ NS_ASSUME_NONNULL_BEGIN
             return S7ExitCodeInvalidArgument;
         }
         
-        if (nil != options && NO == [options urlStringMatchesAllowedTransportProtocols:url]) {
+        if (NO == S7URLStringMatchesTransportProtocolNames(url, options.allowedTransportProtocols)) {
             fprintf(stderr,
                     "URL '%s' does not match allowed transport protocol(s): %s.\n",
                     [url cStringUsingEncoding:NSUTF8StringEncoding],
@@ -186,7 +181,7 @@ NS_ASSUME_NONNULL_BEGIN
             return S7ExitCodeGitOperationFailed;
         }
         
-        if (nil != options && NO == [options urlStringMatchesAllowedTransportProtocols:actualRemoteUrl]) {
+        if (NO == S7URLStringMatchesTransportProtocolNames(actualRemoteUrl, options.allowedTransportProtocols)) {
             fprintf(stderr,
                     "cloned subrepo URL '%s' does not match allowed transport protocol(s): %s.\n",
                     [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
