@@ -13,4 +13,29 @@ function isGitVersionGreaterThan2_23 {
     fi
 }
 
+function setTestOptionsFileContent {
+    local options_file_path="$1"
+    local backup_file_path="$options_file_path-backup"
+    local content="$2"
+    
+    if test -f "$options_file_path"; then
+        mv -f "$options_file_path" "$backup_file_path"
+    fi
+
+    echo "$content" > "$options_file_path"
+}
+
+function restoreOriginalOptionsFileContent {
+    local options_file_path="$1"
+    local backup_file_path="$options_file_path-backup"
+    
+    if test -f "$backup_file_path"; then
+        mv -f "$backup_file_path" "$options_file_path"
+    else
+        rm "$options_file_path"
+    fi
+}
+
 export -f isGitVersionGreaterThan2_23
+export -f setTestOptionsFileContent
+export -f restoreOriginalOptionsFileContent
