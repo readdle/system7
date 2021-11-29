@@ -40,9 +40,16 @@ NSString * const S7UserOptionsFilePath = @"~/.s7options";
             [optionsChain addObject:[[S7IniConfigOptions alloc] initWithContentsOfFile:fullPath]];
         }
     };
+    
+    NSString *userOptionsFilePath = S7UserOptionsFilePath;
+    const char *userOptionsPathEnvVariable = getenv("S7_USER_OPTIONS_PATH");
 
+    if (NULL != userOptionsPathEnvVariable) {
+        userOptionsFilePath = [NSString stringWithUTF8String:userOptionsPathEnvVariable];
+    }
+    
     addIniConfigOptionsIfPossible(S7OptionsFileName);
-    addIniConfigOptionsIfPossible(S7UserOptionsFilePath);
+    addIniConfigOptionsIfPossible(userOptionsFilePath);
     
     [optionsChain addObject:[S7DefaultOptions new]];
     _optionsChain = optionsChain;
