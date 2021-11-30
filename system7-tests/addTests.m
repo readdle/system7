@@ -97,7 +97,7 @@
 
 - (void)testAddAlreadyClonedRepoWithNotAllowedTransportProtocol {
     GitRepository *localRepo = [self.env initializeLocalRepoAtRelativePath:@"user/projects/rd2"
-                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7OptionsTransportProtocolNameSSH]];
+                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7TransportProtocolNameSSH]];
     
     executeInDirectory(localRepo.absolutePath, ^int {
         s7init_deactivateHooks();
@@ -117,7 +117,7 @@
 
 - (void)testAddRepoWithURLWhichDoesNotMatchAllowedTransportProtocol {
     GitRepository *localRepo = [self.env initializeLocalRepoAtRelativePath:@"user/projects/rd2"
-                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7OptionsTransportProtocolNameSSH]];
+                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7TransportProtocolNameSSH]];
     
     executeInDirectory(localRepo.absolutePath, ^int {
         s7init_deactivateHooks();
@@ -130,7 +130,7 @@
 
 - (void)testAddRepoWithURLWhichMatchesAllowedTransportProtocol {
     GitRepository *localRepo = [self.env initializeLocalRepoAtRelativePath:@"user/projects/rd2"
-                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7OptionsTransportProtocolNameLocal]];
+                                       addCommandAllowedTransportProtocols:[NSSet setWithObject:S7TransportProtocolNameLocal]];
     
     executeInDirectory(localRepo.absolutePath, ^int {
         s7init_deactivateHooks();

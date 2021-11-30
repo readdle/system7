@@ -190,7 +190,7 @@
 }
 
 - (GitRepository *)initializeLocalRepoAtRelativePath:(NSString *)relativePath
-                 addCommandAllowedTransportProtocols:(NSSet<S7OptionsTransportProtocolName> *)allowedTransportProtocols
+                 addCommandAllowedTransportProtocols:(NSSet<S7TransportProtocolName> *)allowedTransportProtocols
 {
     NSString *s7OptionsContents =
     [NSString stringWithFormat:
