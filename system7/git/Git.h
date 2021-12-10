@@ -68,6 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)getLatestRemoteRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision atBranch:(NSString *)branchName;
 - (BOOL)isRevisionAvailableLocally:(NSString *)revision;
 - (BOOL)isRevisionDetached:(NSString *)revision numberOfOrphanedCommits:(int *)pNumberOfOrphanedCommits;
+- (BOOL)isRevision:(NSString *)revision knownAtLocalBranch:(NSString *)branchName;
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName;
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant;
 - (BOOL)isMergeRevision:(NSString *)revision;
