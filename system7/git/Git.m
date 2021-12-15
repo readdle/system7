@@ -654,18 +654,41 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
 }
 
+- (BOOL)isRevision:(NSString *)revision knownAtBranch:(NSString *)branchName isRemoteBranch:(BOOL)remoteBranch {
+    NSString *options = @"";
+    if (remoteBranch) {
+        options = @"-r";
+    }
+    else {
+        // prevent git from addin '*" symbol before current branch
+        options = @"--format=%(refname:short)";
+    }
+
+    NSString *command = [NSString stringWithFormat:@"branch %@ --contains %@ %@", options, revision, branchName];
+
+    NSString *stdOutOutput = nil;
+    const int exitStatus = [self runGitCommand:command
+                                  stdOutOutput:&stdOutOutput
+                                  stdErrOutput:NULL];
+    if (0 != exitStatus) {
+        return NO;
+    }
+
+    stdOutOutput = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    return [stdOutOutput isEqualToString:branchName];
+}
+
+- (BOOL)isRevision:(NSString *)revision knownAtLocalBranch:(NSString *)branchName {
+    return [self isRevision:revision knownAtBranch:branchName isRemoteBranch:NO];
+}
+
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName {
     NSString *remoteBranchName = branchName;
     if (NO == [remoteBranchName hasPrefix:@"origin/"]) {
         remoteBranchName = [NSString stringWithFormat:@"origin/%@", branchName];
     }
 
-    NSString *stdOutOutput = nil;
-    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"branch -r --contains %@ %@", revision, remoteBranchName]
-                                  stdOutOutput:&stdOutOutput
-                                  stdErrOutput:NULL];
-    stdOutOutput = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    return 0 == exitStatus && [stdOutOutput isEqualToString:remoteBranchName];
+    return [self isRevision:revision knownAtBranch:remoteBranchName isRemoteBranch:YES];
 }
 
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant {

@@ -369,6 +369,17 @@
                 continue;
             }
 
+            if (NO == [subrepoGit isRevision:subrepoDesc.revision knownAtLocalBranch:branch]) {
+                // See case-pushWithDeletedSubrepoRevisionAndRollback.sh for an example of
+                // situation where this check is important
+                //
+                fprintf(stdout,
+                        "\n  ⚠️  skipping push of %s as it's not referenced by the branch '%s' anymore\n",
+                        [subrepoDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
+                        [branch cStringUsingEncoding:NSUTF8StringEncoding]);
+                continue;
+            }
+
             [branchesToPush addObject:branch];
         }
 
