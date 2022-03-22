@@ -114,7 +114,12 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 {
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
     NSString *bareOption = bare ? @"--bare" : @"";
-    NSString *command = [NSString stringWithFormat:@"git clone %@ %@ \"%@\" \"%@\"",
+    // pastey:
+    // use --filter=blob:none to reduce the size of the cloned repos
+    // blob-less repos almost don't affect the day-to-day use of an average user
+    // Git will fetch needed blobs on demand
+    //
+    NSString *command = [NSString stringWithFormat:@"git clone --filter=blob:none %@ %@ \"%@\" \"%@\"",
                          branchOption,
                          bareOption,
                          url,
