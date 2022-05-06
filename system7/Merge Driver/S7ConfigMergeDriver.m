@@ -31,6 +31,45 @@
         char buf[BUF_LEN];
 
         if (ourVersion && theirVersion) {
+            NSString *const response = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_RESPONSE"];
+            if (response.length > 0) {
+                const char responseChar = tolower([response characterAtIndex:0]);
+                do {
+                    S7ConflictResolutionOption resolution;
+                    NSString *resolutionString;
+                    if (responseChar == 'm') {
+                        resolution = S7ConflictResolutionOptionMerge;
+                        resolutionString = @"merge";
+                    }
+                    else if (responseChar == 'l') {
+                        resolution = S7ConflictResolutionOptionKeepLocal;
+                        resolutionString = @"keep local";
+                    }
+                    else if (responseChar == 'r') {
+                        resolution = S7ConflictResolutionOptionKeepRemote;
+                        resolutionString = @"keep remote";
+                    }
+                    else {
+                        break;
+                    }
+
+                    fprintf(stdout,
+                            "\n"
+                            " subrepo '%s' has diverged\n"
+                            "  local revision: %s\n"
+                            "  remote revision: %s\n"
+                            "  S7_MERGE_DRIVER_RESPONSE: %s\n",
+                            ourVersion.path.fileSystemRepresentation,
+                            [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                            [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                            [resolutionString cStringUsingEncoding:NSUTF8StringEncoding]
+                    );
+
+                    return resolution;
+                }
+                while(0);
+            }
+            
             // should write this to stdout or stderr?
             fprintf(stdout,
                     "\n"
