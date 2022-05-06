@@ -50,7 +50,7 @@
 
 - (void)testOnLFSRepo_WITH_NO_LFSHooksInstalled {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        NSCAssert([@"*.mp4 filter=lfs diff=lfs merge=lfs -text" writeToFile:@".gitattributes" atomically:YES encoding:NSUTF8StringEncoding error:nil],
+        XCTAssert([@"*.mp4 filter=lfs diff=lfs merge=lfs -text" writeToFile:@".gitattributes" atomically:YES encoding:NSUTF8StringEncoding error:nil],
                   @"failed to install fake lfs filter");
 
         [self runBootstrap];
@@ -61,14 +61,14 @@
 
 - (void)testOnLFSRepo_WITH_LFSHooksInstalled {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
-        NSCAssert([@"*.mp4 filter=lfs diff=lfs merge=lfs -text"
+        XCTAssert([@"*.mp4 filter=lfs diff=lfs merge=lfs -text"
                    writeToFile:@".gitattributes"
                    atomically:YES
                    encoding:NSUTF8StringEncoding
                    error:nil],
                   @"failed to install fake lfs filter");
 
-        NSCAssert([NSFileManager.defaultManager
+        XCTAssert([NSFileManager.defaultManager
                    createFileAtPath:@".git/hooks/post-checkout"
                    contents:[@"#!/bin/sh\n"
                              "Git LFS was here" dataUsingEncoding:NSUTF8StringEncoding]
