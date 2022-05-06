@@ -16,6 +16,8 @@
 #import "S7PostMergeHook.h"
 #import "S7PostCommitHook.h"
 #import "S7PrepareCommitMsgHook.h"
+#import "S7DeinitCommand.h"
+#import "S7PostCheckoutHook.h"
 
 #import "S7RebindCommand.h"
 #import "S7CheckoutCommand.h"
@@ -1087,6 +1089,56 @@
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertNotNil(controlConfig);
         XCTAssertEqualObjects(actualConfig, controlConfig);
+    }];
+}
+
+- (void)testMergeBranchWithDeinitializedS7 {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        // s7 init
+        s7init_deactivateHooks();
+        
+        // git ci -am "init s7"
+        s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [repo add:@[@".gitignore", S7ConfigFileName]];
+        [repo commitWithMessage:@"init s7"];
+        NSString *masterWithS7;
+        [repo getCurrentRevision:&masterWithS7];
+        
+        // git co -b "no-s7"
+        [repo checkoutNewLocalBranch:@"no-s7"];
+        
+        // s7 deinit
+        S7DeinitCommand *command = [S7DeinitCommand new];
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
+        
+        // git add -u
+        // git ci -m "deinit s7"
+        [repo add:@[@".gitignore", S7ConfigFileName]];
+        [repo commitWithMessage:@"deinit s7"];
+        NSString *branchWithoutS7;
+        [repo getCurrentRevision:&branchWithoutS7];
+        
+        // git checkout master
+        [repo checkoutExistingLocalBranch:@"master"];
+        XCTAssertEqual(S7ExitCodeSuccess, s7init_deactivateHooks());
+        
+        S7PostCheckoutHook *postCheckoutHook = [S7PostCheckoutHook new];
+        int hookExitStatus = [postCheckoutHook runWithArguments:@[
+            branchWithoutS7,
+            masterWithS7,
+            @"1"
+        ]];
+        XCTAssertEqual(S7ExitCodeSuccess, hookExitStatus);
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
+        
+        // git merge --no-edit no-s7
+        [repo mergeWith:branchWithoutS7];
+        S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
+        hookExitStatus = [postMergeHook runWithArguments:@[@"0"]];
+        XCTAssertEqual(S7ExitCodeSuccess, hookExitStatus);
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7substate"]);
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
     }];
 }
 

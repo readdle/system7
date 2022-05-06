@@ -9,8 +9,10 @@
 #import <XCTest/XCTest.h>
 
 #import "TestReposEnvironment.h"
-
 #import "S7PostCheckoutHook.h"
+#import "S7DeinitCommand.h"
+#import "S7InitCommand.h"
+#import "S7PostMergeHook.h"
 
 @interface postCheckoutHookTests : XCTestCase
 @property (nonatomic, strong) TestReposEnvironment *env;
@@ -1323,6 +1325,66 @@
         NSString *lottieRevision = nil;
         [lottieSubrepo getCurrentRevision:&lottieRevision];
         XCTAssertEqualObjects(lottieRevision, customLottieFixRevision);
+    }];
+}
+
+- (void)testCheckoutSameBrachAfterDeinit {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        // s7 init
+        s7init_deactivateHooks();
+        
+        // git ci -am "init s7"
+        [repo add:@[@"."]];
+        [repo commitWithMessage:@"init s7"];
+        NSString *revWithS7;
+        [repo getCurrentRevision:&revWithS7];
+        
+        // s7 deinit
+        S7DeinitCommand *command = [S7DeinitCommand new];
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
+        
+        // git ci -am "deinit s7"
+        [repo add:@[@"."]];
+        [repo commitWithMessage:@"deinit s7"];
+        NSString *revWithoutS7;
+        [repo getCurrentRevision:&revWithoutS7];
+        
+        // git push
+        [repo pushCurrentBranch];
+        
+        // git checkout -B master HEAD~1
+        [repo forceCheckoutLocalBranch:@"master" revision:revWithS7];
+        XCTAssertEqual(S7ExitCodeSuccess, s7init_deactivateHooks());
+        
+        S7PostCheckoutHook *postCheckoutHook = [S7PostCheckoutHook new];
+        int hookExitStatus = [postCheckoutHook runWithArguments:@[
+            revWithoutS7,
+            revWithS7,
+            @"0"
+        ]];
+        XCTAssertEqual(S7ExitCodeSuccess, hookExitStatus);
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
+        
+        // git pull
+        [repo pull];
+        S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
+        hookExitStatus = [postMergeHook runWithArguments:@[@"0"]];
+        XCTAssertEqual(S7ExitCodeSuccess, hookExitStatus);
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7substate"]);
+        XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
+        
+        // git checkout -B master HEAD~1
+        [repo forceCheckoutLocalBranch:@"master" revision:revWithS7];
+        XCTAssertEqual(S7ExitCodeSuccess, s7init_deactivateHooks());
+        
+        postCheckoutHook = [S7PostCheckoutHook new];
+        hookExitStatus = [postCheckoutHook runWithArguments:@[
+            revWithoutS7,
+            revWithS7,
+            @"0"
+        ]];
+        XCTAssertEqual(S7ExitCodeSuccess, hookExitStatus);
+        XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
     }];
 }
 

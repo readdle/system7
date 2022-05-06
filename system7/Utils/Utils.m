@@ -272,6 +272,10 @@ NSString *getGlobalGitConfigValue(NSString *key) {
 }
 
 int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks) {
+    if (installFakeHooks) {
+        return S7ExitCodeSuccess;
+    }
+    
     NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:hookName];
 
     NSString *contentsToWrite = [NSString stringWithFormat:@"#!/bin/sh\n\n%@\n", commandLine];
@@ -317,11 +321,7 @@ int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, 
             contentsToWrite = mergedHookContents;
         }
     }
-
-    if (installFakeHooks) {
-        contentsToWrite = @"";
-    }
-
+    
     NSError *error = nil;
     if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks"]) {
         if (NO == [NSFileManager.defaultManager
