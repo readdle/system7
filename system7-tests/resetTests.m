@@ -214,7 +214,7 @@
          withIntermediateDirectories:YES
          attributes:nil
          error:&error];
-        NSAssert(nil == error, @"");
+        XCTAssert(nil == error, @"");
 
         XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib/experiment.c"]);
 

@@ -28,7 +28,7 @@ int s7init_deactivateHooks(void) {
 
     initCommand.installFakeHooks = YES;
     const int result = [initCommand runWithArguments:@[]];
-    NSCAssert(0 == result, @"");
+    XCTAssert(0 == result, @"");
     return result;
 }
 
@@ -43,11 +43,11 @@ GitRepository *s7add_impl(NSString *subrepoPath, NSString *url, BOOL stage) {
 
     const int addResult = [addCommand runWithArguments:arguments];
     if (0 != addResult) {
-        NSCAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     GitRepository *subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoPath];
-    NSCAssert(subrepoGit, @"");
+    XCTAssert(subrepoGit, @"");
     return subrepoGit;
 }
 
@@ -63,7 +63,7 @@ void s7remove(NSString *subrepoPath) {
     S7RemoveCommand *rebindCommand = [S7RemoveCommand new];
     const int result = [rebindCommand runWithArguments:@[subrepoPath]];
     if (0 != result) {
-        NSCAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 }
 
@@ -71,7 +71,7 @@ void s7rebind(void) {
     S7RebindCommand *rebindCommand = [S7RebindCommand new];
     const int result = [rebindCommand runWithArguments:@[]];
     if (0 != result) {
-        NSCAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 }
 
@@ -79,7 +79,7 @@ void s7rebind_with_stage(void) {
     S7RebindCommand *rebindCommand = [S7RebindCommand new];
     const int result = [rebindCommand runWithArguments:@[ @"--stage" ]];
     if (0 != result) {
-        NSCAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 }
 
@@ -87,7 +87,7 @@ void s7rebind_specific(NSString *subrepoPath) {
     S7RebindCommand *rebindCommand = [S7RebindCommand new];
     const int result = [rebindCommand runWithArguments:@[ subrepoPath ]];
     if (0 != result) {
-        NSCAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 }
 
@@ -98,7 +98,7 @@ int s7push_currentBranch(GitRepository *repo) {
         return 1;
     }
 
-    NSCAssert(currentBranchName.length > 0, @"");
+    XCTAssert(currentBranchName.length > 0, @"");
 
     NSString *currentRevision = nil;
     if (0 != [repo getCurrentRevision:&currentRevision]) {

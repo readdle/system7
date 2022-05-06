@@ -144,8 +144,8 @@
 
         int exitStatus = 0;
         __unused GitRepository *repo = [GitRepository initializeRepositoryAtPath:templateRepoPath bare:YES exitStatus:&exitStatus];
-        NSCAssert(repo, @"");
-        NSCAssert(0 == exitStatus, @"");
+        XCTAssert(repo, @"");
+        XCTAssert(0 == exitStatus, @"");
         
         // nsavko: working around my local setup
         if ([getGlobalGitConfigValue(@"commit.gpgsign") isEqualToString:@"true"]) {
@@ -167,15 +167,15 @@
 
     NSError *error = nil;
     if (NO == [NSFileManager.defaultManager createDirectoryAtPath:repoParentDirPath withIntermediateDirectories:YES attributes:nil error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     if (NO == [NSFileManager.defaultManager copyItemAtPath:templateRepoPath toPath:absoluteFilePath error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     GitRepository *repo = [[GitRepository alloc] initWithRepoPath:absoluteFilePath bare:YES];
-    NSAssert(repo, @"");
+    XCTAssert(repo, @"");
     
     if (s7OptionsIniContents.length > 0) {
         performChangesInBareRepoAtPath(absoluteFilePath, ^(GitRepository *tmpRepo) {
@@ -202,7 +202,7 @@
                                                                           relativePath.lastPathComponent]
                                                     s7OptionsIniContents:s7OptionsContents];
     
-    NSAssert(remoteRepo, @"Failed to create remote repo.");
+    XCTAssert(remoteRepo, @"Failed to create remote repo.");
     
     __block GitRepository *localRepo;
     
@@ -213,8 +213,8 @@
                                   destinationPath:relativePath
                                        exitStatus:&gitCloneExitStatus];
         
-        NSAssert(nil != localRepo, @"Failed to create local repo.");
-        NSAssert(0 == gitCloneExitStatus, @"Git clone failed.");
+        XCTAssert(nil != localRepo, @"Failed to create local repo.");
+        XCTAssert(0 == gitCloneExitStatus, @"Git clone failed.");
         return gitCloneExitStatus;
     });
     
@@ -224,7 +224,7 @@
 - (GitRepository *)githubRd2Repo {
     if (nil == _githubRd2Repo) {
         _githubRd2Repo = [self initializeRemoteRepoAtRelativePath:@"github/rd2"];
-        NSAssert(_githubRd2Repo, @"");
+        XCTAssert(_githubRd2Repo, @"");
     }
 
     return _githubRd2Repo;
@@ -233,7 +233,7 @@
 - (GitRepository *)githubReaddleLibRepo {
     if (nil == _githubReaddleLibRepo) {
         _githubReaddleLibRepo = [self initializeRemoteRepoAtRelativePath:@"github/ReaddleLib"];
-        NSAssert(_githubReaddleLibRepo, @"");
+        XCTAssert(_githubReaddleLibRepo, @"");
     }
     return _githubReaddleLibRepo;
 }
@@ -241,7 +241,7 @@
 - (GitRepository *)githubRDSFTPRepo {
     if (nil == _githubRDSFTPRepo) {
         _githubRDSFTPRepo = [self initializeRemoteRepoAtRelativePath:@"github/RDSFTPOnlineClient"];
-        NSAssert(_githubRDSFTPRepo, @"");
+        XCTAssert(_githubRDSFTPRepo, @"");
     }
     return _githubRDSFTPRepo;
 }
@@ -249,7 +249,7 @@
 - (GitRepository *)githubRDPDFKitRepo {
     if (nil == _githubRDPDFKitRepo) {
         _githubRDPDFKitRepo = [self initializeRemoteRepoAtRelativePath:@"github/RDPDFKit"];
-        NSAssert(_githubRDPDFKitRepo, @"");
+        XCTAssert(_githubRDPDFKitRepo, @"");
     }
     return _githubRDPDFKitRepo;
 }
@@ -257,7 +257,7 @@
 - (GitRepository *)githubFormCalcRepo {
     if (nil == _githubFormCalcRepo) {
         _githubFormCalcRepo = [self initializeRemoteRepoAtRelativePath:@"github/FormCalc"];
-        NSAssert(_githubFormCalcRepo, @"");
+        XCTAssert(_githubFormCalcRepo, @"");
     }
     return _githubFormCalcRepo;
 }
@@ -267,8 +267,8 @@
         NSString *absoluteFilePath = [self.root stringByAppendingPathComponent:@"github/bare"];
         int exitStatus = 0;
         _githubTestBareRepo = [GitRepository initializeRepositoryAtPath:absoluteFilePath bare:YES exitStatus:&exitStatus];
-        NSAssert(0 == exitStatus, @"");
-        NSAssert(_githubTestBareRepo, @"");
+        XCTAssert(0 == exitStatus, @"");
+        XCTAssert(_githubTestBareRepo, @"");
     }
 
     return _githubTestBareRepo;
