@@ -1290,7 +1290,7 @@
                                             bare:YES
                                             destinationPath:[self.env.root stringByAppendingPathComponent:@"github/readdle/lottie-ios"]
                                             exitStatus:&exitStatus];
-    NSAssert(lottieReaddleForkRepo, @"");
+    XCTAssert(lottieReaddleForkRepo, @"");
     XCTAssertEqual(0, exitStatus);
 
     __block NSString *customLottieFixRevision = nil;

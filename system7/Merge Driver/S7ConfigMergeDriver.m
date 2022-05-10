@@ -31,6 +31,48 @@
         char buf[BUF_LEN];
 
         if (ourVersion && theirVersion) {
+            S7ConflictResolutionOption resolution;
+            
+            NSString *const response = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_RESPONSE"];
+            if (response.length > 0 && [S7ConfigMergeDriver mergeResolution:&resolution forUserInput:[response characterAtIndex:0]]) {
+                NSString *resolutionString;
+                switch (resolution) {
+                    case S7ConflictResolutionOptionMerge:
+                        resolutionString = @"merge";
+                        break;
+                    case S7ConflictResolutionOptionKeepLocal:
+                        resolutionString = @"keep local";
+                        break;
+                    case S7ConflictResolutionOptionKeepRemote:
+                        resolutionString = @"keep remote";
+                        break;
+                    default:
+                        resolutionString = @"";
+                        break;
+                }
+
+                fprintf(stdout,
+                        "\n"
+                        " subrepo '%s' has diverged\n"
+                        "  local revision: %s\n"
+                        "  remote revision: %s\n"
+                        "  S7_MERGE_DRIVER_RESPONSE: %s\n",
+                        ourVersion.path.fileSystemRepresentation,
+                        [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                        [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                        [resolutionString cStringUsingEncoding:NSUTF8StringEncoding]
+                        );
+
+                return resolution;
+            }
+            else if (response != nil) {
+                fprintf(stderr,
+                        "\033[31m"
+                        "  failed to recognize S7_MERGE_DRIVER_RESPONSE: '%s'\n"
+                        "\033[0m",
+                        [response cStringUsingEncoding:NSUTF8StringEncoding]);
+            }
+            
             // should write this to stdout or stderr?
             fprintf(stdout,
                     "\n"
@@ -46,16 +88,8 @@
 
             do {
                 char *userInput = fgets(buf, BUF_LEN, stdin);
-                if (userInput && strlen(userInput) >= 1) {
-                    if (tolower(userInput[0]) == 'm') {
-                        return S7ConflictResolutionOptionMerge;
-                    }
-                    else if (tolower(userInput[0]) == 'l') {
-                        return S7ConflictResolutionOptionKeepLocal;
-                    }
-                    else if (tolower(userInput[0]) == 'r') {
-                        return S7ConflictResolutionOptionKeepRemote;
-                    }
+                if (userInput && strlen(userInput) >= 1 && [S7ConfigMergeDriver mergeResolution:&resolution forUserInput:userInput[0]]) {
+                    return resolution;
                 }
 
                 fprintf(stdout,
@@ -510,6 +544,23 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     return [S7PostCheckoutHook checkoutSubreposForRepo:repo fromConfig:ourConfig toConfig:mergeResult];
+}
+
++ (BOOL)mergeResolution:(S7ConflictResolutionOption *)resolution forUserInput:(char)userInput {
+    userInput = tolower(userInput);
+    switch (userInput) {
+        case 'm':
+            *resolution = S7ConflictResolutionOptionMerge;
+            return YES;
+        case 'l':
+            *resolution = S7ConflictResolutionOptionKeepLocal;
+            return YES;
+        case 'r':
+            *resolution = S7ConflictResolutionOptionKeepRemote;
+            return YES;
+        default:
+            return NO;
+    }
 }
 
 @end

@@ -78,5 +78,6 @@ pushd pastey/rd2 > /dev/null
     # Not asserting anything here
     # just checking that this doesn't hang.
     # See comment in Git.m -mergeWith: for more info
-    yes m | git merge feature/ast-optimization
+    export S7_MERGE_DRIVER_RESPONSE="m"
+    git merge feature/ast-optimization
 popd > /dev/null

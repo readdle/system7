@@ -33,7 +33,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
@@ -56,7 +56,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
@@ -76,7 +76,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
@@ -96,7 +96,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
@@ -112,7 +112,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
@@ -128,7 +128,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
@@ -154,7 +154,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
@@ -186,7 +186,7 @@
 
     NSError *error = nil;
     if (NO == [config writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        NSAssert(NO, @"");
+        XCTAssert(NO, @"");
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
