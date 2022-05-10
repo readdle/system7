@@ -79,6 +79,10 @@ void printHelp(void) {
     help_puts("    Enables trace of git commands that s7 invokes. If the variable is set to");
     help_puts("    positive integer, s7 will log each git command, it's stdout and stderr");
     help_puts("    output (if any), and git return code.");
+    help_puts("");
+    help_puts(" S7_MERGE_DRIVER_RESPONSE");
+    help_puts("    Specifis response that automates s7 merge driver. Options are the same as");
+    help_puts("    driver's prompt input: (m)erge, keep (l)ocal or keep (r)emote.");
 }
 
 Class commandClassByName(NSString *commandName) {
