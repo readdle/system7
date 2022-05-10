@@ -1,10 +1,10 @@
 #!/bin/sh
 
-mkdir -p "$S7_TESTS_DIR/case7"
+mkdir -p "$S7_TESTS_DIR/case-status"
 
 function s7status {
-    local ACTUAL="$S7_TESTS_DIR/case7/$1.actual"
-    local ETALON="$S7_TESTS_DIR/case7/$1.etalon"
+    local ACTUAL="$S7_TESTS_DIR/case-status/$1.actual"
+    local ETALON="$S7_TESTS_DIR/case-status/$1.etalon"
 
     echo
     echo "status $1:"

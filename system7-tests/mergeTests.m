@@ -1098,8 +1098,7 @@
         s7init_deactivateHooks();
         
         // git ci -am "init s7"
-        s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
-        [repo add:@[@".gitignore", S7ConfigFileName]];
+        s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         [repo commitWithMessage:@"init s7"];
         NSString *masterWithS7;
         [repo getCurrentRevision:&masterWithS7];
