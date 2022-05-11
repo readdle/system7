@@ -24,8 +24,6 @@
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
-    S7_REPO_PRECONDITION_CHECK();
-
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
         fprintf(stderr, "s7: post-merge hook – ran in not git repo root!\n");
@@ -39,8 +37,21 @@
     if (0 != checkoutExitStatus) {
         return checkoutExitStatus;
     }
-
-    return [postMergeConfig saveToFileAtPath:S7ControlFileName];
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:S7ConfigFileName]) {
+        return [postMergeConfig saveToFileAtPath:S7ControlFileName];
+    }
+    else if ([[NSFileManager defaultManager] fileExistsAtPath:S7ControlFileName]) {
+        NSError *error = nil;
+        if (NO == [NSFileManager.defaultManager removeItemAtPath:S7ControlFileName error:&error]) {
+            fprintf(stderr, "failed to remove %s. Error: %s\n",
+                    S7ControlFileName.fileSystemRepresentation,
+                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+            return S7ExitCodeFileOperationFailed;
+        }
+    }
+    
+    return S7ExitCodeSuccess;
 }
 
 @end
