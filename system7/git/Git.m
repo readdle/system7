@@ -940,7 +940,12 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 #pragma mark - exchange -
 
 - (int)fetch {
-    const int exitStatus = [self runGitCommand:@"fetch -p"
+    // pastey:
+    // use --filter=blob:none to reduce the size of the subrepos
+    // blob-less repos almost don't affect the day-to-day use of an average user
+    // Git will fetch needed blobs on demand
+    //
+    const int exitStatus = [self runGitCommand:@"fetch --filter=blob:none -p"
                                   stdOutOutput:NULL
                                   stdErrOutput:NULL];
     return exitStatus;
