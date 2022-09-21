@@ -570,7 +570,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                                                     branch:currentBranch];
     if ([actualSubrepoStateDesc isEqual:expectedSubrepoStateDesc]) {
         // even if the subrepo _is_ in the right state,
-        // if it's an s7 repo itself, it's subpores might be not in the right state,
+        // if it's an s7 repo itself, it's subrepos might be not in the right state,
         // thus we must check them too
         //
         if (isS7Repo(subrepoGit)) {
@@ -596,7 +596,23 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeSuccess;
     }
 
-    if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
+    // pastey:
+    // we used to fetch subrepo only if the necessary revision was not available locally.
+    // This turned to lead to a bug described in case-pushOfNewBranchDoesntPushUnnecessarySubrepos.sh
+    // In short, we failed to push main repo because a subrepo push was rejected. And that got
+    // rejected 'cause local branch was behind remote branch. But in reality, remote branch
+    // just was not updated (fetched), as we skipped this step due to `isRevisionAvailableLocally`
+    // check.
+    //
+    // Initially, this check was added to reduce the amount of network calls / heavy operations
+    // on branch switches in the main repo.
+    //
+    // I considered some alternative fixes to `case-pushOfNewBranchDoesntPushUnnecessarySubrepos.sh`,
+    // but all of them are too heavy and make this code harder to understand.
+    // If we notice that additional fetches become a problem, we will try to find a way to skip
+    // fetch when possible. One option is to perform fetch only if local branch is ahead of remote.
+    //
+//    if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
         fprintf(stdout,
                 "  fetching '%s'\n",
                 [expectedSubrepoStateDesc.path fileSystemRepresentation]);
@@ -615,7 +631,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
             return S7ExitCodeInvalidSubrepoRevision;
         }
-    }
+//    }
 
     fprintf(stdout,
             "  switching to %s\n",
