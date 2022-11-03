@@ -25,9 +25,21 @@ NS_ASSUME_NONNULL_BEGIN
                                 exitStatus:(int *)exitStatus;
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                           destinationPath:(NSString *)destinationPath
+                            filterBlobNone:(BOOL)filterBlobNone
+                                exitStatus:(int *)exitStatus;
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
                                     branch:(NSString * _Nullable)branch
                                       bare:(BOOL)bare
                            destinationPath:(NSString *)destinationPath
+                                exitStatus:(int *)exitStatus;
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                            filterBlobNone:(BOOL)filterBlobNone
                                 exitStatus:(int *)exitStatus;
 
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(int *)exitStatus;
@@ -41,6 +53,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)removeLocalConfigSection:(NSString *)section;
 
 - (int)fetch;
+- (int)fetchWithFilterBlobNone:(BOOL)filterBlobNone;
+
 - (int)pull;
 - (int)merge;
 - (int)mergeWith:(NSString *)commit;

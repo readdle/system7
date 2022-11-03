@@ -13,12 +13,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 static NSString * const S7IniConfigOptionsAddCommandSectionName = @"add";
 static NSString * const S7IniConfigOptionsAddCommandAllowedTransportProtocols = @"transport-protocols";
-
+static NSString * const S7IniConfigOptionsGitCommandSectionName = @"git";
+static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
 
 @interface S7IniConfigOptions()
 
 @property (nonatomic, readonly) S7IniConfig *iniConfig;
 @property (nonatomic, assign) BOOL areAllowedTransportProtocolsParsed;
+@property (nonatomic, assign) BOOL areFilterParsed;
 
 @end
 
@@ -27,6 +29,7 @@ static NSString * const S7IniConfigOptionsAddCommandAllowedTransportProtocols = 
 #pragma mark - Synthesizers -
 
 @synthesize allowedTransportProtocols = _allowedTransportProtocols;
+@synthesize filter = _filter;
 
 #pragma mark - Initialization -
 
@@ -108,6 +111,32 @@ static NSString * const S7IniConfigOptionsAddCommandAllowedTransportProtocols = 
     
     handleParsingCompletion([NSSet setWithArray:protocols]);
     return _allowedTransportProtocols;
+}
+
+- (nullable id<S7FilterProtocol>)filter {
+    if (self.areFilterParsed) {
+        return _filter;
+    }
+    
+    NSDictionary<NSString*, NSDictionary<NSString*, NSString *> *> *iniDictionary = self.iniConfig.dictionaryRepresentation;
+    NSString *filterValue = iniDictionary[S7IniConfigOptionsGitCommandSectionName][S7IniConfigOptionsGitCommandFilter].lowercaseString;
+    if ([filterValue isEqualToString:S7FilterBlobNoneKey]) {
+        _filter = [[S7FilterBlobNone alloc] init];
+    } else {
+        NSMutableString *errorMessage =
+            [NSMutableString stringWithFormat:@"error: unsupported filter detected during '%@' option parsing.",
+             S7IniConfigOptionsGitCommandFilter];
+        
+        fprintf(stderr,
+                "\033[31m"
+                "%s\n"
+                "\033[0m",
+                [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
+
+        return nil;
+    }
+    
+    return _filter;
 }
 
 @end

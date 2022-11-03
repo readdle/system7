@@ -103,7 +103,24 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
-    return [self cloneRepoAtURL:url branch:nil bare:NO destinationPath:destinationPath exitStatus:exitStatus];
+    return [self cloneRepoAtURL:url
+                         branch:nil
+                           bare:NO
+                destinationPath:destinationPath
+                     exitStatus:exitStatus];
+}
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                           destinationPath:(NSString *)destinationPath
+                            filterBlobNone:(BOOL)filterBlobNone
+                                exitStatus:(int *)exitStatus
+{
+    return [self cloneRepoAtURL:url
+                         branch:nil
+                           bare:NO
+                destinationPath:destinationPath
+                 filterBlobNone:filterBlobNone
+                     exitStatus:exitStatus];
 }
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
@@ -112,14 +129,27 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
+    return [self cloneRepoAtURL:url
+                         branch:branch
+                           bare:bare
+                destinationPath:destinationPath
+                 filterBlobNone:NO
+                     exitStatus:exitStatus];
+}
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                            filterBlobNone:(BOOL)filterBlobNone
+                                exitStatus:(int *)exitStatus
+{
+    NSString *filterBlobNoneOption = filterBlobNone ? @"--filter=blob:none" : @"";
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
     NSString *bareOption = bare ? @"--bare" : @"";
-    // pastey:
-    // use --filter=blob:none to reduce the size of the cloned repos
-    // blob-less repos almost don't affect the day-to-day use of an average user
-    // Git will fetch needed blobs on demand
-    //
-    NSString *command = [NSString stringWithFormat:@"git clone --filter=blob:none %@ %@ \"%@\" \"%@\"",
+    
+    NSString *command = [NSString stringWithFormat:@"git clone %@ %@ %@ \"%@\" \"%@\"",
+                         filterBlobNoneOption,
                          branchOption,
                          bareOption,
                          url,
@@ -940,12 +970,14 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 #pragma mark - exchange -
 
 - (int)fetch {
-    // pastey:
-    // use --filter=blob:none to reduce the size of the subrepos
-    // blob-less repos almost don't affect the day-to-day use of an average user
-    // Git will fetch needed blobs on demand
-    //
-    const int exitStatus = [self runGitCommand:@"fetch --filter=blob:none -p"
+    return [self fetchWithFilterBlobNone:NO];
+}
+
+- (int)fetchWithFilterBlobNone:(BOOL)filterBlobNone {
+    NSString *filterBlobNoneOption = filterBlobNone ? @"--filter=blob:none" : @"";
+    NSString *gitCommand = [NSString stringWithFormat:@"fetch %@ -p", filterBlobNoneOption];
+    
+    const int exitStatus = [self runGitCommand:gitCommand
                                   stdOutOutput:NULL
                                   stdErrOutput:NULL];
     return exitStatus;

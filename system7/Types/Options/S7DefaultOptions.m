@@ -18,6 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
     return S7SupportedTransportProtocolNames();
 }
 
+- (nullable id<S7FilterProtocol>)filter {
+    return nil;
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

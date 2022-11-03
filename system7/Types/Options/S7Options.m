@@ -72,6 +72,18 @@ NSString * const S7UserOptionsFilePath = @"~/.s7options";
     return nil;
 }
 
+- (nullable id<S7FilterProtocol>)filter {
+    for (id<S7OptionsProtocol> options in self.optionsChain) {
+        const id<S7FilterProtocol> filter = options.filter;
+        
+        if (nil != filter) {
+            return filter;
+        }
+    }
+    
+    return nil;
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

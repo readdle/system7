@@ -8,12 +8,15 @@
 
 #import <Foundation/Foundation.h>
 #import "S7TransportProtocolName.h"
+#import "S7FilterProtocol.h"
+#import "S7FilterBlobNone.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol S7OptionsProtocol<NSObject>
 
 @property (nonatomic, readonly, nullable) NSSet<S7TransportProtocolName> *allowedTransportProtocols;
+@property (nonatomic, readonly, nullable) id<S7FilterProtocol> filter;
 
 @end
 

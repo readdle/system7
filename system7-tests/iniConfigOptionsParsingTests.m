@@ -9,6 +9,8 @@
 #import <XCTest/XCTest.h>
 #import "S7IniConfig.h"
 #import "S7IniConfigOptions.h"
+#import "S7FilterProtocol.h"
+#import "S7FilterBlobNone.h"
 
 @interface optionsParsingTests : XCTestCase
 
@@ -211,6 +213,49 @@
     NSString *httpsURLString = @"https://user@host.xz/path/to/repo.git/";
     
     XCTAssertFalse(S7URLStringMatchesTransportProtocolNames(httpsURLString, options.allowedTransportProtocols));
+}
+
+- (void)testCorrectFilterBlobNoneParsing {
+    S7IniConfig *config = [S7IniConfig configWithContentsOfString:
+                           @"[git]\n"
+                           "filter = blob:none"];
+    S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
+
+    XCTAssertTrue([options.filter conformsToProtocol:@protocol(S7FilterProtocol)]);
+    XCTAssertTrue([options.filter isKindOfClass:[S7FilterBlobNone class]]);
+}
+
+- (void)testCorrectCaseInsensitivityFilterBlobNoneParsing {
+    S7IniConfig *config = [S7IniConfig configWithContentsOfString:
+                           @"[git]\n"
+                           "filter = Blob:NONE"];
+    S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
+
+    XCTAssertTrue([options.filter conformsToProtocol:@protocol(S7FilterProtocol)]);
+    XCTAssertTrue([options.filter isKindOfClass:[S7FilterBlobNone class]]);
+}
+
+- (void)testUnsupportedFilterParsing {
+    S7IniConfig *config = [S7IniConfig configWithContentsOfString:
+                           @"[git]\n"
+                           "filter = unsupported filter"];
+    S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
+
+    XCTAssertNil(options.filter);
+}
+
+- (void)testMissedGitSectionInFilterParsing {
+    S7IniConfig *config = [S7IniConfig configWithContentsOfString:@"filter = blob:none"];
+    S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
+
+    XCTAssertNil(options.filter);
+}
+
+- (void)testMissedGitSectionOptionInFilterParsing {
+    S7IniConfig *config = [S7IniConfig configWithContentsOfString:@"[git]"];
+    S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
+
+    XCTAssertNil(options.filter);
 }
 
 @end
