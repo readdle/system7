@@ -120,22 +120,30 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
     
     NSDictionary<NSString*, NSDictionary<NSString*, NSString *> *> *iniDictionary = self.iniConfig.dictionaryRepresentation;
     NSString *filterValue = iniDictionary[S7IniConfigOptionsGitCommandSectionName][S7IniConfigOptionsGitCommandFilter].lowercaseString;
-    if ([filterValue isEqualToString:S7FilterBlobNoneKey]) {
-        _filter = [[S7FilterBlobNone alloc] init];
-    } else {
-        NSMutableString *errorMessage =
+    
+    if (filterValue == nil) {
+        _filter = nil;
+    }
+    else {
+        if ([filterValue isEqualToString:S7FilterBlobNoneKey]) {
+            _filter = [[S7FilterBlobNone alloc] init];
+        }
+        else {
+            NSMutableString *errorMessage =
             [NSMutableString stringWithFormat:@"error: unsupported filter detected during '%@' option parsing.",
              S7IniConfigOptionsGitCommandFilter];
-        
-        fprintf(stderr,
-                "\033[31m"
-                "%s\n"
-                "\033[0m",
-                [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
-
-        return nil;
+            
+            fprintf(stderr,
+                    "\033[31m"
+                    "%s\n"
+                    "\033[0m",
+                    [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
+            
+            _filter = nil;
+        }
     }
     
+    self.areFilterParsed = YES;
     return _filter;
 }
 
