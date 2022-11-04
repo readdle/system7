@@ -42,7 +42,11 @@ NS_ASSUME_NONNULL_BEGIN
                             filterBlobNone:(BOOL)filterBlobNone
                                 exitStatus:(int *)exitStatus;
 
-+ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(int *)exitStatus;
++ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path
+                                                  bare:(BOOL)bare
+                                     defaultBranchName:(nullable NSString *)defaultBranchName
+                                            exitStatus:(int *)exitStatus;
+
 
 @property (nonatomic, readonly, strong) NSString *absolutePath;
 

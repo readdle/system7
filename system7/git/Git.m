@@ -164,13 +164,18 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return [[GitRepository alloc] initWithRepoPath:destinationPath bare:bare];
 }
 
-+ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(nonnull int *)exitStatus {
++ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path
+                                                  bare:(BOOL)bare
+                                     defaultBranchName:(nullable NSString *)defaultBranchName
+                                            exitStatus:(nonnull int *)exitStatus
+{
     NSString *command = @"git init";
     if (bare) {
         command = [command stringByAppendingString:@" --bare"];
     }
 
-    command = [command stringByAppendingFormat:@" %@", path];
+    NSString *branch = defaultBranchName ?: @"master";
+    command = [command stringByAppendingFormat:@" -b %@ %@", branch, path];
 
     const int gitInitResult = [self executeCommand:command];
 
