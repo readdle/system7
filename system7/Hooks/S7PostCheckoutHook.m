@@ -619,9 +619,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 [expectedSubrepoStateDesc.path fileSystemRepresentation]);
 
         S7Options *options = [S7Options new];
-        const BOOL withFilterBlobNone = [options.filter isKindOfClass:[S7FilterBlobNone class]];
-    
-        if (0 != [subrepoGit fetchWithFilterBlobNone:withFilterBlobNone]) {
+        if (0 != [subrepoGit fetchWithFilter:options.filter]) {
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -671,14 +669,12 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     int cloneExitStatus = 0;
 
     S7Options *options = [S7Options new];
-    const BOOL withFilterBlobNone = [options.filter isKindOfClass:[S7FilterBlobNone class]];
-    
     GitRepository *subrepoGit = [GitRepository
                                  cloneRepoAtURL:subrepoDesc.url
                                  branch:subrepoDesc.branch
                                  bare:NO
                                  destinationPath:subrepoDesc.path
-                                 filterBlobNone:withFilterBlobNone
+                                 filter:options.filter
                                  exitStatus:&cloneExitStatus];
     if (nil == subrepoGit || 0 != cloneExitStatus) {
         fprintf(stderr,
@@ -690,7 +686,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         subrepoGit = [GitRepository
                       cloneRepoAtURL:subrepoDesc.url
                       destinationPath:subrepoDesc.path
-                      filterBlobNone:withFilterBlobNone
+                      filter:options.filter
                       exitStatus:&cloneExitStatus];
 
         if (nil == subrepoGit || 0 != cloneExitStatus) {

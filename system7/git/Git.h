@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "GitFilter.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
                            destinationPath:(NSString *)destinationPath
-                            filterBlobNone:(BOOL)filterBlobNone
+                                    filter:(GitFilter)filter
                                 exitStatus:(int *)exitStatus;
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
@@ -39,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
                                     branch:(NSString * _Nullable)branch
                                       bare:(BOOL)bare
                            destinationPath:(NSString *)destinationPath
-                            filterBlobNone:(BOOL)filterBlobNone
+                                    filter:(GitFilter)filter
                                 exitStatus:(int *)exitStatus;
 
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path
@@ -57,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)removeLocalConfigSection:(NSString *)section;
 
 - (int)fetch;
-- (int)fetchWithFilterBlobNone:(BOOL)filterBlobNone;
+- (int)fetchWithFilter:(GitFilter)filter;
 
 - (int)pull;
 - (int)merge;

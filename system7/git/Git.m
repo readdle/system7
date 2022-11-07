@@ -112,14 +112,14 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
                            destinationPath:(NSString *)destinationPath
-                            filterBlobNone:(BOOL)filterBlobNone
+                                    filter:(GitFilter)filter
                                 exitStatus:(int *)exitStatus
 {
     return [self cloneRepoAtURL:url
                          branch:nil
                            bare:NO
                 destinationPath:destinationPath
-                 filterBlobNone:filterBlobNone
+                         filter:filter
                      exitStatus:exitStatus];
 }
 
@@ -133,7 +133,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                          branch:branch
                            bare:bare
                 destinationPath:destinationPath
-                 filterBlobNone:NO
+                         filter:GitFilterNone
                      exitStatus:exitStatus];
 }
 
@@ -141,10 +141,14 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                                     branch:(NSString * _Nullable)branch
                                       bare:(BOOL)bare
                            destinationPath:(NSString *)destinationPath
-                            filterBlobNone:(BOOL)filterBlobNone
+                                    filter:(GitFilter)filter
                                 exitStatus:(int *)exitStatus
 {
-    NSString *filterBlobNoneOption = filterBlobNone ? @"--filter=blob:none" : @"";
+    NSString *filterBlobNoneOption = @"";
+    if (filter == GitFilterBlobNone) {
+        filterBlobNoneOption = @"--filter=blob:none";
+    }
+    
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
     NSString *bareOption = bare ? @"--bare" : @"";
     
@@ -975,11 +979,15 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 #pragma mark - exchange -
 
 - (int)fetch {
-    return [self fetchWithFilterBlobNone:NO];
+    return [self fetchWithFilter:GitFilterNone];
 }
 
-- (int)fetchWithFilterBlobNone:(BOOL)filterBlobNone {
-    NSString *filterBlobNoneOption = filterBlobNone ? @"--filter=blob:none" : @"";
+- (int)fetchWithFilter:(GitFilter)filter {
+    NSString *filterBlobNoneOption = @"";
+    if (filter == GitFilterBlobNone) {
+        filterBlobNoneOption = @"--filter=blob:none";
+    }
+    
     NSString *gitCommand = [NSString stringWithFormat:@"fetch %@ -p", filterBlobNoneOption];
     
     const int exitStatus = [self runGitCommand:gitCommand

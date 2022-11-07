@@ -9,8 +9,7 @@
 #import <XCTest/XCTest.h>
 #import "S7IniConfig.h"
 #import "S7IniConfigOptions.h"
-#import "S7FilterProtocol.h"
-#import "S7FilterBlobNone.h"
+#import "GitFilter.h"
 
 @interface optionsParsingTests : XCTestCase
 
@@ -220,9 +219,8 @@
                            @"[git]\n"
                            "filter = blob:none"];
     S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
-
-    XCTAssertTrue([options.filter conformsToProtocol:@protocol(S7FilterProtocol)]);
-    XCTAssertTrue([options.filter isKindOfClass:[S7FilterBlobNone class]]);
+    
+    XCTAssertEqual(options.filter, GitFilterBlobNone);
 }
 
 - (void)testCorrectCaseInsensitivityFilterBlobNoneParsing {
@@ -231,8 +229,16 @@
                            "filter = Blob:NONE"];
     S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
 
-    XCTAssertTrue([options.filter conformsToProtocol:@protocol(S7FilterProtocol)]);
-    XCTAssertTrue([options.filter isKindOfClass:[S7FilterBlobNone class]]);
+    XCTAssertEqual(options.filter, GitFilterBlobNone);
+}
+
+- (void)testEmptyFilterParsing {
+    S7IniConfig *config = [S7IniConfig configWithContentsOfString:
+                           @"[git]\n"
+                           "filter = "];
+    S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
+
+    XCTAssertEqual(options.filter, GitFilterNone);
 }
 
 - (void)testUnsupportedFilterParsing {
@@ -241,21 +247,21 @@
                            "filter = unsupported filter"];
     S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
 
-    XCTAssertNil(options.filter);
+    XCTAssertEqual(options.filter, GitFilterNone);
 }
 
 - (void)testMissedGitSectionInFilterParsing {
     S7IniConfig *config = [S7IniConfig configWithContentsOfString:@"filter = blob:none"];
     S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
 
-    XCTAssertNil(options.filter);
+    XCTAssertEqual(options.filter, GitFilterUnspecified);
 }
 
 - (void)testMissedGitSectionOptionInFilterParsing {
     S7IniConfig *config = [S7IniConfig configWithContentsOfString:@"[git]"];
     S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
 
-    XCTAssertNil(options.filter);
+    XCTAssertEqual(options.filter, GitFilterUnspecified);
 }
 
 @end

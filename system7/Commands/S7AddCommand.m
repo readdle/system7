@@ -147,11 +147,9 @@ NS_ASSUME_NONNULL_BEGIN
         }
 
         int cloneResult = 0;
-        const BOOL withFilterBlobNone = [options.filter isKindOfClass:[S7FilterBlobNone class]];
-        
         gitSubrepo = [GitRepository cloneRepoAtURL:url
                                    destinationPath:path
-                                    filterBlobNone:withFilterBlobNone
+                                            filter:options.filter
                                         exitStatus:&cloneResult];
         
         if (0 != cloneResult) {

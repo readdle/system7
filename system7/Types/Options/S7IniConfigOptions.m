@@ -113,7 +113,7 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
     return _allowedTransportProtocols;
 }
 
-- (nullable id<S7FilterProtocol>)filter {
+- (GitFilter)filter {
     if (self.areFilterParsed) {
         return _filter;
     }
@@ -122,15 +122,15 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
     NSString *filterValue = iniDictionary[S7IniConfigOptionsGitCommandSectionName][S7IniConfigOptionsGitCommandFilter].lowercaseString;
     
     if (filterValue == nil) {
-        _filter = nil;
+        _filter = GitFilterUnspecified;
     }
     else {
-        if ([filterValue isEqualToString:S7FilterBlobNoneKey]) {
-            _filter = [[S7FilterBlobNone alloc] init];
+        if ([filterValue isEqualToString:kGitFilterBlobNone]) {
+            _filter = GitFilterBlobNone;
         }
         else {
-            NSMutableString *errorMessage =
-            [NSMutableString stringWithFormat:@"error: unsupported filter detected during '%@' option parsing.",
+            NSString *errorMessage =
+            [NSString stringWithFormat:@"error: unsupported filter detected during '%@' option parsing.",
              S7IniConfigOptionsGitCommandFilter];
             
             fprintf(stderr,
@@ -139,7 +139,7 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
                     "\033[0m",
                     [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
             
-            _filter = nil;
+            _filter = GitFilterNone;
         }
     }
     

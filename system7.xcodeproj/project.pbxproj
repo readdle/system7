@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
 		24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
-		409254772913A2B1007605B0 /* S7FilterBlobNone.m in Sources */ = {isa = PBXBuildFile; fileRef = 409254762913A2B1007605B0 /* S7FilterBlobNone.m */; };
-		40F84C692913A59600295167 /* S7FilterBlobNone.m in Sources */ = {isa = PBXBuildFile; fileRef = 409254762913A2B1007605B0 /* S7FilterBlobNone.m */; };
+		40183E542915558200009EFD /* GitFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = 40183E532915558200009EFD /* GitFilter.m */; };
+		40183E552915558200009EFD /* GitFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = 40183E532915558200009EFD /* GitFilter.m */; };
 		6D73D3B1270702D0009AE0B9 /* S7IniConfigOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */; };
 		6D73D3B327070E9A009AE0B9 /* iniConfigOptionsParsingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B227070E9A009AE0B9 /* iniConfigOptionsParsingTests.m */; };
 		6DD4A82D2750DAB00050F3FD /* S7DefaultOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DD4A82C2750DAB00050F3FD /* S7DefaultOptions.m */; };
@@ -107,9 +107,8 @@
 /* Begin PBXFileReference section */
 		2465939A24CA336700EFC5A0 /* HelpPager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HelpPager.h; sourceTree = "<group>"; };
 		2465939B24CA336700EFC5A0 /* HelpPager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HelpPager.m; sourceTree = "<group>"; };
-		409254702912C839007605B0 /* S7FilterProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7FilterProtocol.h; sourceTree = "<group>"; };
-		409254752913A14C007605B0 /* S7FilterBlobNone.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7FilterBlobNone.h; sourceTree = "<group>"; };
-		409254762913A2B1007605B0 /* S7FilterBlobNone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7FilterBlobNone.m; sourceTree = "<group>"; };
+		40183E522915551100009EFD /* GitFilter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GitFilter.h; sourceTree = "<group>"; };
+		40183E532915558200009EFD /* GitFilter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GitFilter.m; sourceTree = "<group>"; };
 		6D73D3AF270702D0009AE0B9 /* S7IniConfigOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7IniConfigOptions.h; sourceTree = "<group>"; };
 		6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7IniConfigOptions.m; sourceTree = "<group>"; };
 		6D73D3B227070E9A009AE0B9 /* iniConfigOptionsParsingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = iniConfigOptionsParsingTests.m; path = "system7-tests/iniConfigOptionsParsingTests.m"; sourceTree = SOURCE_ROOT; };
@@ -232,9 +231,6 @@
 				6DD4A82C2750DAB00050F3FD /* S7DefaultOptions.m */,
 				6D73D3AF270702D0009AE0B9 /* S7IniConfigOptions.h */,
 				6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */,
-				409254702912C839007605B0 /* S7FilterProtocol.h */,
-				409254752913A14C007605B0 /* S7FilterBlobNone.h */,
-				409254762913A2B1007605B0 /* S7FilterBlobNone.m */,
 			);
 			path = Options;
 			sourceTree = "<group>";
@@ -413,6 +409,8 @@
 			children = (
 				BEE9289F2456DA6500BD6B86 /* Git.h */,
 				BEE928A02456DA6500BD6B86 /* Git.m */,
+				40183E522915551100009EFD /* GitFilter.h */,
+				40183E532915558200009EFD /* GitFilter.m */,
 			);
 			path = git;
 			sourceTree = "<group>";
@@ -511,13 +509,13 @@
 				BE3A29EF2460712F004A2B31 /* S7InitCommand.m in Sources */,
 				6D73D3B1270702D0009AE0B9 /* S7IniConfigOptions.m in Sources */,
 				BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */,
+				40183E542915558200009EFD /* GitFilter.m in Sources */,
 				BEE672C82523B72200DB09BC /* S7IniConfig.m in Sources */,
 				BED36BEA246E904E00D6EB1C /* S7PostMergeHook.m in Sources */,
 				BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */,
 				BE734D2025C34EAD00660FBA /* S7VersionCommand.m in Sources */,
-				409254772913A2B1007605B0 /* S7FilterBlobNone.m in Sources */,
 				6DD4A8302750DC3B0050F3FD /* S7TransportProtocolName.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
 				BEBE40C92576D0B900E39755 /* S7DeinitCommand.m in Sources */,
@@ -544,7 +542,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				40F84C692913A59600295167 /* S7FilterBlobNone.m in Sources */,
 				BEE672C92523B72200DB09BC /* S7IniConfig.m in Sources */,
 				BE3892112463049400394CA8 /* removeTests.m in Sources */,
 				BE172C4924642C3B00B57557 /* mergeTests.m in Sources */,
@@ -556,6 +553,7 @@
 				BE5B752F248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */,
 				6DD4A8382750E8A40050F3FD /* S7DefaultOptions.m in Sources */,
 				BE3A29EC2460616D004A2B31 /* TestReposEnvironment.m in Sources */,
+				40183E552915558200009EFD /* GitFilter.m in Sources */,
 				BED36BED246E908300D6EB1C /* mergeAlgorithmTests.m in Sources */,
 				BEE1CD0A246AEE9E00E2CC3B /* S7Command.m in Sources */,
 				BEBD16952455824400E81673 /* diffTests.m in Sources */,
