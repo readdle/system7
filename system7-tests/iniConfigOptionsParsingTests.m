@@ -238,7 +238,7 @@
                            "filter = "];
     S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
 
-    XCTAssertEqual(options.filter, GitFilterNone);
+    XCTAssertEqual(options.filter, GitFilterUnspecified);
 }
 
 - (void)testUnsupportedFilterParsing {
@@ -247,7 +247,7 @@
                            "filter = unsupported filter"];
     S7IniConfigOptions *options = [[S7IniConfigOptions alloc] initWithIniConfig:config];
 
-    XCTAssertEqual(options.filter, GitFilterNone);
+    XCTAssertEqual(options.filter, GitFilterUnspecified);
 }
 
 - (void)testMissedGitSectionInFilterParsing {

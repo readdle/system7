@@ -144,16 +144,16 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                                     filter:(GitFilter)filter
                                 exitStatus:(int *)exitStatus
 {
-    NSString *filterBlobNoneOption = @"";
+    NSString *filterOption = @"";
     if (filter == GitFilterBlobNone) {
-        filterBlobNoneOption = @"--filter=blob:none";
+        filterOption = @"--filter=blob:none";
     }
     
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
     NSString *bareOption = bare ? @"--bare" : @"";
     
     NSString *command = [NSString stringWithFormat:@"git clone %@ %@ %@ \"%@\" \"%@\"",
-                         filterBlobNoneOption,
+                         filterOption,
                          branchOption,
                          bareOption,
                          url,
@@ -983,12 +983,12 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 }
 
 - (int)fetchWithFilter:(GitFilter)filter {
-    NSString *filterBlobNoneOption = @"";
+    NSString *filterOption = @"";
     if (filter == GitFilterBlobNone) {
-        filterBlobNoneOption = @"--filter=blob:none";
+        filterOption = @"--filter=blob:none";
     }
     
-    NSString *gitCommand = [NSString stringWithFormat:@"fetch %@ -p", filterBlobNoneOption];
+    NSString *gitCommand = [NSString stringWithFormat:@"fetch %@ -p", filterOption];
     
     const int exitStatus = [self runGitCommand:gitCommand
                                   stdOutOutput:NULL

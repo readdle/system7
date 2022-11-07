@@ -139,7 +139,7 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
                     "\033[0m",
                     [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
             
-            _filter = GitFilterNone;
+            _filter = GitFilterUnspecified;
         }
     }
     

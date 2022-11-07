@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (GitFilter)filter {
-    return GitFilterUnspecified;
+    return GitFilterNone;
 }
 
 @end
