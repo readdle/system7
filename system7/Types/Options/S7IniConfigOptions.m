@@ -20,7 +20,7 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
 
 @property (nonatomic, readonly) S7IniConfig *iniConfig;
 @property (nonatomic, assign) BOOL areAllowedTransportProtocolsParsed;
-@property (nonatomic, assign) BOOL areFilterParsed;
+@property (nonatomic, assign) BOOL isFilterParsed;
 
 @end
 
@@ -114,7 +114,7 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
 }
 
 - (GitFilter)filter {
-    if (self.areFilterParsed) {
+    if (self.isFilterParsed) {
         return _filter;
     }
     
@@ -143,7 +143,7 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
         }
     }
     
-    self.areFilterParsed = YES;
+    self.isFilterParsed = YES;
     return _filter;
 }
 

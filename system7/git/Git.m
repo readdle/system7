@@ -7,6 +7,7 @@
 //
 
 #import "Git.h"
+#import "GitFilter.h"
 #import "Utils.h"
 #import "S7IniConfig.h"
 
@@ -146,7 +147,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 {
     NSString *filterOption = @"";
     if (filter == GitFilterBlobNone) {
-        filterOption = @"--filter=blob:none";
+        filterOption = [NSString stringWithFormat: @"--filter=%@", kGitFilterBlobNone];
     }
     
     NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
@@ -985,7 +986,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 - (int)fetchWithFilter:(GitFilter)filter {
     NSString *filterOption = @"";
     if (filter == GitFilterBlobNone) {
-        filterOption = @"--filter=blob:none";
+        filterOption = [NSString stringWithFormat: @"--filter=%@", kGitFilterBlobNone];
     }
     
     NSString *gitCommand = [NSString stringWithFormat:@"fetch %@ -p", filterOption];
