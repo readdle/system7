@@ -18,6 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
     return S7SupportedTransportProtocolNames();
 }
 
+- (GitFilter)filter {
+    return GitFilterNone;
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

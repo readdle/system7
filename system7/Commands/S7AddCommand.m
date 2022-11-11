@@ -147,7 +147,11 @@ NS_ASSUME_NONNULL_BEGIN
         }
 
         int cloneResult = 0;
-        gitSubrepo = [GitRepository cloneRepoAtURL:url destinationPath:path exitStatus:&cloneResult];
+        gitSubrepo = [GitRepository cloneRepoAtURL:url
+                                   destinationPath:path
+                                            filter:options.filter
+                                        exitStatus:&cloneResult];
+        
         if (0 != cloneResult) {
             return S7ExitCodeGitOperationFailed;
         }

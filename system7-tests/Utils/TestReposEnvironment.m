@@ -143,16 +143,18 @@
         }
 
         int exitStatus = 0;
-        __unused GitRepository *repo = [GitRepository initializeRepositoryAtPath:templateRepoPath bare:YES exitStatus:&exitStatus];
+        __unused GitRepository *repo = [GitRepository initializeRepositoryAtPath:templateRepoPath
+                                                                            bare:YES
+                                                               defaultBranchName:NULL
+                                                                      exitStatus:&exitStatus];
         XCTAssert(repo, @"");
         XCTAssert(0 == exitStatus, @"");
         
-        // nsavko: working around my local setup
-        if ([getGlobalGitConfigValue(@"commit.gpgsign") isEqualToString:@"true"]) {
-            GitRepository.testRepoConfigureOnInitBlock = ^(GitRepository * _Nonnull repo) {
-                [repo runGitCommand:@"config --local commit.gpgsign false"];
-            };
-        }
+        // nsavko: working around local machine setup
+        GitRepository.testRepoConfigureOnInitBlock = ^(GitRepository * _Nonnull repo) {
+            [repo runGitCommand:@"config --local commit.gpgsign false"];
+            [repo runGitCommand:@"config --local pull.rebase false"];
+        };
 
         // make repo non-empty by default
         performChangesInBareRepoAtPath(templateRepoPath, ^(GitRepository *tmpRepo) {
@@ -266,7 +268,10 @@
     if (nil == _githubTestBareRepo) {
         NSString *absoluteFilePath = [self.root stringByAppendingPathComponent:@"github/bare"];
         int exitStatus = 0;
-        _githubTestBareRepo = [GitRepository initializeRepositoryAtPath:absoluteFilePath bare:YES exitStatus:&exitStatus];
+        _githubTestBareRepo = [GitRepository initializeRepositoryAtPath:absoluteFilePath
+                                                                   bare:YES
+                                                      defaultBranchName:NULL
+                                                             exitStatus:&exitStatus];
         XCTAssert(0 == exitStatus, @"");
         XCTAssert(_githubTestBareRepo, @"");
     }

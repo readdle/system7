@@ -12,6 +12,7 @@
 #import "Utils.h"
 #import "S7InitCommand.h"
 #import "S7BootstrapCommand.h"
+#import "S7Options.h"
 
 static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberOfCommits) = nil;
 
@@ -617,7 +618,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 "  fetching '%s'\n",
                 [expectedSubrepoStateDesc.path fileSystemRepresentation]);
 
-        if (0 != [subrepoGit fetch]) {
+        S7Options *options = [S7Options new];
+        if (0 != [subrepoGit fetchWithFilter:options.filter]) {
             return S7ExitCodeGitOperationFailed;
         }
 
@@ -665,11 +667,14 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             [subrepoDesc.url fileSystemRepresentation]);
 
     int cloneExitStatus = 0;
+
+    S7Options *options = [S7Options new];
     GitRepository *subrepoGit = [GitRepository
                                  cloneRepoAtURL:subrepoDesc.url
                                  branch:subrepoDesc.branch
                                  bare:NO
                                  destinationPath:subrepoDesc.path
+                                 filter:options.filter
                                  exitStatus:&cloneExitStatus];
     if (nil == subrepoGit || 0 != cloneExitStatus) {
         fprintf(stderr,
@@ -681,6 +686,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         subrepoGit = [GitRepository
                       cloneRepoAtURL:subrepoDesc.url
                       destinationPath:subrepoDesc.path
+                      filter:options.filter
                       exitStatus:&cloneExitStatus];
 
         if (nil == subrepoGit || 0 != cloneExitStatus) {

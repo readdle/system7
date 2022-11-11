@@ -72,6 +72,18 @@ NSString * const S7UserOptionsFilePath = @"~/.s7options";
     return nil;
 }
 
+- (GitFilter)filter {
+    for (id<S7OptionsProtocol> options in self.optionsChain) {
+        const GitFilter filter = options.filter;
+        
+        if (GitFilterUnspecified != filter) {
+            return filter;
+        }
+    }
+    
+    return GitFilterUnspecified;
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

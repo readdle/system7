@@ -71,7 +71,10 @@
     NSString *const remoteRepoPath = [self.env.root stringByAppendingPathComponent:@"empty-repo.remote"];
     NSString *const repoPath = [self.env.root stringByAppendingPathComponent:@"empty-repo.local"];
     int exitStatus = 0;
-    XCTAssertNotNil([GitRepository initializeRepositoryAtPath:remoteRepoPath bare:YES exitStatus:&exitStatus]);
+    XCTAssertNotNil([GitRepository initializeRepositoryAtPath:remoteRepoPath
+                                                         bare:YES
+                                            defaultBranchName:NULL
+                                                   exitStatus:&exitStatus]);
     XCTAssertEqual(exitStatus, 0);
     
     GitRepository *const repo = [GitRepository cloneRepoAtURL:remoteRepoPath destinationPath:repoPath exitStatus:&exitStatus];
