@@ -40,6 +40,7 @@
 		BE4BB43E246166CE00545358 /* pushHookTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE4BB43D246166CE00545358 /* pushHookTests.m */; };
 		BE50AA00246C2CB800DBB618 /* S7PrePushHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */; };
 		BE50AA01246C2CB800DBB618 /* S7PrePushHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */; };
+		BE52E43526BB194500726388 /* libgit2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = BE52E43426BB194500726388 /* libgit2.dylib */; };
 		BE5B752E248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */; };
 		BE5B752F248947AD008E7378 /* S7PrepareCommitMsgHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */; };
 		BE734D2025C34EAD00660FBA /* S7VersionCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE734D1F25C34EAD00660FBA /* S7VersionCommand.m */; };
@@ -49,6 +50,7 @@
 		BE82188E2452C1ED00E878A8 /* S7Config.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218802452C16A00E878A8 /* S7Config.m */; };
 		BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE90D38F258F470900186E86 /* S7BootstrapCommand.m */; };
 		BE90D391258F470900186E86 /* S7BootstrapCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE90D38F258F470900186E86 /* S7BootstrapCommand.m */; };
+		BE9A08EC26BE59A8000DBDD1 /* libgit2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = BE52E43426BB194500726388 /* libgit2.dylib */; };
 		BEBD16952455824400E81673 /* diffTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBD16942455824400E81673 /* diffTests.m */; };
 		BEBE40C42576D04D00E39755 /* deinitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBE40C32576D04D00E39755 /* deinitTests.m */; };
 		BEBE40C92576D0B900E39755 /* S7DeinitCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBE40C82576D0B900E39755 /* S7DeinitCommand.m */; };
@@ -132,6 +134,7 @@
 		BE50A9FE246C2CB800DBB618 /* S7PrePushHook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7PrePushHook.m; sourceTree = "<group>"; };
 		BE50A9FF246C2CB800DBB618 /* S7PrePushHook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = S7PrePushHook.h; sourceTree = "<group>"; };
 		BE50AA02246C2CEA00DBB618 /* S7Hook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Hook.h; sourceTree = "<group>"; };
+		BE52E43426BB194500726388 /* libgit2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgit2.dylib; path = ../projects/libgit2/build/libgit2.dylib; sourceTree = "<group>"; };
 		BE55A2F024AB803300AA735F /* system7-tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "system7-tests.xctestplan"; sourceTree = "<group>"; };
 		BE5B752C248947AD008E7378 /* S7PrepareCommitMsgHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PrepareCommitMsgHook.h; sourceTree = "<group>"; };
 		BE5B752D248947AD008E7378 /* S7PrepareCommitMsgHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PrepareCommitMsgHook.m; sourceTree = "<group>"; };
@@ -183,6 +186,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BE52E43526BB194500726388 /* libgit2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -190,6 +194,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BE9A08EC26BE59A8000DBDD1 /* libgit2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,6 +239,14 @@
 			path = Hooks;
 			sourceTree = "<group>";
 		};
+		BE52E43326BB194500726388 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				BE52E43426BB194500726388 /* libgit2.dylib */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		BE82186B2452BA7300E878A8 = {
 			isa = PBXGroup;
 			children = (
@@ -241,6 +254,7 @@
 				BE8218762452BA7300E878A8 /* system7 */,
 				BE8218872452C1DE00E878A8 /* system7-tests */,
 				BE8218752452BA7300E878A8 /* Products */,
+				BE52E43326BB194500726388 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -564,7 +578,6 @@
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
@@ -599,11 +612,13 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../projects/libgit2/include\"";
+				LD_RUNPATH_SEARCH_PATHS = "\"$(SRCROOT)/../projects/libgit2/build\"";
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../projects/libgit2/build\"";
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "-Wl,-fatal_warnings";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
 			};
@@ -628,7 +643,6 @@
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
@@ -657,10 +671,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../projects/libgit2/include\"";
+				LD_RUNPATH_SEARCH_PATHS = "\"$(SRCROOT)/../projects/libgit2/build\"";
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../projects/libgit2/build\"";
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OTHER_LDFLAGS = "-Wl,-fatal_warnings";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
 			};

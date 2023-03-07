@@ -12,12 +12,18 @@
 
 #include <stdlib.h>
 
+#include "git2.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 #define s7TraceGit(...) do { if ([GitRepository envGitTraceEnabled]) { \
 NSString *const __trace = [NSString stringWithFormat:__VA_ARGS__]; \
 fprintf(stderr, "%s", [__trace cStringUsingEncoding:NSUTF8StringEncoding]); \
 } } while (0)
+
+@interface GitRepository ()
+@property (nonatomic, assign) git_repository *repo;
+@end
 
 @implementation GitRepository
 
@@ -54,7 +60,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     static BOOL traceEnabled;
     
     dispatch_once(&onceToken, ^{
-        traceEnabled = [[NSProcessInfo processInfo].environment[@"S7_TRACE_GIT"] intValue] != 0;
+        traceEnabled = YES;// [[NSProcessInfo processInfo].environment[@"S7_TRACE_GIT"] intValue] != 0;
     });
     return traceEnabled;
 }
@@ -91,6 +97,19 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     if (GitRepository.testRepoConfigureOnInitBlock) {
         GitRepository.testRepoConfigureOnInitBlock(self);
     }
+
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        git_libgit2_init();
+    });
+
+    const char *git_dir = [_absolutePath fileSystemRepresentation];
+
+    int r = git_repository_open_ext(&_repo, git_dir, 0, NULL);
+    r=r;
+
+//    git_repository_free(repo);
+//    git_libgit2_shutdown();
 
     return self;
 }
@@ -1093,13 +1112,44 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 }
 
 - (nullable NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus {
-    NSString *fileContents = nil;
-    NSString *devNull = nil;
-    NSString *spell = [NSString stringWithFormat:@"%@:%@", revision, filePath];
-    *exitStatus = [self
-                   runGitWithArguments:@[ @"show", spell ]
-                   stdOutOutput:&fileContents
-                   stdErrOutput:&devNull];
+
+    git_oid oid;
+    git_object *commit;
+
+    int r = git_oid_fromstr(&oid, [revision cStringUsingEncoding:NSASCIIStringEncoding]);
+    r=r;
+    NSAssert(0 == r, @"");
+
+    r = git_object_lookup(&commit, _repo, &oid, GIT_OBJECT_COMMIT);
+    if (GIT_ENOTFOUND == r) {
+        *exitStatus = 128;
+        return nil;
+    }
+
+    NSAssert(0 == r, @"");
+
+    git_blob *blob;
+    r = git_object_lookup_bypath((git_object**)&blob, commit, filePath.fileSystemRepresentation, GIT_OBJ_BLOB);
+    if (GIT_ENOTFOUND == r) {
+        *exitStatus = 128;
+        return nil;
+    }
+
+    NSAssert(0 == r, @"");
+    
+    // utf-8 ?? it can be in any encoding?
+    NSString *fileContents = [[NSString alloc] initWithBytes:git_blob_rawcontent(blob) length:(size_t)git_blob_rawsize(blob) encoding:NSUTF8StringEncoding];
+    NSAssert(fileContents, @"");
+
+    *exitStatus = 0;
+
+//    NSString *fileContents = nil;
+//    NSString *devNull = nil;
+//    NSString *spell = [NSString stringWithFormat:@"%@:%@", revision, filePath];
+//    *exitStatus = [self
+//                   runGitWithArguments:@[ @"show", spell ]
+//                   stdOutOutput:&fileContents
+//                   stdErrOutput:&devNull];
     return fileContents;
 }
 
@@ -1110,34 +1160,98 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         return NO;
     }
 
-    // pastey:
-    // we used to do the following here:
-    //  git update-index -q --refresh
-    //  git diff-index --quiet HEAD
-    // Then, in some time to check for untracked files
-    // I've added `status --porcelain` call, thus
-    // update-index/diff-index became unnecessary. That's two
-    // extra calls to external process.
-    //
-    
-    NSString *statusOutput = nil;
-    const int statusExitCode = [self
-                                runGitWithArguments:@[ @"status", @"--porcelain", @"--untracked-files=normal" ]
-                                stdOutOutput:&statusOutput
-                                stdErrOutput:NULL];
-    if (0 != statusExitCode) {
-        return NO;
-    }
 
-    statusOutput = [statusOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    return statusOutput.length > 0;
+    git_status_options statusopt = GIT_STATUS_OPTIONS_INIT;
+
+    statusopt.show  = GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
+    statusopt.flags = GIT_STATUS_OPT_INCLUDE_UNTRACKED |
+        GIT_STATUS_OPT_RENAMES_HEAD_TO_INDEX |
+        GIT_STATUS_OPT_SORT_CASE_SENSITIVELY;
+
+    /**
+     * Run status on the repository
+     *
+     * We use `git_status_list_new()` to generate a list of status
+     * information which lets us iterate over it at our
+     * convenience and extract the data we want to show out of
+     * each entry.
+     *
+     * You can use `git_status_foreach()` or
+     * `git_status_foreach_ext()` if you'd prefer to execute a
+     * callback for each entry. The latter gives you more control
+     * about what results are presented.
+     */
+    git_status_list *status;
+    int r = git_status_list_new(&status, _repo, &statusopt);
+    r=r;
+
+    size_t cnt = git_status_list_entrycount(status);
+    cnt = cnt;
+
+    git_status_list_free(status);
+
+    return cnt > 0;
+
+//    // pastey:
+//    // we used to do the following here:
+//    //  git update-index -q --refresh
+//    //  git diff-index --quiet HEAD
+//    // Then, in some time to check for untracked files
+//    // I've added `status --porcelain` call, thus
+//    // update-index/diff-index became unnecessary. That's two
+//    // extra calls to external process.
+//    //
+//
+//    NSString *statusOutput = nil;
+//    const int statusExitCode = [self
+//                                runGitWithArguments:@[ @"status", @"--porcelain", @"--untracked-files=normal" ]
+//                                stdOutOutput:&statusOutput
+//                                stdErrOutput:NULL];
+//    if (0 != statusExitCode) {
+//        return NO;
+//    }
+//
+//    statusOutput = [statusOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+//    return statusOutput.length > 0;
 }
 
 - (int)add:(NSArray<NSString *> *)filePaths {
-    NSArray<NSString *> *args = [@[@"add", @"--"] arrayByAddingObjectsFromArray:filePaths];
-    return [self runGitWithArguments:args
-                        stdOutOutput:NULL
-                        stdErrOutput:NULL];
+    git_index_matched_path_cb matched_cb = NULL;
+    git_index *index;
+
+    char **paths = malloc(sizeof(char *) * filePaths.count);
+    /* Parse the options & arguments. */
+    @try {
+        for (int i=0; i<filePaths.count; ++i) {
+            paths[i] = strdup(filePaths[i].fileSystemRepresentation);
+        }
+        git_strarray array = {paths, filePaths.count};
+
+        /* Grab the repository's index. */
+        int r = git_repository_index(&index, _repo);
+        if (0 != r) {
+            return r;
+        }
+
+        git_index_add_all(index, &array, 0, matched_cb, NULL);
+
+        /* Cleanup memory */
+        git_index_write(index);
+    }
+    @finally {
+        git_index_free(index);
+
+        for (int i=0; i<filePaths.count; ++i) {
+            free(paths[i]);
+        }
+        free(paths);
+    }
+
+    return 0;
+//    NSArray<NSString *> *args = [@[@"add", @"--"] arrayByAddingObjectsFromArray:filePaths];
+//    return [self runGitWithArguments:args
+//                        stdOutOutput:NULL
+//                        stdErrOutput:NULL];
 }
 
 - (int)commitWithMessage:(NSString *)message {
