@@ -37,6 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isEmptyRepo;
 - (BOOL)isBareRepo;
 - (void)printStatus;
+- (int)diff:(NSArray<NSString *> *)arguments stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput ;
 
 - (int)removeLocalConfigSection:(NSString *)section;
 

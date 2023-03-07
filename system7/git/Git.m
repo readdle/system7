@@ -367,6 +367,12 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
            stdErrOutput:NULL];
 }
 
+- (int)diff:(NSArray<NSString *> *)arguments stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput {
+    return [self runGitWithArguments:[@[@"diff"] arrayByAddingObjectsFromArray:arguments]
+                        stdOutOutput:ppStdOutOutput
+                        stdErrOutput:NULL];
+}
+
 #pragma mark - config -
 
 - (int)removeLocalConfigSection:(NSString *)section {

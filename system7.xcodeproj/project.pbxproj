@@ -58,6 +58,8 @@
 		BE82188E2452C1ED00E878A8 /* S7Config.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218802452C16A00E878A8 /* S7Config.m */; };
 		BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE90D38F258F470900186E86 /* S7BootstrapCommand.m */; };
 		BE90D391258F470900186E86 /* S7BootstrapCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE90D38F258F470900186E86 /* S7BootstrapCommand.m */; };
+		BEAF676B2872D40C0020B1D9 /* S7DiffCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BEAF676A2872D40C0020B1D9 /* S7DiffCommand.m */; };
+		BEAF676C2872D4130020B1D9 /* S7DiffCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BEAF676A2872D40C0020B1D9 /* S7DiffCommand.m */; };
 		BEBD16952455824400E81673 /* diffTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBD16942455824400E81673 /* diffTests.m */; };
 		BEBE40C42576D04D00E39755 /* deinitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBE40C32576D04D00E39755 /* deinitTests.m */; };
 		BEBE40C92576D0B900E39755 /* S7DeinitCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BEBE40C82576D0B900E39755 /* S7DeinitCommand.m */; };
@@ -165,6 +167,8 @@
 		BE82188A2452C1DE00E878A8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BE90D38E258F470900186E86 /* S7BootstrapCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7BootstrapCommand.h; sourceTree = "<group>"; };
 		BE90D38F258F470900186E86 /* S7BootstrapCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7BootstrapCommand.m; sourceTree = "<group>"; };
+		BEAF67692872D40C0020B1D9 /* S7DiffCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7DiffCommand.h; sourceTree = "<group>"; };
+		BEAF676A2872D40C0020B1D9 /* S7DiffCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7DiffCommand.m; sourceTree = "<group>"; };
 		BEBD16942455824400E81673 /* diffTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = diffTests.m; sourceTree = "<group>"; };
 		BEBE40C32576D04D00E39755 /* deinitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = deinitTests.m; sourceTree = "<group>"; };
 		BEBE40C72576D0B900E39755 /* S7DeinitCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7DeinitCommand.h; sourceTree = "<group>"; };
@@ -371,6 +375,8 @@
 				BE90D38F258F470900186E86 /* S7BootstrapCommand.m */,
 				BE734D1E25C34EAD00660FBA /* S7VersionCommand.h */,
 				BE734D1F25C34EAD00660FBA /* S7VersionCommand.m */,
+				BEAF67692872D40C0020B1D9 /* S7DiffCommand.h */,
+				BEAF676A2872D40C0020B1D9 /* S7DiffCommand.m */,
 			);
 			path = Commands;
 			sourceTree = "<group>";
@@ -509,6 +515,7 @@
 				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
 				BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */,
 				BE734D2025C34EAD00660FBA /* S7VersionCommand.m in Sources */,
+				BEAF676B2872D40C0020B1D9 /* S7DiffCommand.m in Sources */,
 				6DD4A8302750DC3B0050F3FD /* S7TransportProtocolName.m in Sources */,
 				BE8218812452C16A00E878A8 /* S7Config.m in Sources */,
 				BEBE40C92576D0B900E39755 /* S7DeinitCommand.m in Sources */,
@@ -583,6 +590,7 @@
 				BEBE40CA2576D0B900E39755 /* S7DeinitCommand.m in Sources */,
 				BE3A29F02460712F004A2B31 /* S7InitCommand.m in Sources */,
 				BED60E172458811A008EA752 /* Utils.m in Sources */,
+				BEAF676C2872D4130020B1D9 /* S7DiffCommand.m in Sources */,
 				BE28CB332472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */,
 				BED60FBA245ABB43008EA752 /* S7RebindCommand.m in Sources */,
 			);

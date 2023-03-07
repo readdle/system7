@@ -20,6 +20,7 @@
 #import "S7CheckoutCommand.h"
 #import "S7BootstrapCommand.h"
 #import "S7VersionCommand.h"
+#import "S7DiffCommand.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -102,6 +103,7 @@ Class commandClassByName(NSString *commandName) {
             [S7CheckoutCommand class],
             [S7BootstrapCommand class],
             [S7VersionCommand class],
+            [S7DiffCommand class],
         ]];
 
         for (Class<S7Command> commandClass in commandClasses) {
