@@ -167,8 +167,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 &dummy,
                 &dummy);
 
-    int exitCode = S7ExitCodeSuccess;
-
+    int exitCode = [self tryMovingSameOriginSubrepos:subreposToDelete.allValues
+                                 ifPresentInSubrepos:toConfig.subrepoDescriptions];
+    
     const int deleteExitCode = [self deleteSubrepos:subreposToDelete.allValues];
     if (S7ExitCodeSuccess != deleteExitCode) {
         exitCode = deleteExitCode;
@@ -353,6 +354,41 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 
     return exitCode;
+}
+
++ (int)tryMovingSameOriginSubrepos:(NSArray<S7SubrepoDescription *> *)subrepos
+               ifPresentInSubrepos:(NSArray<S7SubrepoDescription *> *)subreposToCheckout
+{
+    if (subrepos.count == 0) {
+        return S7ExitCodeSuccess;
+    }
+    
+    NSMutableDictionary *const subrepoToURLMap = [NSMutableDictionary dictionaryWithCapacity:subreposToCheckout.count];
+    for (S7SubrepoDescription *subrepo in subreposToCheckout) {
+        subrepoToURLMap[subrepo.url] = subrepo;
+    }
+    
+    for (S7SubrepoDescription *subrepo in subrepos) {
+        S7SubrepoDescription *const sameSubrepo = subrepoToURLMap[subrepo.url];
+        if (sameSubrepo == nil) {
+            continue;
+        }
+        
+        
+        // If move fails, we'll delete old subrepo and checkout a new one further in checkoutSubreposForRepo:
+        NSError *error;
+        [[NSFileManager defaultManager] moveItemAtPath:subrepo.path
+                                                toPath:sameSubrepo.path
+                                                 error:nil];
+        if (nil == error) {
+            fprintf(stdout,
+                    "\033[34m>\033[0m \033[1msubrepo '%s' renamed to '%s'\033[0m\n",
+                    [subrepo.path fileSystemRepresentation],
+                    [sameSubrepo.path fileSystemRepresentation]);
+        }
+    }
+    
+    return S7ExitCodeSuccess;
 }
 
 + (int)deleteSubrepos:(NSArray<S7SubrepoDescription *> *)subreposToDelete {
