@@ -368,19 +368,27 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         subrepoToURLMap[subrepo.url] = subrepo;
     }
     
+    S7ExitCode exitCode = S7ExitCodeSuccess;
     for (S7SubrepoDescription *subrepo in subrepos) {
         S7SubrepoDescription *const sameSubrepo = subrepoToURLMap[subrepo.url];
         if (sameSubrepo == nil) {
             continue;
         }
         
-        
-        // If move fails, we'll delete old subrepo and checkout a new one further in checkoutSubreposForRepo:
         NSError *error;
         [[NSFileManager defaultManager] moveItemAtPath:subrepo.path
                                                 toPath:sameSubrepo.path
-                                                 error:nil];
-        if (nil == error) {
+                                                 error:&error];
+        if (error) {
+            fprintf(stderr,
+                    " abort: failed to move subrepo '%s' to '%s'\n"
+                    " error: %s\n",
+                    [subrepo.path fileSystemRepresentation],
+                    [sameSubrepo.path fileSystemRepresentation],
+                    [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+            exitCode = S7ExitCodeFileOperationFailed;
+        }
+        else {
             fprintf(stdout,
                     "\033[34m>\033[0m \033[1msubrepo '%s' renamed to '%s'\033[0m\n",
                     [subrepo.path fileSystemRepresentation],
@@ -388,7 +396,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
     }
     
-    return S7ExitCodeSuccess;
+    return exitCode;
 }
 
 + (int)deleteSubrepos:(NSArray<S7SubrepoDescription *> *)subreposToDelete {
