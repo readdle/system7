@@ -89,6 +89,8 @@
                                     initWithData:[NSFileManager.defaultManager contentsAtPath:@".git/config"]
                                     encoding:NSUTF8StringEncoding];
         XCTAssertTrue([configContents containsString:@"[merge \"s7\"]"]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 

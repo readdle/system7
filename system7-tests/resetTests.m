@@ -44,6 +44,8 @@
 
         S7ResetCommand *command = [S7ResetCommand new];
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -53,6 +55,8 @@
 
         S7ResetCommand *command = [S7ResetCommand new];
         XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -65,6 +69,8 @@
 
         int exitStatus = [command runWithArguments:@[ @"-X", @"Dependencies/NoSuch", @"--all" ]];
         XCTAssertEqual(S7ExitCodeInvalidParameterValue, exitStatus);
+        
+        return S7ExitCodeSuccess;
     });
 }
 

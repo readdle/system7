@@ -46,6 +46,8 @@
 
         S7StatusCommand *statusCommand = [S7StatusCommand new];
         XCTAssertEqual(0, [statusCommand runWithArguments:@[]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 

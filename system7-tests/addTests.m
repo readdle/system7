@@ -40,6 +40,8 @@
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
 
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[ @"--stage" ]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -55,6 +57,8 @@
 
         S7AddCommand *command = [S7AddCommand new];
         XCTAssertEqual(S7ExitCodeSubrepoIsNotGitRepository, [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -92,6 +96,8 @@
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertNotNil(controlConfig);
         XCTAssertEqualObjects(newConfig, controlConfig);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -112,6 +118,8 @@
 
         S7AddCommand *command = [S7AddCommand new];
         XCTAssertEqual(S7ExitCodeInvalidArgument, [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -125,6 +133,8 @@
         S7AddCommand *command = [S7AddCommand new];
         const int addResult = [command runWithArguments:@[ @"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];
         XCTAssertEqual(S7ExitCodeInvalidArgument, addResult);
+        
+        return addResult;
     });
 }
 
@@ -138,6 +148,8 @@
         S7AddCommand *command = [S7AddCommand new];
         const int addResult = [command runWithArguments:@[ @"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];
         XCTAssertEqual(0, addResult);
+        
+        return addResult;
     });
 }
 
@@ -171,6 +183,8 @@
         XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib" options:NSBackwardsSearch].location,
                        [gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location,
                        @"must be added to .gitignore just once");
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -201,6 +215,8 @@
         XCTAssertEqual([gitignoreContents rangeOfString:@"Dependencies/ReaddleLib" options:NSBackwardsSearch].location,
                        [gitignoreContents rangeOfString:@"Dependencies/ReaddleLib"].location,
                        @"must be added to .gitignore just once");
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -215,6 +231,8 @@
         S7AddCommand *command = [S7AddCommand new];
         const int addResult = [command runWithArguments:@[ @"/Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath ]];
         XCTAssertEqual(S7ExitCodeInvalidArgument, addResult);
+        
+        return addResult;
     });
 }
 
@@ -231,6 +249,8 @@
 
         S7Config *newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(0, newConfig.subrepoDescriptions.count);
+        
+        return addResult;
     });
 }
 
@@ -271,6 +291,8 @@
 
         newConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         XCTAssertEqual(1, newConfig.subrepoDescriptions.count);
+        
+        return addResult;
     });
 }
 
@@ -292,6 +314,8 @@
         XCTAssertEqual(0, [tempReaddleLibRepo pushCurrentBranch]);
 
         [tempReaddleLibRepo getCurrentRevision:&expectedRevision];
+        
+        return S7ExitCodeSuccess;
     });
 
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int {
@@ -316,6 +340,7 @@
         XCTAssertEqualObjects(expectedSubrepoDesc,
                               newConfig.subrepoDescriptions.firstObject);
 
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -343,6 +368,8 @@
         }
 
         XCTAssert([gitignoreContents rangeOfString:typicalGitIgnoreContent].location != NSNotFound);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
