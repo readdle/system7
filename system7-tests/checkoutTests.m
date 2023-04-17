@@ -223,4 +223,47 @@
     }];
 }
 
+- (void)testSubrepoMoveWithoutCheckout {
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+        [repo runGitCommand:@"add ."];
+        [repo commitWithMessage:@"init s7"];
+        // Get revision X.
+        NSString *rootRevision;
+        [repo getCurrentRevision:&rootRevision];
+        
+        // Checkout and commit ReaddleLib.
+        NSString *const masterReaddeLibPath = @"Dependencies/ReaddleLib";
+        s7add_stage(masterReaddeLibPath,
+                    self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add Dependencies/ReaddleLib subrepo"];
+        
+        // Checkout X, create new branch.
+        [repo checkoutRevision:rootRevision];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        [repo checkoutNewLocalBranch:@"feature"];
+        
+        // Checkout ReaddleLib with different path, and commit.
+        NSString *const featureReaddleLibPath = @"Libraries/ReaddleLib";
+        s7add_stage(featureReaddleLibPath,
+                    self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add Libraries/ReaddleLib subrepo"];
+        
+        // Save creation date of ReaddleLib
+        NSDate *(^getCreationDate)(NSString *) = ^(NSString *path){
+            return [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil] fileCreationDate];
+        };
+        NSDate *const originalFolderCreationDate = getCreationDate(featureReaddleLibPath);
+        
+        // Check that ReaddleLib folder is moved, not cloned during switch between by comparing creation dates.
+        [repo checkoutExistingLocalBranch:@"master"];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        XCTAssertEqualObjects(originalFolderCreationDate, getCreationDate(masterReaddeLibPath));
+        
+        [repo checkoutExistingLocalBranch:@"feature"];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        XCTAssertEqualObjects(originalFolderCreationDate, getCreationDate(featureReaddleLibPath));
+    }];
+}
+
 @end
