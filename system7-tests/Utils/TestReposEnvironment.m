@@ -206,17 +206,25 @@
     
     XCTAssert(remoteRepo, @"Failed to create remote repo.");
     
+    return [self cloneRepoAtURL:remoteRepo.absolutePath destinationPath:relativePath];
+}
+
+- (GitRepository *)cloneRepoAtURL:(NSString *)repoURL destinationPath:(NSString *)destinationPath {
     __block GitRepository *localRepo;
     
     executeInDirectory(self.root, ^int{
         int gitCloneExitStatus = 0;
         
-        localRepo = [GitRepository cloneRepoAtURL:remoteRepo.absolutePath
-                                  destinationPath:relativePath
+        localRepo = [GitRepository cloneRepoAtURL:repoURL
+                                  destinationPath:destinationPath
                                        exitStatus:&gitCloneExitStatus];
         
         XCTAssert(nil != localRepo, @"Failed to create local repo.");
         XCTAssert(0 == gitCloneExitStatus, @"Git clone failed.");
+        
+        // Allow implicit merge during pull, overrides global config "pull.ff only" when it present.
+        [localRepo runGitCommand:@"config pull.ff true"];
+        
         return gitCloneExitStatus;
     });
     
@@ -282,13 +290,9 @@
 - (GitRepository *)pasteyRd2Repo {
     if (nil == _pasteyRd2Repo) {
         executeInDirectory(self.root, ^int{
-            int gitCloneExitStatus = 0;
-            _pasteyRd2Repo = [GitRepository cloneRepoAtURL:self.githubRd2Repo.absolutePath
-                                           destinationPath:@"pastey/projects/rd2"
-                                                exitStatus:&gitCloneExitStatus];
-            NSParameterAssert(_pasteyRd2Repo);
-            NSParameterAssert(0 == gitCloneExitStatus);
-            return gitCloneExitStatus;
+            _pasteyRd2Repo = [self cloneRepoAtURL:self.githubRd2Repo.absolutePath
+                                  destinationPath:@"pastey/projects/rd2"];
+            return S7ExitCodeSuccess;
         });
     }
 
@@ -298,13 +302,9 @@
 - (GitRepository *)nikRd2Repo {
     if (nil == _nikRd2Repo) {
         executeInDirectory(self.root, ^int{
-            int gitCloneExitStatus = 0;
-            _nikRd2Repo = [GitRepository cloneRepoAtURL:self.githubRd2Repo.absolutePath
-                                        destinationPath:@"nik/rd2"
-                                             exitStatus:&gitCloneExitStatus];
-            NSParameterAssert(_nikRd2Repo);
-            NSParameterAssert(0 == gitCloneExitStatus);
-            return gitCloneExitStatus;
+            _nikRd2Repo = [self cloneRepoAtURL:self.githubRd2Repo.absolutePath
+                               destinationPath:@"nik/rd2"];
+            return S7ExitCodeSuccess;
         });
     }
 
