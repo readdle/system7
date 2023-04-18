@@ -31,11 +31,8 @@
         fprintf(stderr, "s7: post-commit hook – ran in not git repo root!\n");
         return S7ExitCodeNotGitRepository;
     }
-
-    NSString *committedRevision = nil;
-    [repo getCurrentRevision:&committedRevision];
-
-    if (NO == [repo isMergeRevision:committedRevision]) {
+    
+    if (NO == [repo shouldExecutePostCommitHook]) {
         return 0;
     }
 
