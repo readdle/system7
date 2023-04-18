@@ -6,7 +6,7 @@
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import "Git.h"
+#import "Git+Tests.h"
 #import "GitFilter.h"
 #import "Utils.h"
 #import "S7IniConfig.h"

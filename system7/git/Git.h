@@ -117,15 +117,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface GitRepository (Tests)
-
-- (int)createFile:(NSString *)relativeFilePath withContents:(nullable NSString *)contents;
-- (void)run:(void (NS_NOESCAPE ^)(GitRepository *repo))block;
-
-- (int)runGitCommand:(NSString *)command;
-
-@property (nonatomic, class) void (^testRepoConfigureOnInitBlock)(GitRepository *repo);
-
-@end
-
 NS_ASSUME_NONNULL_END
