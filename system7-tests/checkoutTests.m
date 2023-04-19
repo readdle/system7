@@ -249,20 +249,20 @@
                     self.env.githubReaddleLibRepo.absolutePath);
         [repo commitWithMessage:@"add Libraries/ReaddleLib subrepo"];
         
-        // Save creation date of ReaddleLib
-        NSDate *(^getCreationDate)(NSString *) = ^(NSString *path){
-            return [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil] fileCreationDate];
+        // Save ReaddleLib file number.
+        NSUInteger(^getFSNumber)(NSString *) = ^(NSString *path){
+            return [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil] fileSystemFileNumber];
         };
-        NSDate *const originalFolderCreationDate = getCreationDate(featureReaddleLibPath);
+        const NSUInteger originalFolderFSNumber = getFSNumber(featureReaddleLibPath);
         
-        // Check that ReaddleLib folder is moved, not cloned during switch between by comparing creation dates.
+        // Check that ReaddleLib folder is moved, not cloned during switch between by comparing file numbers.
         [repo checkoutExistingLocalBranch:@"master"];
         XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
-        XCTAssertEqualObjects(originalFolderCreationDate, getCreationDate(masterReaddeLibPath));
+        XCTAssertEqual(originalFolderFSNumber, getFSNumber(masterReaddeLibPath));
         
         [repo checkoutExistingLocalBranch:@"feature"];
         XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
-        XCTAssertEqualObjects(originalFolderCreationDate, getCreationDate(featureReaddleLibPath));
+        XCTAssertEqual(originalFolderFSNumber, getFSNumber(featureReaddleLibPath));
     }];
 }
 
