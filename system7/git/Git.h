@@ -90,8 +90,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isRevision:(NSString *)revision knownAtLocalBranch:(NSString *)branchName;
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName;
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant;
-- (BOOL)isMergeRevision:(NSString *)revision;
 - (int)checkoutRevision:(NSString *)revision;
+- (BOOL)isCurrentRevisionMerge;
+- (BOOL)isCurrentRevisionCherryPickOrRevert;
 
 - (NSArray<NSString *> *)logNotPushedRevisionsOfFile:(NSString *)filePath
                                              fromRef:(NSString *)fromRef
@@ -114,17 +115,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (int)getRemote:(NSString * _Nullable __autoreleasing * _Nonnull)ppRemote;
 - (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl;
-
-@end
-
-@interface GitRepository (Tests)
-
-- (int)createFile:(NSString *)relativeFilePath withContents:(nullable NSString *)contents;
-- (void)run:(void (NS_NOESCAPE ^)(GitRepository *repo))block;
-
-- (int)runGitCommand:(NSString *)command;
-
-@property (nonatomic, class) void (^testRepoConfigureOnInitBlock)(GitRepository *repo);
 
 @end
 

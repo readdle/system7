@@ -167,8 +167,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 &dummy,
                 &dummy);
 
-    int exitCode = S7ExitCodeSuccess;
-
+    int exitCode = [self tryMovingSameOriginSubrepos:subreposToDelete.allValues
+                                 ifPresentInSubrepos:toConfig.subrepoDescriptions];
+    
     const int deleteExitCode = [self deleteSubrepos:subreposToDelete.allValues];
     if (S7ExitCodeSuccess != deleteExitCode) {
         exitCode = deleteExitCode;
@@ -352,6 +353,49 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         exitCode = initExitCode;
     }
 
+    return exitCode;
+}
+
++ (int)tryMovingSameOriginSubrepos:(NSArray<S7SubrepoDescription *> *)subrepos
+               ifPresentInSubrepos:(NSArray<S7SubrepoDescription *> *)subreposToCheckout
+{
+    if (subrepos.count == 0) {
+        return S7ExitCodeSuccess;
+    }
+    
+    NSMutableDictionary *const subrepoToURLMap = [NSMutableDictionary dictionaryWithCapacity:subreposToCheckout.count];
+    for (S7SubrepoDescription *subrepo in subreposToCheckout) {
+        subrepoToURLMap[subrepo.url] = subrepo;
+    }
+    
+    S7ExitCode exitCode = S7ExitCodeSuccess;
+    for (S7SubrepoDescription *subrepo in subrepos) {
+        S7SubrepoDescription *const sameSubrepo = subrepoToURLMap[subrepo.url];
+        if (sameSubrepo == nil) {
+            continue;
+        }
+        
+        NSError *error;
+        [[NSFileManager defaultManager] moveItemAtPath:subrepo.path
+                                                toPath:sameSubrepo.path
+                                                 error:&error];
+        if (error) {
+            fprintf(stderr,
+                    " abort: failed to move subrepo '%s' to '%s'\n"
+                    " error: %s\n",
+                    [subrepo.path fileSystemRepresentation],
+                    [sameSubrepo.path fileSystemRepresentation],
+                    [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+            exitCode = S7ExitCodeFileOperationFailed;
+        }
+        else {
+            fprintf(stdout,
+                    "\033[34m>\033[0m \033[1msubrepo '%s' renamed to '%s'\033[0m\n",
+                    [subrepo.path fileSystemRepresentation],
+                    [sameSubrepo.path fileSystemRepresentation]);
+        }
+    }
+    
     return exitCode;
 }
 

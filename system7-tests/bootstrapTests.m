@@ -23,6 +23,8 @@
 
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
         XCTAssertTrue([NSFileManager.defaultManager createFileAtPath:@".gitattributes" contents:nil attributes:nil]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -45,6 +47,8 @@
         [self runBootstrap];
 
         XCTAssertTrue([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -56,6 +60,8 @@
         [self runBootstrap];
 
         XCTAssertFalse([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -78,6 +84,8 @@
         [self runBootstrap];
 
         XCTAssertTrue([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -95,6 +103,8 @@
         [self runBootstrap];
 
         XCTAssertFalse([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 

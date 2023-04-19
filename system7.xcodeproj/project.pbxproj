@@ -107,6 +107,7 @@
 /* Begin PBXFileReference section */
 		2465939A24CA336700EFC5A0 /* HelpPager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HelpPager.h; sourceTree = "<group>"; };
 		2465939B24CA336700EFC5A0 /* HelpPager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HelpPager.m; sourceTree = "<group>"; };
+		2493CEE029EE88C500B9ECD8 /* Git+Tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Git+Tests.h"; sourceTree = "<group>"; };
 		40183E522915551100009EFD /* GitFilter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GitFilter.h; sourceTree = "<group>"; };
 		40183E532915558200009EFD /* GitFilter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GitFilter.m; sourceTree = "<group>"; };
 		6D73D3AF270702D0009AE0B9 /* S7IniConfigOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7IniConfigOptions.h; sourceTree = "<group>"; };
@@ -408,6 +409,7 @@
 			isa = PBXGroup;
 			children = (
 				BEE9289F2456DA6500BD6B86 /* Git.h */,
+				2493CEE029EE88C500B9ECD8 /* Git+Tests.h */,
 				BEE928A02456DA6500BD6B86 /* Git.m */,
 				40183E522915551100009EFD /* GitFilter.h */,
 				40183E532915558200009EFD /* GitFilter.m */,
@@ -763,7 +765,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.readdle.system7-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -783,7 +785,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.readdle.system7-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
