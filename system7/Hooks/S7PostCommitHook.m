@@ -32,7 +32,7 @@
         return S7ExitCodeNotGitRepository;
     }
     
-    if (NO == [repo shouldExecutePostCommitHook]) {
+    if ([S7PostCommitHook shouldSkipExecutionInRepo:repo]) {
         return 0;
     }
 
@@ -49,6 +49,13 @@
     }
 
     return [postMergeConfig saveToFileAtPath:S7ControlFileName];
+}
+
++ (BOOL)shouldSkipExecutionInRepo:(GitRepository *)repo {
+    // If revision is reverted or cherry-picked, post-commit is our only chanse to update substate.
+    // During merge post-merge hook is not called when merge is interrupted, although commit is
+    // recorded as a merge commit. During successful merge only post-merge is called.
+    return ([repo isCurrentRevisionMerge] || [repo isCurrentRevisionCherryPickOrRevert]) == NO;
 }
 
 @end

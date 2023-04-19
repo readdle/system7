@@ -91,7 +91,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName;
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant;
 - (int)checkoutRevision:(NSString *)revision;
-- (BOOL)shouldExecutePostCommitHook;
+- (BOOL)isCurrentRevisionMerge;
+- (BOOL)isCurrentRevisionCherryPickOrRevert;
 
 - (NSArray<NSString *> *)logNotPushedRevisionsOfFile:(NSString *)filePath
                                              fromRef:(NSString *)fromRef

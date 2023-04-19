@@ -755,21 +755,20 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return [possibleAncestor isEqualToString:mergeBaseRevision];
 }
 
-- (BOOL)shouldExecutePostCommitHook {
+- (BOOL)isCurrentRevisionMerge {
     NSString *devNull;
-    // Is it a merge revision?
-    int exitStatus = [self runGitCommand:@"show HEAD^2 -- -s"
-                            stdOutOutput:&devNull
-                            stdErrOutput:&devNull];
-    if (0 == exitStatus) {
-        return YES;
-    }
-    
-    // Is it cherry-pick or revert?
+    const int exitStatus = [self runGitCommand:@"show HEAD^2 -- -s"
+                                  stdOutOutput:&devNull
+                                  stdErrOutput:&devNull];
+    return exitStatus == 0;
+}
+ 
+- (BOOL)isCurrentRevisionCherryPickOrRevert {
     NSString *stdOut;
-    exitStatus = [self runGitCommand:@"reflog show -1"
-                        stdOutOutput:&stdOut
-                        stdErrOutput:&devNull];
+    NSString *devNull;
+    const int exitStatus = [self runGitCommand:@"reflog show -1"
+                                  stdOutOutput:&stdOut
+                                  stdErrOutput:&devNull];
     if (0 != exitStatus) {
         return NO;
     }
