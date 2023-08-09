@@ -27,7 +27,14 @@ assert git push
 
 cd "$S7_ROOT/nik"
 
-assert git clone '"$S7_ROOT/github/rd2"'
+# make sure that bootstrap uses PATH-agnostic (full path) "/usr/local/bin/s7"
+# by removing /usr/local/bin and $HOME/bin from PATH
+OLD_PATH="$PATH"
+PATH="/usr/bin:/bin"
+
+    assert git clone '"$S7_ROOT/github/rd2"'
+
+PATH="$OLD_PATH"
 
 cd rd2
 

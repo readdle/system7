@@ -733,6 +733,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = system7/system7.pch;
+				INSTALL_PATH = /bin;
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = s7;
 			};
@@ -746,6 +747,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = system7/system7.pch;
+				INSTALL_PATH = /bin;
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_NAME = s7;
 			};
@@ -760,11 +762,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "system7-tests/S7Tests.pch";
 				INFOPLIST_FILE = "system7-tests/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.readdle.system7-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -780,11 +777,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "system7-tests/S7Tests.pch";
 				INFOPLIST_FILE = "system7-tests/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.readdle.system7-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
