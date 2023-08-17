@@ -21,7 +21,7 @@ After `s7` is installed, we recommend to run `git config --global filter.s7.smud
 
 > This command will do the following at your machine:
 >  - download System 7 repo to `${HOME}/.system7`
->  - build and install three files to `/usr/local/bin/` – `s7`, `update-s7.sh` and `install-s7.sh`
+>  - build and install `s7` and three helper scripts to `$HOME/bin/` (`update-s7.sh`, `install-s7.sh`, and `uninstall-s7.sh`).
 >  - install `s7 filter` to global Git config
 
 If you want to update `s7` in the future, run `/usr/local/bin/update-s7.sh`.
