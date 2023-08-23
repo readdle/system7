@@ -22,6 +22,10 @@ function bootstrap() {
     rm -f "/usr/local/bin/s7" > /dev/null
     rm -f "/usr/local/bin/install-s7.sh" > /dev/null
     rm -f "/usr/local/bin/update-s7.sh" > /dev/null
+    rm -f "${HOME}/bin/s7" > /dev/null
+    rm -f "${HOME}/bin/install-s7.sh" > /dev/null
+    rm -f "${HOME}/bin/update-s7.sh" > /dev/null
+
 
     git clone -b master git@github.com:readdle/system7.git "${SYSTEM7_DIR}"
     if [ 0 -ne $? ]
