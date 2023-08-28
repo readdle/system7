@@ -24,7 +24,18 @@ After `s7` is installed, we recommend to run `git config --global filter.s7.smud
 >  - build and install `s7` and three helper scripts to `$HOME/bin/` (`update-s7.sh`, `install-s7.sh`, and `uninstall-s7.sh`).
 >  - install `s7 filter` to global Git config
 
-If you want to update `s7` in the future, run `/usr/local/bin/update-s7.sh`.
+If you want to update `s7` in the future, run `$HOME/bin/update-s7.sh`.
+
+Make a link to `"$HOME/bin/s7"` in `/usr/local/bin`.
+
+```
+# if /usr/local/bin doesn't exist, create it at first
+/usr/bin/sudo mkdir -p /usr/local/bin
+/usr/bin/sudo chown root:wheel /usr/local/bin
+/usr/bin/sudo chmod 755 /usr/local/bin
+
+/usr/bin/sudo ln -s "$HOME/bin/s7" /usr/local/bin/s7
+```
 
 ## Using S7 by Example
 
