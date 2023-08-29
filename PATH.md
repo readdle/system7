@@ -43,7 +43,7 @@ It made me sweat.
 
 With my own hands I made the team of about 30 engineers vulnerable to sudo spoofing.
 
-And then the dam had broken... I have a Homebrew version of Git on my machine. To use it, I **prepended** `/opt/homebrew/bin` to my `PATH`. And what are the rights of `/opt/homebrew/bin`? owner = $USER, 775. Well, alright, I did this with my own hands again. I decided to check what the internet has to say about it. Sure enough, you will find the same answer,– "prepend. the. `/opt/homebrew/bin`. to. your. PATH." Even worth. Take a look at what `/opt/homebrew/bin/brew shellenv` does – it... prepends `/opt/homebrew/bin` to your PATH.
+And then the dam had broken... I have a Homebrew version of Git on my machine. To use it, I **prepended** `/opt/homebrew/bin` to my `PATH`. And what are the rights of `/opt/homebrew/bin`? owner = $USER, 775. Well, alright, I did this with my own hands again. I decided to check what the internet has to say about it. Sure enough, you will find the same answer,– "prepend. the. `/opt/homebrew/bin`. to. your. PATH.". Even worse. Take a look at what `/opt/homebrew/bin/brew shellenv` does – it... prepends `/opt/homebrew/bin` to your PATH.
 
 Sure enough, when I decided to use `/usr/local/bin`, this directory permissions were modified by `Homebrew`. Of course, I'm to blame too. After reading the article above every piece of puzzle I knew before just made the whole picture.
 
