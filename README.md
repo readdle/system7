@@ -37,6 +37,8 @@ Make a link to `"$HOME/bin/s7"` in `/usr/local/bin`.
 /usr/bin/sudo ln -s "$HOME/bin/s7" /usr/local/bin/s7
 ```
 
+Please, read [this](PATH.md) to learn more details about `"$HOME/bin"` and `/usr/local/bin`.
+
 ## Using S7 by Example
 
 Imagine we have a team of developers working on… PDF Viewer application :)
