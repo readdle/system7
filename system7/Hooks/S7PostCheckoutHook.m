@@ -13,6 +13,7 @@
 #import "S7InitCommand.h"
 #import "S7BootstrapCommand.h"
 #import "S7Options.h"
+#import "S7Logging.h"
 
 static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberOfCommits) = nil;
 
@@ -23,9 +24,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "\ns7: post-checkout hook start\n");
+    logInfo("\ns7: post-checkout hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    fprintf(stdout, "s7: post-checkout hook complete\n");
+    logInfo("s7: post-checkout hook complete\n");
     return result;
 }
 
@@ -36,7 +37,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
-        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        logError("s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
     }
 
@@ -60,15 +61,13 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 
     if (NO == [repo isRevisionAvailableLocally:fromRevision] && NO == [fromRevision isEqualToString:[GitRepository nullRevision]]) {
-        fprintf(stderr,
-                "FROM_REV %s is not available in this repository\n",
+        logError("FROM_REV %s is not available in this repository\n",
                 [fromRevision cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
 
     if (NO == [repo isRevisionAvailableLocally:toRevision]) {
-        fprintf(stderr,
-                "TO_REV %s is not available in this repository\n",
+        logError("TO_REV %s is not available in this repository\n",
                 [toRevision cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
@@ -122,21 +121,23 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return checkoutExitStatus;
     }
 
-    if ([NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName]) {
-        if (0 != [toConfig saveToFileAtPath:S7ControlFileName]) {
-            fprintf(stderr,
-                    "failed to save %s to disk.\n",
-                    S7ControlFileName.fileSystemRepresentation);
+    NSString *configFileAbsolutePath = [repo.absolutePath stringByAppendingPathComponent:S7ConfigFileName];
+    NSString *controlFileAbsolutePath = [repo.absolutePath stringByAppendingPathComponent:S7ControlFileName];
+
+    if ([NSFileManager.defaultManager fileExistsAtPath:configFileAbsolutePath]) {
+        if (0 != [toConfig saveToFileAtPath:controlFileAbsolutePath]) {
+            logError("failed to save %s to disk.\n",
+                     S7ControlFileName.fileSystemRepresentation);
 
             return S7ExitCodeFileOperationFailed;
         }
     }
-    else if ([NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName]) {
+    else if ([NSFileManager.defaultManager fileExistsAtPath:controlFileAbsolutePath]) {
         NSError *error = nil;
-        if (NO == [NSFileManager.defaultManager removeItemAtPath:S7ControlFileName error:&error]) {
-            fprintf(stderr, "failed to remove %s. Error: %s\n",
-                    S7ControlFileName.fileSystemRepresentation,
-                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        if (NO == [NSFileManager.defaultManager removeItemAtPath:controlFileAbsolutePath error:&error]) {
+            logError("failed to remove %s. Error: %s\n",
+                     S7ControlFileName.fileSystemRepresentation,
+                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeFileOperationFailed;
         }
     }
@@ -167,10 +168,13 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 &dummy,
                 &dummy);
 
-    int exitCode = [self tryMovingSameOriginSubrepos:subreposToDelete.allValues
-                                 ifPresentInSubrepos:toConfig.subrepoDescriptions];
-    
-    const int deleteExitCode = [self deleteSubrepos:subreposToDelete.allValues];
+    __block int exitCode = [self tryMovingSameOriginSubrepos:subreposToDelete.allValues
+                                         ifPresentInSubrepos:toConfig.subrepoDescriptions
+                                      parentRepoAbsolutePath:repo.absolutePath];
+
+    const int deleteExitCode = [self
+                                deleteSubrepos:subreposToDelete.allValues
+                                parentRepoAbsolutePath:repo.absolutePath];
     if (S7ExitCodeSuccess != deleteExitCode) {
         exitCode = deleteExitCode;
     }
@@ -183,7 +187,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         const int getGitReposExitCode = [self
                                          getGitRepositoriesForSubrepoDescriptions:subreposToCheckout
                                          subrepoDescToGit:&subrepoDescToGit
-                                         corruptedSubrepoRepositoryIndices:&corruptedSubrepoRepositoryIndices];
+                                         corruptedSubrepoRepositoryIndices:&corruptedSubrepoRepositoryIndices
+                                         parentRepoAbsolutePath:repo.absolutePath];
         if (S7ExitCodeSuccess != getGitReposExitCode) {
             exitCode = getGitReposExitCode;
         }
@@ -238,39 +243,48 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         if (subreposWithUncommittedChangesIndices.count > 0) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "\n"
-                    "  subrepos with uncommitted local changes were not updated\n"
-                    "  to prevent possible data loss:\n\n");
+            logError("\n"
+                     "  subrepos with uncommitted local changes were not updated\n"
+                     "  to prevent possible data loss:\n\n");
 
             [subreposToCheckout
              enumerateObjectsAtIndexes:subreposWithUncommittedChangesIndices
              options:0
              usingBlock:^(S7SubrepoDescription * _Nonnull subrepoDesc, NSUInteger idx, BOOL * _Nonnull stop) {
-                fprintf(stderr, "    %s\n", [subrepoDesc.path fileSystemRepresentation]);
+                logError("    %s\n", [subrepoDesc.path fileSystemRepresentation]);
              }];
 
-            fprintf(stderr,
+            logError(
                     "\n"
                     "  Use `s7 reset` to discard subrepo changes.\n"
                     "  (see `s7 help reset` for more info)\n"
                     "\n"
                     "  Or you can run `git reset REV && git reset --hard REV`\n"
-                    "  in subrepo yourself.\n"
-                    "\033[0m");
+                    "  in subrepo yourself.\n");
 
             [subreposToCheckout removeObjectsAtIndexes:subreposWithUncommittedChangesIndices];
         }
     }
 
+    __auto_type recordFailingExitCode = ^(int operationExitCode) {
+        NSCAssert(S7ExitCodeSuccess != operationExitCode, @"please, send only failures here!");
+        if (S7ExitCodeSuccess != operationExitCode) {
+            @synchronized (self) {
+                exitCode = operationExitCode;
+            }
+        }
+    };
+
     NSMutableArray<GitRepository *> *subreposToInit = [NSMutableArray new];
 
-    for (S7SubrepoDescription *subrepoDesc in subreposToCheckout) {
+    dispatch_apply(subreposToCheckout.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
+
+        S7SubrepoDescription *subrepoDesc = subreposToCheckout[i];
+        NSString *subrepoAbsolutePath = [repo.absolutePath stringByAppendingPathComponent:subrepoDesc.path];
+
         GitRepository *subrepoGit = subrepoDescToGit[subrepoDesc];
 
-        fprintf(stdout,
-                "\033[34m>\033[0m \033[1mchecking out subrepo '%s'\033[0m\n",
+        logInfo("\033[34m>\033[0m \033[1mchecking out subrepo '%s'\033[0m\n",
                 [subrepoDesc.path fileSystemRepresentation]);
 
         if (subrepoGit) {
@@ -281,8 +295,9 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                                                         urlChanged:&subrepoUrlChanged
                                                             oldUrl:&oldUrl];
             if (S7ExitCodeSuccess != checkExitCode) {
-                exitCode = checkExitCode;
-                continue;
+                recordFailingExitCode(checkExitCode);
+
+                return;
             }
 
             if (subrepoUrlChanged) {
@@ -291,25 +306,25 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 // We still clone it to Dependencies/Thirdparty/lottie,
                 // but the remote is absolutely different.
                 //
-                fprintf(stdout,
-                        " detected that subrepo '%s' has migrated:\n"
-                        "  from '%s'\n"
-                        "  to '%s'\n"
-                        "  removing an old version...\n",
+                logInfo("  detected that subrepo '%s' has migrated:\n"
+                        "   from '%s'\n"
+                        "   to '%s'\n"
+                        "   removing an old version...\n",
                         [subrepoDesc.path fileSystemRepresentation],
                         [oldUrl cStringUsingEncoding:NSUTF8StringEncoding],
                         [subrepoDesc.url cStringUsingEncoding:NSUTF8StringEncoding]);
 
                 NSError *error = nil;
-                if (NO == [[NSFileManager defaultManager] removeItemAtPath:subrepoDesc.path error:&error]) {
-                    fprintf(stderr,
-                            "\033[31m"
-                            "failed to remove old version of '%s' from disk. Error: %s\n"
-                            "\033[0m",
-                            subrepoDesc.path.fileSystemRepresentation,
-                            [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-                    exitCode = S7ExitCodeFileOperationFailed;
-                    continue;
+                if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoAbsolutePath
+                                                                   error:&error])
+                {
+                    logError("failed to remove old version of '%s' from disk. Error: %s\n",
+                             subrepoDesc.path.fileSystemRepresentation,
+                             [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+
+                    recordFailingExitCode(S7ExitCodeFileOperationFailed);
+
+                    return;
                 }
 
                 subrepoGit = nil;
@@ -318,18 +333,23 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         if (nil == subrepoGit) {
-            const int cloneExitCode = [self cloneSubrepo:subrepoDesc subrepoGit:&subrepoGit];
+            const int cloneExitCode = [self cloneSubrepo:subrepoDesc
+                                  parentRepoAbsolutePath:repo.absolutePath
+                                              subrepoGit:&subrepoGit];
             if (S7ExitCodeSuccess != cloneExitCode) {
-                exitCode = cloneExitCode;
-                continue;
+                recordFailingExitCode(cloneExitCode);
+
+                return;
             }
 
             NSAssert(subrepoGit, @"");
 
             subrepoDescToGit[subrepoDesc] = subrepoGit;
 
-            if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoDesc.path stringByAppendingPathComponent:S7ConfigFileName]]) {
-                [subreposToInit addObject:subrepoGit];
+            if ([NSFileManager.defaultManager fileExistsAtPath:[subrepoAbsolutePath stringByAppendingPathComponent:S7ConfigFileName]]) {
+                @synchronized (self) {
+                    [subreposToInit addObject:subrepoGit];
+                }
             }
         }
 
@@ -339,14 +359,17 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                                                                          clean:clean
                                                              shouldInitSubrepo:&shouldInitSubrepo];
         if (S7ExitCodeSuccess != checkoutExitCode) {
-            exitCode = checkoutExitCode;
-            continue;
+            recordFailingExitCode(checkoutExitCode);
+
+            return;
         }
 
         if (shouldInitSubrepo) {
-            [subreposToInit addObject:subrepoGit];
+            @synchronized (self) {
+                [subreposToInit addObject:subrepoGit];
+            }
         }
-    }
+    });
 
     const S7ExitCode initExitCode = [self initS7InSubrepos:subreposToInit];
     if (S7ExitCodeSuccess != initExitCode) {
@@ -358,6 +381,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
 + (int)tryMovingSameOriginSubrepos:(NSArray<S7SubrepoDescription *> *)subrepos
                ifPresentInSubrepos:(NSArray<S7SubrepoDescription *> *)subreposToCheckout
+            parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
 {
     if (subrepos.count == 0) {
         return S7ExitCodeSuccess;
@@ -376,21 +400,19 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
         
         NSError *error;
-        [[NSFileManager defaultManager] moveItemAtPath:subrepo.path
-                                                toPath:sameSubrepo.path
+        [[NSFileManager defaultManager] moveItemAtPath:[parentRepoAbsolutePath stringByAppendingPathComponent:subrepo.path]
+                                                toPath:[parentRepoAbsolutePath stringByAppendingPathComponent:sameSubrepo.path]
                                                  error:&error];
         if (error) {
-            fprintf(stderr,
-                    " abort: failed to move subrepo '%s' to '%s'\n"
-                    " error: %s\n",
-                    [subrepo.path fileSystemRepresentation],
-                    [sameSubrepo.path fileSystemRepresentation],
-                    [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError(" abort: failed to move subrepo '%s' to '%s'\n"
+                     " error: %s\n",
+                     [subrepo.path fileSystemRepresentation],
+                     [sameSubrepo.path fileSystemRepresentation],
+                     [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
             exitCode = S7ExitCodeFileOperationFailed;
         }
         else {
-            fprintf(stdout,
-                    "\033[34m>\033[0m \033[1msubrepo '%s' renamed to '%s'\033[0m\n",
+            logInfo("\033[34m>\033[0m \033[1msubrepo '%s' renamed to '%s'\033[0m\n",
                     [subrepo.path fileSystemRepresentation],
                     [sameSubrepo.path fileSystemRepresentation]);
         }
@@ -399,13 +421,17 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     return exitCode;
 }
 
-+ (int)deleteSubrepos:(NSArray<S7SubrepoDescription *> *)subreposToDelete {
++ (int)deleteSubrepos:(NSArray<S7SubrepoDescription *> *)subreposToDelete
+    parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
+{
     int exitCode = S7ExitCodeSuccess;
     for (S7SubrepoDescription *subrepoToDelete in subreposToDelete) {
-        NSString *subrepoPath = subrepoToDelete.path;
+        NSString *subrepoRelativePath = subrepoToDelete.path;
+        NSString *subrepoAbsolutePath = [parentRepoAbsolutePath stringByAppendingPathComponent:subrepoRelativePath];
+
         BOOL isDirectory = NO;
-        if ([NSFileManager.defaultManager fileExistsAtPath:subrepoPath isDirectory:&isDirectory] && isDirectory) {
-            GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
+        if ([NSFileManager.defaultManager fileExistsAtPath:subrepoAbsolutePath isDirectory:&isDirectory] && isDirectory) {
+            GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoAbsolutePath];
             if (subrepoGit) {
                 const BOOL hasUnpushedCommits = [subrepoGit hasUnpushedCommits];
                 const BOOL hasUncommitedChanges = [subrepoGit hasUncommitedChanges];
@@ -423,23 +449,21 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
                     NSAssert(reason, @"");
 
-                    fprintf(stderr,
-                            "⚠️  not removing repo '%s' because it has %s.\n",
-                            subrepoPath.fileSystemRepresentation,
-                            reason);
+                    logError("  not removing repo '%s' because it has %s.\n",
+                             subrepoRelativePath.fileSystemRepresentation,
+                             reason);
                     continue;
                 }
             }
 
-            fprintf(stdout, "\033[31m>\033[0m \033[1mremoving subrepo '%s'\033[0m\n", subrepoPath.fileSystemRepresentation);
+            logInfo("\033[31m>\033[0m \033[1mremoving subrepo '%s'\033[0m\n", subrepoRelativePath.fileSystemRepresentation);
 
             NSError *error = nil;
-            if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoPath error:&error]) {
-                fprintf(stderr,
-                        " abort: failed to remove subrepo '%s' directory\n"
-                        " error: %s\n",
-                        [subrepoPath fileSystemRepresentation],
-                        [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+            if (NO == [NSFileManager.defaultManager removeItemAtPath:subrepoAbsolutePath error:&error]) {
+                logError(" abort: failed to remove subrepo '%s' directory\n"
+                         " error: %s\n",
+                         [subrepoRelativePath fileSystemRepresentation],
+                         [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
                 exitCode = S7ExitCodeFileOperationFailed;
             }
         }
@@ -451,24 +475,28 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 + (int)getGitRepositoriesForSubrepoDescriptions:(NSArray<S7SubrepoDescription *> *)subrepoDescriptions
                                subrepoDescToGit:(NSMutableDictionary<S7SubrepoDescription *, GitRepository *> **)ppSubrepoDescToGit
               corruptedSubrepoRepositoryIndices:(NSIndexSet **)ppCorruptedSubrepoRepositoryIndices
+                         parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
 {
     int exitCode = S7ExitCodeSuccess;
 
     NSMutableIndexSet *corruptedSubrepoRepositoryIndices = [NSMutableIndexSet new];
-    NSMutableDictionary<S7SubrepoDescription *, GitRepository *> *subrepoDescToGit = [NSMutableDictionary dictionaryWithCapacity:subrepoDescriptions.count];
+    NSMutableDictionary<S7SubrepoDescription *, GitRepository *> *subrepoDescToGit =
+        [NSMutableDictionary dictionaryWithCapacity:subrepoDescriptions.count];
 
     for (NSUInteger i = 0; i < subrepoDescriptions.count; ++i) {
         S7SubrepoDescription *subrepoDesc = subrepoDescriptions[i];
 
         BOOL isDirectory = NO;
-        if ([NSFileManager.defaultManager fileExistsAtPath:subrepoDesc.path isDirectory:&isDirectory] && isDirectory) {
-            GitRepository *subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoDesc.path];
+        NSString *subrepoAbsolutePath = [parentRepoAbsolutePath stringByAppendingPathComponent:subrepoDesc.path];
+        if ([NSFileManager.defaultManager fileExistsAtPath:subrepoAbsolutePath isDirectory:&isDirectory] && isDirectory) {
+            GitRepository *subrepoGit = [[GitRepository alloc] initWithRepoPath:subrepoAbsolutePath];
             if (nil == subrepoGit) {
                 [corruptedSubrepoRepositoryIndices addIndex:i];
                 exitCode = S7ExitCodeSubrepoIsNotGitRepository;
                 continue;
             }
 
+            subrepoGit.redirectOutputToMemory = YES;
             subrepoDescToGit[subrepoDesc] = subrepoGit;
         }
     }
@@ -502,27 +530,20 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         if (NO == clean) {
-            @synchronized (self) {
-                // use fprintf in synchronized to make sure output of several parallel operation doesn't get mixed
-                fprintf(stderr,
-                        "\033[31m"
-                        "  uncommited local changes in subrepo '%s'\n"
-                        "\033[0m",
-                        subrepoDesc.path.fileSystemRepresentation);
+            logError("  uncommited local changes in subrepo '%s'\n",
+                     subrepoDesc.path.fileSystemRepresentation);
 
+            @synchronized (self) {
                 [indicesOfSubreposWithUncommittedChanges addIndex:i];
             }
         }
         else {
             const int resetExitStatus = [subrepoGit resetLocalChanges];
             if (0 != resetExitStatus) {
-                @synchronized (self) {
-                    fprintf(stderr,
-                            "\033[31m"
-                            "  failed to discard uncommited changes in subrepo '%s'\n"
-                            "\033[0m",
-                            subrepoDesc.path.fileSystemRepresentation);
+                logError("  failed to discard uncommited changes in subrepo '%s'\n",
+                         subrepoDesc.path.fileSystemRepresentation);
 
+                @synchronized (self) {
                     [indicesOfSubreposWithUncommittedChanges addIndex:i];
                 }
             }
@@ -558,6 +579,10 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                               clean:(BOOL)clean
                   shouldInitSubrepo:(BOOL *)shouldInitSubrepo
 {
+    NSAssert(subrepoGit.redirectOutputToMemory,
+             @"not to produce soup in the output, we buffer every git command output, "
+              "and, if necessary, can dump it out in coordinated manner, once the command is done.");
+
     NSString *currentBranch = nil;
     BOOL isEmptyRepo = NO;
     BOOL isDetachedHEAD = NO;
@@ -571,11 +596,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
         else {
             NSAssert(NO, @"");
-            fprintf(stderr,
-                    "\033[31m"
-                    "  unexpected subrepo '%s' state. Failed to detect current branch.\n"
-                    "\033[0m",
-                    expectedSubrepoStateDesc.path.fileSystemRepresentation);
+            logError("  unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                     expectedSubrepoStateDesc.path.fileSystemRepresentation);
             return S7ExitCodeGitOperationFailed;
         }
     }
@@ -591,19 +613,17 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         //
         S7Config *subConfigToResetTo = nil;
         const int getConfigExitStatus = getConfig(subrepoGit, expectedSubrepoStateDesc.revision, &subConfigToResetTo);
-        if (0 != getConfigExitStatus) {
+        if (S7ExitCodeSuccess != getConfigExitStatus) {
             return getConfigExitStatus;
         }
 
-        const int checkoutExitStatus = executeInDirectory(expectedSubrepoStateDesc.path, ^int{
-            return [S7PostCheckoutHook
-                    checkoutSubreposForRepo:subrepoGit
-                    fromConfig:[S7Config emptyConfig]
-                    toConfig:subConfigToResetTo
-                    clean:YES];
-        });
+        const int checkoutExitStatus =
+            [S7PostCheckoutHook checkoutSubreposForRepo:subrepoGit
+                                             fromConfig:[S7Config emptyConfig]
+                                               toConfig:subConfigToResetTo
+                                                  clean:YES];
 
-        if (0 != checkoutExitStatus) {
+        if (S7ExitCodeSuccess != checkoutExitStatus) {
             return checkoutExitStatus;
         }
     }
@@ -621,17 +641,15 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         if (isS7Repo(subrepoGit)) {
             S7Config *subrepoConfig = nil;
             const int getConfigExitStatus = getConfig(subrepoGit, expectedSubrepoStateDesc.revision, &subrepoConfig);
-            if (0 != getConfigExitStatus) {
+            if (S7ExitCodeSuccess != getConfigExitStatus) {
                 return getConfigExitStatus;
             }
 
-            const int checkoutExitStatus = executeInDirectory(expectedSubrepoStateDesc.path, ^int{
-                return [S7PostCheckoutHook
-                        checkoutSubreposForRepo:subrepoGit
-                        fromConfig:subrepoConfig
-                        toConfig:subrepoConfig
-                        clean:clean];
-            });
+            const int checkoutExitStatus = [S7PostCheckoutHook
+                                            checkoutSubreposForRepo:subrepoGit
+                                            fromConfig:subrepoConfig
+                                            toConfig:subrepoConfig
+                                            clean:clean];
 
             if (S7ExitCodeSuccess != checkoutExitStatus) {
                 return checkoutExitStatus;
@@ -658,29 +676,32 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     // fetch when possible. One option is to perform fetch only if local branch is ahead of remote.
     //
 //    if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
-        fprintf(stdout,
-                "  fetching '%s'\n",
+        logInfo("  fetching '%s'\n",
                 [expectedSubrepoStateDesc.path fileSystemRepresentation]);
 
         S7Options *options = [S7Options new];
         if (0 != [subrepoGit fetchWithFilter:options.filter]) {
+            logError("  failed to fetch '%s':\n%s\n\n",
+                     [expectedSubrepoStateDesc.path fileSystemRepresentation],
+                     [subrepoGit.lastCommandStdErrOutput cStringUsingEncoding:NSUTF8StringEncoding]);
+
             return S7ExitCodeGitOperationFailed;
         }
 
+        logInfo("  fetched '%s'\n",
+                [expectedSubrepoStateDesc.path fileSystemRepresentation]);
+
         if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "  revision '%s' does not exist in '%s'\n"
-                    "\033[0m",
-                    [expectedSubrepoStateDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
-                    [expectedSubrepoStateDesc.path fileSystemRepresentation]);
+            logError("  revision '%s' does not exist in '%s'\n",
+                     [expectedSubrepoStateDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
+                     [expectedSubrepoStateDesc.path fileSystemRepresentation]);
 
             return S7ExitCodeInvalidSubrepoRevision;
         }
 //    }
 
-    fprintf(stdout,
-            "  switching to %s\n",
+    logInfo("  switching '%s' to %s\n",
+            [expectedSubrepoStateDesc.path fileSystemRepresentation],
             [expectedSubrepoStateDesc.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
     // `git checkout -B branch revision`
@@ -705,46 +726,59 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     return S7ExitCodeSuccess;
 }
 
-+ (int)cloneSubrepo:(S7SubrepoDescription *)subrepoDesc subrepoGit:(GitRepository **)ppSubrepoGit {
-    fprintf(stdout,
-            "  cloning from '%s'\n",
++ (int)cloneSubrepo:(S7SubrepoDescription *)subrepoDesc
+parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
+         subrepoGit:(GitRepository **)ppSubrepoGit
+{
+    logInfo("  cloning from '%s'\n",
             [subrepoDesc.url fileSystemRepresentation]);
 
     int cloneExitStatus = 0;
+
+    NSString *subrepoAbsolutePath = [parentRepoAbsolutePath stringByAppendingPathComponent:subrepoDesc.path];
+
+    // in case of clone, Git sends all output to stderr
+    NSString *gitOutput = nil;
 
     S7Options *options = [S7Options new];
     GitRepository *subrepoGit = [GitRepository
                                  cloneRepoAtURL:subrepoDesc.url
                                  branch:subrepoDesc.branch
                                  bare:NO
-                                 destinationPath:subrepoDesc.path
+                                 destinationPath:subrepoAbsolutePath
                                  filter:options.filter
+                                 stdOutOutput:&gitOutput
+                                 stdErrOutput:&gitOutput
                                  exitStatus:&cloneExitStatus];
     if (nil == subrepoGit || 0 != cloneExitStatus) {
-        fprintf(stderr,
-                "⚠️  failed to clone '%s' with exact branch '%s'. Will retry to clone default branch and switch to the revision\n",
-                [subrepoDesc.path fileSystemRepresentation],
-                [subrepoDesc.branch cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("  failed to clone '%s' with exact branch '%s'. Will retry to clone default branch and switch to the revision\n",
+                 [subrepoDesc.path fileSystemRepresentation],
+                 [subrepoDesc.branch cStringUsingEncoding:NSUTF8StringEncoding]);
 
         cloneExitStatus = 0;
         subrepoGit = [GitRepository
                       cloneRepoAtURL:subrepoDesc.url
-                      destinationPath:subrepoDesc.path
+                      branch:nil
+                      bare:NO
+                      destinationPath:subrepoAbsolutePath
                       filter:options.filter
+                      stdOutOutput:&gitOutput
+                      stdErrOutput:&gitOutput
                       exitStatus:&cloneExitStatus];
 
         if (nil == subrepoGit || 0 != cloneExitStatus) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "  failed to clone subrepo '%s'\n"
-                    "\033[0m",
-                    [subrepoDesc.path fileSystemRepresentation]);
+            logError("  failed to clone subrepo '%s':\n%s\n\n",
+                     [subrepoDesc.path fileSystemRepresentation],
+                     [gitOutput cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeGitOperationFailed;
         }
     }
 
+    logInfo("  cloned subrepo '%s'", [subrepoDesc.path fileSystemRepresentation]);
+
     NSAssert(subrepoGit, @"");
     *ppSubrepoGit = subrepoGit;
+    subrepoGit.redirectOutputToMemory = YES;
 
     return S7ExitCodeSuccess;
 }
@@ -799,8 +833,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     // We warn user about this situation
     //
 
-    fprintf(stdout,
-            "\033[33m"
+    logInfo("\033[33m"
             "Warning: you are leaving %d commit(s) behind, not connected to\n"
             "any of your pushed branches in %s:\n"
             "\n"
@@ -837,6 +870,10 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
 + (int)initS7InSubrepos:(NSArray<GitRepository *> *)subrepos {
     int result = S7ExitCodeSuccess;
+
+    NSAssert(NSThread.isMainThread,
+             @"if someday this code gets parrallelized, we will have to remove `executeInDirectory` here."
+              "Different threads will mess with it, resulting in undefined (read bad) checkout/init results.");
 
     for (GitRepository *subrepoGit in subrepos) {
         NSAssert([NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]], @"");

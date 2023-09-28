@@ -145,22 +145,50 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                                     filter:(GitFilter)filter
                                 exitStatus:(int *)exitStatus
 {
-    NSString *filterOption = @"";
+    return [self cloneRepoAtURL:url
+                         branch:branch
+                           bare:bare
+                destinationPath:destinationPath
+                         filter:filter
+                   stdOutOutput:NULL
+                   stdErrOutput:NULL
+                     exitStatus:exitStatus];
+}
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+                              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+                                exitStatus:(int *)exitStatus
+{
+    NSMutableArray<NSString *> *arguments = [NSMutableArray new];
+
+    [arguments addObject:@"clone"];
+
     if (filter == GitFilterBlobNone) {
-        filterOption = [NSString stringWithFormat: @"--filter=%@", kGitFilterBlobNone];
+        [arguments addObject:[NSString stringWithFormat: @"--filter=%@", kGitFilterBlobNone]];
     }
     
-    NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
-    NSString *bareOption = bare ? @"--bare" : @"";
-    
-    NSString *command = [NSString stringWithFormat:@"git clone %@ %@ %@ \"%@\" \"%@\"",
-                         filterOption,
-                         branchOption,
-                         bareOption,
-                         url,
-                         destinationPath];
+    if (branch.length > 0) {
+        [arguments addObject:@"-b"];
+        [arguments addObject:branch];
+    }
 
-    *exitStatus = [self executeCommand:command];
+    if (bare) {
+        [arguments addObject:@"--bare"];
+    }
+
+    [arguments addObject:url];
+    [arguments addObject:destinationPath];
+
+    *exitStatus = [self
+                   runGitWithArguments:arguments
+                   stdOutOutput:ppStdOutOutput
+                   stdErrOutput:ppStdErrOutput
+                   currentDirectoryPath:nil];
 
     if (0 != *exitStatus) {
         return nil;
@@ -249,24 +277,60 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     //  2. s7 starts cloning subrepos (GIT_DIR set for the hook in main repo is still there)
     //  3. s7 calls `git cat-file -e <hash>` and Git is confused, working dir is in subrepo,
     //     GIT_DIR is in the main repo. In our case `cat-file` resulted workin in the main repo.
-    //     Sure, it could find the commit from the subrepo in the main repo.
+    //     Sure, it could not find the commit from the subrepo in the main repo.
     //
     // Maybe I could unset GIT_DIR in every hook we write. This would be less centralized
     // and more error prone, as if we add any new hook, we would have to remember about
     // GIT_DIR issue.
     //
     NSString *dotGitDirPath = self.isBareRepo
-                                ? self.absolutePath
-                                : [self.absolutePath stringByAppendingPathComponent:@".git"];
+    ? self.absolutePath
+    : [self.absolutePath stringByAppendingPathComponent:@".git"];
     NSString *gitDirOption = [@"--git-dir=" stringByAppendingString:dotGitDirPath];
     NSArray<NSString *> *defaultArguments = @[ gitDirOption ];
 
     arguments = [defaultArguments arrayByAddingObjectsFromArray:arguments];
 
+    NSString *stdOutOutput = nil;
+    NSString *stdErrOutput = nil;
+
+    _lastCommandStdOutOutput = nil;
+    _lastCommandStdErrOutput = nil;
+
+    const int exitCode = 
+        [self.class
+         runGitWithArguments:arguments
+         stdOutOutput:(NULL != ppStdOutOutput || self.redirectOutputToMemory) ? &stdOutOutput : NULL
+         stdErrOutput:(NULL != ppStdErrOutput || self.redirectOutputToMemory) ? &stdErrOutput : NULL
+         currentDirectoryPath:self.absolutePath];
+
+    if (ppStdOutOutput) {
+        *ppStdOutOutput = stdOutOutput;
+    }
+
+    if (ppStdErrOutput) {
+        *ppStdErrOutput = stdErrOutput;
+    }
+
+    if (self.redirectOutputToMemory) {
+        _lastCommandStdOutOutput = stdOutOutput;
+        _lastCommandStdErrOutput = stdErrOutput;
+    }
+
+    return exitCode;
+}
+
++ (int)runGitWithArguments:(NSArray<NSString *> *)arguments
+              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+      currentDirectoryPath:(NSString * _Nullable)currentDirectoryPath
+{
     NSTask *task = [NSTask new];
-    [task setLaunchPath:[self.class envGitExecutablePath]];
+    [task setLaunchPath:[self envGitExecutablePath]];
     [task setArguments:arguments];
-    task.currentDirectoryURL = [NSURL fileURLWithPath:self.absolutePath];
+    if (currentDirectoryPath) {
+        task.currentDirectoryURL = [NSURL fileURLWithPath:currentDirectoryPath];
+    }
 
     // https://stackoverflow.com/questions/49184623/nstask-race-condition-with-readabilityhandler-block
     // we must use semaphore to make sure we finish reading from pipes properly once task finished it's execution.
@@ -290,7 +354,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
             }
         };
     };
-    
+
     __autoreleasing NSString * __stdOutOutputGuarantee;
     if ([self.class envGitTraceEnabled] && nil == ppStdOutOutput) {
         ppStdOutOutput = &__stdOutOutputGuarantee;
