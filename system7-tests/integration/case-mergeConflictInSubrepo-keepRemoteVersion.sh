@@ -45,7 +45,7 @@ assert git commit -m '"up ReaddleLib"'
 
 echo
 echo
-echo R | git merge experiment
+S7_MERGE_DRIVER_RESPONSE="r" git merge --no-edit experiment
 assert test 0 -eq $?
 
 echo

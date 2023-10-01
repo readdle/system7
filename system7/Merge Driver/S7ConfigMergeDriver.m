@@ -27,14 +27,14 @@
      {
         void *self __attribute((unused)) __attribute((unavailable));
 
-        const int BUF_LEN = 20;
-        char buf[BUF_LEN];
-
-        if (ourVersion && theirVersion) {
+        NSString *const response = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_RESPONSE"];
+        if (response) {
             S7ConflictResolutionOption resolution;
-            
-            NSString *const response = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_RESPONSE"];
-            if (response.length > 0 && [S7ConfigMergeDriver mergeResolution:&resolution forUserInput:[response characterAtIndex:0]]) {
+            if (response.length > 0 &&
+                [S7ConfigMergeDriver mergeResolution:&resolution
+                                        forUserInput:[response characterAtIndex:0]
+                                  allowedResolutions:~0])
+            {
                 NSString *resolutionString;
                 switch (resolution) {
                     case S7ConflictResolutionOptionMerge:
@@ -46,8 +46,14 @@
                     case S7ConflictResolutionOptionKeepRemote:
                         resolutionString = @"keep remote";
                         break;
-                    default:
-                        resolutionString = @"";
+                    case S7ConflictResolutionOptionKeepChanged:
+                        resolutionString = @"keep changed";
+                        break;
+                    case S7ConflictResolutionOptionDelete:
+                        resolutionString = @"delete";
+                        break;
+                    case S7ConflictResolutionOptionKeepConflict:
+                        resolutionString = @"keep conflict";
                         break;
                 }
 
@@ -65,14 +71,32 @@
 
                 return resolution;
             }
-            else if (response != nil) {
+            else {
                 fprintf(stderr,
                         "\033[31m"
                         "  failed to recognize S7_MERGE_DRIVER_RESPONSE: '%s'\n"
                         "\033[0m",
                         [response cStringUsingEncoding:NSUTF8StringEncoding]);
             }
-            
+        }
+
+        if (!isatty(fileno(stdin))) {
+            fprintf(stderr,
+                    "\033[31m"
+                    "to run interactive merge of s7 subrepos, please run the following command in Terminal:\n"
+                    "\033[1m"
+                    "  git checkout -m .s7substate\n\n"
+                    "\033[m"
+                    "\033[0m");
+            return S7ConflictResolutionOptionKeepConflict;
+        }
+
+        if (ourVersion && theirVersion) {
+            S7ConflictResolutionOption possibleConflictResolutionOptions =
+                S7ConflictResolutionOptionKeepLocal |
+                S7ConflictResolutionOptionKeepRemote |
+                S7ConflictResolutionOptionMerge;
+
             // should write this to stdout or stderr?
             fprintf(stdout,
                     "\n"
@@ -86,21 +110,17 @@
                     [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]
             );
 
-            do {
-                char *userInput = fgets(buf, BUF_LEN, stdin);
-                if (userInput && strlen(userInput) >= 1 && [S7ConfigMergeDriver mergeResolution:&resolution forUserInput:userInput[0]]) {
-                    return resolution;
-                }
-
-                fprintf(stdout,
-                        "\n  sorry?\n"
-                        "  (m)erge, keep (l)ocal or keep (r)emote.\n"
-                        "  what do you want to do? ");
-            }
-            while (1);
+            return [S7ConfigMergeDriver
+                    readConflictResolutionFromStdinWithAllowedOptions:possibleConflictResolutionOptions
+                    prompt:@"\n  sorry?\n"
+                            "  (m)erge, keep (l)ocal or keep (r)emote.\n"
+                            "  what do you want to do? "];
         }
         else {
             NSCAssert(ourVersion || theirVersion, @"");
+            S7ConflictResolutionOption possibleConflictResolutionOptions =
+                    S7ConflictResolutionOptionKeepChanged |
+                    S7ConflictResolutionOptionDelete;
 
             if (ourVersion) {
                 fprintf(stdout,
@@ -115,22 +135,10 @@
                         ourVersion.path.fileSystemRepresentation);
             }
 
-            do {
-                char *userInput = fgets(buf, BUF_LEN, stdin);
-                if (userInput && strlen(userInput) >= 1) {
-                    if (tolower(userInput[0]) == 'c') {
-                        return S7ConflictResolutionOptionKeepChanged;
-                    }
-                    else if (tolower(userInput[0]) == 'd') {
-                        return S7ConflictResolutionOptionDelete;
-                    }
-                }
-
-                fprintf(stdout,
-                        "\n  sorry?\n"
-                        "  use (c)hanged version or (d)elete? ");
-            }
-            while (1);
+            return [S7ConfigMergeDriver
+                    readConflictResolutionFromStdinWithAllowedOptions:possibleConflictResolutionOptions
+                    prompt:@"\n  sorry?\n"
+                            "  use (c)hanged version or (d)elete? "];
         }
      }];
 
@@ -440,46 +448,12 @@ saveResultToFilePath:(NSString *)resultFilePath
 
             S7SubrepoDescriptionConflict *conflict = (S7SubrepoDescriptionConflict *)subrepoDesc;
 
-            S7ConflictResolutionOption possibleConflictResolutionOptions = 0;
-            if (conflict.ourVersion && conflict.theirVersion) {
-                possibleConflictResolutionOptions =
-                    S7ConflictResolutionOptionKeepLocal |
-                    S7ConflictResolutionOptionKeepRemote |
-                    S7ConflictResolutionOptionMerge;
+            const S7ConflictResolutionOption userDecision = self.resolveConflictBlock(conflict.ourVersion,
+                                                                                      conflict.theirVersion);
+
+            if (S7ConflictResolutionOptionKeepConflict == userDecision) {
+                conflictResolved = NO;
             }
-            else {
-                NSAssert(conflict.ourVersion || conflict.theirVersion, @"");
-                possibleConflictResolutionOptions =
-                    S7ConflictResolutionOptionKeepChanged |
-                    S7ConflictResolutionOptionDelete;
-            }
-
-            NSUInteger numberOfTries = 0;
-            S7ConflictResolutionOption userDecision = 0;
-            do {
-                ++numberOfTries;
-                if (numberOfTries > 10) {
-                    fprintf(stderr, "too many attempts – will leave conflict unresolved\n");
-                    userDecision = S7ConflictResolutionOptionKeepConflict;
-                    conflictResolved = NO;
-                    NSAssert(NO, @"");
-                    break;
-                }
-
-                userDecision = self.resolveConflictBlock(conflict.ourVersion,
-                                                         conflict.theirVersion);
-
-                if (NO == isExactlyOneBitSetInNumber(userDecision)) {
-                    continue;
-                }
-
-                if (0 == (possibleConflictResolutionOptions & userDecision)) {
-                    continue;
-                }
-
-                break;
-
-            } while (1);
 
             switch (userDecision) {
                 case S7ConflictResolutionOptionKeepLocal:
@@ -527,11 +501,11 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     const int configSaveResult = [mergeResult saveToFileAtPath:resultFilePath];
-    if (0 != configSaveResult) {
+    if (S7ExitCodeSuccess != configSaveResult) {
         return configSaveResult;
     }
 
-    if (0 != [mergeResult saveToFileAtPath:S7ControlFileName]) {
+    if (S7ExitCodeSuccess != [mergeResult saveToFileAtPath:S7ControlFileName]) {
         fprintf(stderr,
                 "failed to save %s to disk.\n",
                 S7ControlFileName.fileSystemRepresentation);
@@ -546,21 +520,74 @@ saveResultToFilePath:(NSString *)resultFilePath
     return [S7PostCheckoutHook checkoutSubreposForRepo:repo fromConfig:ourConfig toConfig:mergeResult];
 }
 
-+ (BOOL)mergeResolution:(S7ConflictResolutionOption *)resolution forUserInput:(char)userInput {
++ (S7ConflictResolutionOption)readConflictResolutionFromStdinWithAllowedOptions:(S7ConflictResolutionOption)allowedResolutions
+                                                                         prompt:(NSString *)prompt
+{
+    const int BUF_LEN = 20;
+    char buf[BUF_LEN];
+
+    NSUInteger numberOfTries = 0;
+    do {
+        ++numberOfTries;
+
+        S7ConflictResolutionOption resolution;
+        char *userInput = fgets(buf, BUF_LEN, stdin);
+        if (userInput &&
+            strlen(userInput) >= 1 &&
+            [S7ConfigMergeDriver mergeResolution:&resolution
+                                    forUserInput:userInput[0]
+                              allowedResolutions:allowedResolutions])
+        {
+            return resolution;
+        }
+
+        fprintf(stdout, "%s", [prompt cStringUsingEncoding:NSUTF8StringEncoding]);
+    }
+    while (numberOfTries < 5);
+
+    fprintf(stderr, "too many attempts – will leave the conflict unresolved\n");
+
+    return S7ConflictResolutionOptionKeepConflict;
+}
+
++ (BOOL)mergeResolution:(S7ConflictResolutionOption *)pResolution
+           forUserInput:(char)userInput
+     allowedResolutions:(S7ConflictResolutionOption)allowedResolutions
+{
     userInput = tolower(userInput);
+
+    S7ConflictResolutionOption userResolution;
     switch (userInput) {
         case 'm':
-            *resolution = S7ConflictResolutionOptionMerge;
-            return YES;
+            userResolution = S7ConflictResolutionOptionMerge;
+            break;
+
         case 'l':
-            *resolution = S7ConflictResolutionOptionKeepLocal;
-            return YES;
+            userResolution = S7ConflictResolutionOptionKeepLocal;
+            break;
+
         case 'r':
-            *resolution = S7ConflictResolutionOptionKeepRemote;
-            return YES;
+            userResolution = S7ConflictResolutionOptionKeepRemote;
+            break;
+
+        case 'c':
+            userResolution = S7ConflictResolutionOptionKeepChanged;
+            break;
+
+        case 'd':
+            userResolution = S7ConflictResolutionOptionDelete;
+            break;
+
         default:
             return NO;
     }
+
+    if (0 != (userResolution & allowedResolutions)) {
+        *pResolution = userResolution;
+        return YES;
+    }
+
+    return NO;
 }
 
 @end

@@ -52,9 +52,24 @@ popd > /dev/null
 assert s7 rebind --stage
 assert git commit -m '"up ReaddleLib"'
 
+# first try non-interactive merge "via GUI app"
+echo "emulating GUI Git client that doesn't support interactive stdin" |
+    git merge --no-edit experiment
+assert test 0 -ne $?
+
+echo
+echo "resulting .s7substate:"
+cat .s7substate
+echo
+
+assert grep '"<<<"' .s7substate > /dev/null
+
+assert git merge --abort
+
+
 echo
 echo
-echo m | git merge experiment
+S7_MERGE_DRIVER_RESPONSE="m" git merge --no-edit experiment
 assert test 0 -ne $?
 
 echo
