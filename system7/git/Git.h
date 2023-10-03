@@ -43,6 +43,15 @@ NS_ASSUME_NONNULL_BEGIN
                                     filter:(GitFilter)filter
                                 exitStatus:(int *)exitStatus;
 
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+                              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+                                exitStatus:(int *)exitStatus;
+
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path
                                                   bare:(BOOL)bare
                                      defaultBranchName:(nullable NSString *)defaultBranchName
@@ -50,6 +59,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 @property (nonatomic, readonly, strong) NSString *absolutePath;
+
+// If set to YES, collect every command output executed on this instance to the
+// `lastCommandStdOutOutput` and `lastCommandStdErrOutput`.
+// If set to NO, git output goes directly to the corresponding stdout/stderr
+// bound to the process.
+// Default value: NO
+@property (nonatomic, readwrite) BOOL redirectOutputToMemory;
+@property (nonatomic, readonly, nullable) NSString *lastCommandStdOutOutput;
+@property (nonatomic, readonly, nullable) NSString *lastCommandStdErrOutput;
 
 - (BOOL)isEmptyRepo;
 - (BOOL)isBareRepo;
