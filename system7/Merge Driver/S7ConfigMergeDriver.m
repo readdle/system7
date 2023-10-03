@@ -25,121 +25,7 @@
     [self setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nullable ourVersion,
                                                               S7SubrepoDescription * _Nullable theirVersion)
      {
-        void *self __attribute((unused)) __attribute((unavailable));
-
-        NSString *const response = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_RESPONSE"];
-        if (response) {
-            S7ConflictResolutionOption resolution;
-            if (response.length > 0 &&
-                [S7ConfigMergeDriver mergeResolution:&resolution
-                                        forUserInput:[response characterAtIndex:0]
-                                  allowedResolutions:~0])
-            {
-                NSString *resolutionString;
-                switch (resolution) {
-                    case S7ConflictResolutionOptionMerge:
-                        resolutionString = @"merge";
-                        break;
-                    case S7ConflictResolutionOptionKeepLocal:
-                        resolutionString = @"keep local";
-                        break;
-                    case S7ConflictResolutionOptionKeepRemote:
-                        resolutionString = @"keep remote";
-                        break;
-                    case S7ConflictResolutionOptionKeepChanged:
-                        resolutionString = @"keep changed";
-                        break;
-                    case S7ConflictResolutionOptionDelete:
-                        resolutionString = @"delete";
-                        break;
-                    case S7ConflictResolutionOptionKeepConflict:
-                        resolutionString = @"keep conflict";
-                        break;
-                }
-
-                fprintf(stdout,
-                        "\n"
-                        " subrepo '%s' has diverged\n"
-                        "  local revision: %s\n"
-                        "  remote revision: %s\n"
-                        "  S7_MERGE_DRIVER_RESPONSE: %s\n",
-                        ourVersion.path.fileSystemRepresentation,
-                        [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
-                        [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
-                        [resolutionString cStringUsingEncoding:NSUTF8StringEncoding]
-                        );
-
-                return resolution;
-            }
-            else {
-                fprintf(stderr,
-                        "\033[31m"
-                        "  failed to recognize S7_MERGE_DRIVER_RESPONSE: '%s'\n"
-                        "\033[0m",
-                        [response cStringUsingEncoding:NSUTF8StringEncoding]);
-            }
-        }
-
-        if (!isatty(fileno(stdin))) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "to run interactive merge of s7 subrepos, please run the following command in Terminal:\n"
-                    "\033[1m"
-                    "  git checkout -m .s7substate\n\n"
-                    "\033[m"
-                    "\033[0m");
-            return S7ConflictResolutionOptionKeepConflict;
-        }
-
-        if (ourVersion && theirVersion) {
-            S7ConflictResolutionOption possibleConflictResolutionOptions =
-                S7ConflictResolutionOptionKeepLocal |
-                S7ConflictResolutionOptionKeepRemote |
-                S7ConflictResolutionOptionMerge;
-
-            // should write this to stdout or stderr?
-            fprintf(stdout,
-                    "\n"
-                    " subrepo '%s' has diverged\n"
-                    "  local revision: %s\n"
-                    "  remote revision: %s\n"
-                    "  you can (m)erge, keep (l)ocal or keep (r)emote.\n"
-                    "  what do you want to do? ",
-                    ourVersion.path.fileSystemRepresentation,
-                    [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
-                    [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]
-            );
-
-            return [S7ConfigMergeDriver
-                    readConflictResolutionFromStdinWithAllowedOptions:possibleConflictResolutionOptions
-                    prompt:@"\n  sorry?\n"
-                            "  (m)erge, keep (l)ocal or keep (r)emote.\n"
-                            "  what do you want to do? "];
-        }
-        else {
-            NSCAssert(ourVersion || theirVersion, @"");
-            S7ConflictResolutionOption possibleConflictResolutionOptions =
-                    S7ConflictResolutionOptionKeepChanged |
-                    S7ConflictResolutionOptionDelete;
-
-            if (ourVersion) {
-                fprintf(stdout,
-                        "  local changed subrepository '%s' which remote removed\n"
-                        "  use (c)hanged version or (d)elete? ",
-                        ourVersion.path.fileSystemRepresentation);
-            }
-            else {
-                fprintf(stdout,
-                        "  remote changed subrepository '%s' which local removed\n"
-                        "  use (c)hanged version or (d)elete? ",
-                        ourVersion.path.fileSystemRepresentation);
-            }
-
-            return [S7ConfigMergeDriver
-                    readConflictResolutionFromStdinWithAllowedOptions:possibleConflictResolutionOptions
-                    prompt:@"\n  sorry?\n"
-                            "  use (c)hanged version or (d)elete? "];
-        }
+        return [S7ConfigMergeDriver resolveConflictBetweenOurVersion:ourVersion theirVersion:theirVersion];
      }];
 
     return self;
@@ -518,6 +404,142 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     return [S7PostCheckoutHook checkoutSubreposForRepo:repo fromConfig:ourConfig toConfig:mergeResult];
+}
+
++ (S7ConflictResolutionOption)resolveConflictBetweenOurVersion:(S7SubrepoDescription * _Nullable)ourVersion
+                                                  theirVersion:(S7SubrepoDescription * _Nullable)theirVersion
+{
+    {
+        S7ConflictResolutionOption resolutionFromEnv;
+        if ([self readMergeResolutionFromEnvironmentVariable:&resolutionFromEnv
+                                                  ourVersion:ourVersion
+                                                theirVersion:theirVersion])
+        {
+            return resolutionFromEnv;
+        }
+    }
+
+    if (!isatty(fileno(stdin))) {
+        fprintf(stderr,
+                "\033[31m"
+                "to run interactive merge of s7 subrepos, please run the following command in Terminal:\n"
+                "\033[1m"
+                "  git checkout -m .s7substate\n\n"
+                "\033[m"
+                "\033[0m");
+        return S7ConflictResolutionOptionKeepConflict;
+    }
+
+    if (ourVersion && theirVersion) {
+        S7ConflictResolutionOption possibleConflictResolutionOptions =
+        S7ConflictResolutionOptionKeepLocal |
+        S7ConflictResolutionOptionKeepRemote |
+        S7ConflictResolutionOptionMerge;
+
+        // should write this to stdout or stderr?
+        fprintf(stdout,
+                "\n"
+                " subrepo '%s' has diverged\n"
+                "  local revision: %s\n"
+                "  remote revision: %s\n"
+                "  you can (m)erge, keep (l)ocal or keep (r)emote.\n"
+                "  what do you want to do? ",
+                ourVersion.path.fileSystemRepresentation,
+                [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]
+                );
+
+        return [S7ConfigMergeDriver
+                readConflictResolutionFromStdinWithAllowedOptions:possibleConflictResolutionOptions
+                prompt:@"\n  sorry?\n"
+                "  (m)erge, keep (l)ocal or keep (r)emote.\n"
+                "  what do you want to do? "];
+    }
+    else {
+        NSCAssert(ourVersion || theirVersion, @"");
+        S7ConflictResolutionOption possibleConflictResolutionOptions =
+        S7ConflictResolutionOptionKeepChanged |
+        S7ConflictResolutionOptionDelete;
+
+        if (ourVersion) {
+            fprintf(stdout,
+                    "  local changed subrepository '%s' which remote removed\n"
+                    "  use (c)hanged version or (d)elete? ",
+                    ourVersion.path.fileSystemRepresentation);
+        }
+        else {
+            fprintf(stdout,
+                    "  remote changed subrepository '%s' which local removed\n"
+                    "  use (c)hanged version or (d)elete? ",
+                    ourVersion.path.fileSystemRepresentation);
+        }
+
+        return [S7ConfigMergeDriver
+                readConflictResolutionFromStdinWithAllowedOptions:possibleConflictResolutionOptions
+                prompt:@"\n  sorry?\n"
+                "  use (c)hanged version or (d)elete? "];
+    }
+}
+
++ (BOOL)readMergeResolutionFromEnvironmentVariable:(S7ConflictResolutionOption *)pResolution
+                                        ourVersion:(S7SubrepoDescription * _Nullable)ourVersion
+                                      theirVersion:(S7SubrepoDescription * _Nullable)theirVersion
+{
+    NSString *const response = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_RESPONSE"];
+    if (response) {
+        S7ConflictResolutionOption resolution;
+        if (response.length > 0 &&
+            [S7ConfigMergeDriver mergeResolution:&resolution
+                                    forUserInput:[response characterAtIndex:0]
+                              allowedResolutions:~0])
+        {
+            NSString *resolutionString;
+            switch (resolution) {
+                case S7ConflictResolutionOptionMerge:
+                    resolutionString = @"merge";
+                    break;
+                case S7ConflictResolutionOptionKeepLocal:
+                    resolutionString = @"keep local";
+                    break;
+                case S7ConflictResolutionOptionKeepRemote:
+                    resolutionString = @"keep remote";
+                    break;
+                case S7ConflictResolutionOptionKeepChanged:
+                    resolutionString = @"keep changed";
+                    break;
+                case S7ConflictResolutionOptionDelete:
+                    resolutionString = @"delete";
+                    break;
+                case S7ConflictResolutionOptionKeepConflict:
+                    resolutionString = @"keep conflict";
+                    break;
+            }
+
+            fprintf(stdout,
+                    "\n"
+                    " subrepo '%s' has diverged\n"
+                    "  local revision: %s\n"
+                    "  remote revision: %s\n"
+                    "  S7_MERGE_DRIVER_RESPONSE: %s\n",
+                    ourVersion.path.fileSystemRepresentation,
+                    [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                    [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
+                    [resolutionString cStringUsingEncoding:NSUTF8StringEncoding]
+                    );
+
+            *pResolution = resolution;
+            return YES;
+        }
+        else {
+            fprintf(stderr,
+                    "\033[31m"
+                    "  failed to recognize S7_MERGE_DRIVER_RESPONSE: '%s'\n"
+                    "\033[0m",
+                    [response cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
+    }
+
+    return NO;
 }
 
 + (S7ConflictResolutionOption)readConflictResolutionFromStdinWithAllowedOptions:(S7ConflictResolutionOption)allowedResolutions
