@@ -23,8 +23,6 @@ int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove);
 
 int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
 
-BOOL isExactlyOneBitSetInNumber(uint32_t bits);
-
 BOOL isCurrentDirectoryS7RepoRoot(void);
 BOOL isS7Repo(GitRepository *repo);
 int s7RepoPreconditionCheck(void);

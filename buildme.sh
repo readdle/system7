@@ -21,13 +21,15 @@ fi
 #
 # INSTALL_PATH:
 #  "The directory in which to install the build products. This path is prepended by the DSTROOT."
+#
+# Starting with Sonoma, xcodebuild install (without clean) stopped replacing existing binary in the DSTROOT.
 
 xcodebuild_cmd() {
     # when executed as part of xcode run script phase, env is populated with settings of current project
     # these headers are unwanted and may cause module import conflicts  
     unset USER_HEADER_SEARCH_PATHS
     unset HEADER_SEARCH_PATHS
-    xcodebuild -target system7 -configuration Release DSTROOT="$HOME" install
+    xcodebuild -target system7 -configuration Release DSTROOT="$HOME" clean install
 }
 
 if ! xcodebuild_cmd

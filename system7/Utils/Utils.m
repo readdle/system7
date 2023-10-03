@@ -52,13 +52,6 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
     return 0;
 }
 
-BOOL isExactlyOneBitSetInNumber(uint32_t bits)
-{
-    // I was too lazy to do this myself
-    // taken here https://stackoverflow.com/questions/51094594/how-to-check-if-exactly-one-bit-is-set-in-an-int/51094793
-    return bits && !(bits & (bits-1));
-}
-
 int addLineToGitIgnore(NSString *lineToAppend) {
     static NSString *gitIgnoreFileName = @".gitignore";
 
