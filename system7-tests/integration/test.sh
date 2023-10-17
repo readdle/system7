@@ -1,28 +1,31 @@
 #!/bin/sh
 
-ORIGINAL_PWD=$PWD
-PATH=$PATH:$PWD
-export S7_ROOT=$PWD/root
-export S7_TESTS_DIR=$ORIGINAL_PWD
+if [ -n "${BASH_VERSION}" ]; then
+    SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+elif [ -n "${ZSH_VERSION}" ]; then
+    SCRIPT_SOURCE="${(%):-%N}"
+else
+    echo >&2 "failed to deduce the shell you are using"
+    exit $LINENO
+fi
 
-#set -x
+SCRIPT_SOURCE_DIR="$( cd "$( dirname "$SCRIPT_SOURCE" )" >/dev/null 2>&1 && pwd )"
 
-ANY_TEST_FAILED=0
+# make sure we do everything in the proper directory
+cd "$SCRIPT_SOURCE_DIR"
 
-VERBOSE=0
-LEAVE_TEST_REPOS_AFTER_FAIL=0
-if [ ! -z $1 ]
+
+PARALLELIZE=1
+if [ ! -z "$1" ]
 then
-    if [ $1 = "--leave-repos-on-fail" ]
+    if [ $1 = "--no-parallel" ]
     then
         shift
-        LEAVE_TEST_REPOS_AFTER_FAIL=1
-    elif [ \( "$1" = "-v" \) -o \( "$1" = "--verbose" \) ]
-    then
-        shift
-        VERBOSE=1
+        PARALLELIZE=0
     fi
 fi
+
+export S7_TESTS_DIR="$SCRIPT_SOURCE_DIR"
 
 TESTS_TO_RUN="$@"
 if [ -z "$TESTS_TO_RUN" ]
@@ -30,100 +33,111 @@ then
     TESTS_TO_RUN=`ls case*.sh`
 fi
 
-git init -q --bare templates/rd2
-git init -q --bare templates/ReaddleLib
-git init -q --bare templates/RDPDFKit
+prepareTemplateRepos() {
+    git init -q --bare templates/rd2
+    git init -q --bare templates/ReaddleLib
+    git init -q --bare templates/RDPDFKit
 
-for d in templates/*
-do
-    git clone -q $d tmp
-    pushd tmp
-        touch .gitignore
-        git add .gitignore
-        git commit -m"add .gitignore to make repo non-empty"
-        git push
-    popd
-    rm -rf tmp
-done > /dev/null 2>&1
-
-function setUp {
-    cd "$ORIGINAL_PWD"
-
-    if [ -d root ]
-    then
-        rm -rf root
-    fi
-
-    mkdir -p root/github
-
-    cp -R templates/rd2 root/github/
-    cp -R templates/ReaddleLib root/github/
-    cp -R templates/RDPDFKit root/github/
-
-    mkdir -p root/pastey
-    mkdir -p root/nik
-
-    cd root
+    for d in templates/*
+    do
+        git clone -q $d tmp
+        pushd tmp
+            touch .gitignore
+            git add .gitignore
+            git commit -m"add .gitignore to make repo non-empty"
+            git push
+        popd
+        rm -rf tmp
+    done > /dev/null 2>&1
 }
 
-function tearDown {
-    if [ $ANY_TEST_FAILED -eq 1  -a  1 -eq $LEAVE_TEST_REPOS_AFTER_FAIL ]
-    then
-        exit 1
-    fi
-
-    cd "$ORIGINAL_PWD"
-    rm -Rf root 2>/dev/null
+cleanup() {
+    rm -f "${SANDBOX_DIR}/failed-cases"
+    rm -rf "${SCRIPT_SOURCE_DIR}/templates"
 }
 
-function globalCleanUp {
-    rm "${ORIGINAL_PWD}/failed-cases" 2>/dev/null
-    rm -rf "${ORIGINAL_PWD}/templates"
-
-    tearDown
+prepareSandboxDirectory() {
+    SANDBOX_DIR="${SCRIPT_SOURCE_DIR}/sandbox"
+    rm -rf "$SANDBOX_DIR"
+    mkdir "$SANDBOX_DIR"
 }
 
-trap globalCleanUp EXIT
+trap cleanup EXIT
+
+cleanup
+prepareTemplateRepos
+prepareSandboxDirectory
 
 source assertions
 source utils
 
-for CASE in $TESTS_TO_RUN
-do
-    setUp
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+normal=$(tput sgr0)
 
-    echo "🎬 running $CASE..."
-    echo
+setupAndRunCase() {
+    local CASE=$1
 
-    if [ $VERBOSE -eq 1 ]
-    then
-        sh -x "$ORIGINAL_PWD/$CASE"
+    local TEST_ROOT="$SANDBOX_DIR/$CASE"
+
+    mkdir -p "$TEST_ROOT"
+    mkdir -p "$TEST_ROOT/github"
+    mkdir -p "$TEST_ROOT/pastey"
+    mkdir -p "$TEST_ROOT/nik"
+
+    cp -Rc "$SCRIPT_SOURCE_DIR/templates/rd2" "$TEST_ROOT/github"
+    cp -Rc "$SCRIPT_SOURCE_DIR/templates/ReaddleLib" "$TEST_ROOT/github"
+    cp -Rc "$SCRIPT_SOURCE_DIR/templates/RDPDFKit" "$TEST_ROOT/github"
+
+    cd "$TEST_ROOT"
+
+    S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" >"$TEST_ROOT/log.txt" 2>&1
+
+    if [ -f "$TEST_ROOT/FAIL" ]; then
+        printf "${red}x${noraml}"
     else
-        sh "$ORIGINAL_PWD/$CASE"
+        printf "${green}v${noraml}"
     fi
+}
 
-    echo
-    if [ -f "${S7_ROOT}/FAIL" ]
-    then
-        echo "$CASE" >> "${ORIGINAL_PWD}/failed-cases"
-        echo "[❌ FAIL]"
-        ANY_TEST_FAILED=1
-    else
-        echo "[✅ OK]"
-    fi
-
-    tearDown
-
-    echo
+for CASE in $TESTS_TO_RUN; do
+    printf "="
 done
 
 echo
+
+for CASE in $TESTS_TO_RUN
+do
+    if [ 1 -eq $PARALLELIZE ]; then
+        setupAndRunCase $CASE &
+    else
+        setupAndRunCase $CASE
+    fi
+done
+
+if [ 1 -eq $PARALLELIZE ]; then
+    wait
+
+    echo
+    echo
+fi
+
+ANY_TEST_FAILED=0
+
+for CASE in $TESTS_TO_RUN
+do
+    if [ -f "$SANDBOX_DIR/$CASE/FAIL" ]; then
+        echo "$CASE" >> "${SANDBOX_DIR}/failed-cases"
+        ANY_TEST_FAILED=1
+    fi
+done
+
 if [ $ANY_TEST_FAILED -eq 1 ]
 then
     echo "[🚨🚨🚨]"
     echo
     echo "The following tests failed:"
-    cat "${ORIGINAL_PWD}/failed-cases" | sed 's/^/    /'
+    cat "${SANDBOX_DIR}/failed-cases" | sed 's/^/    /'
     echo
     echo "[❌ TESTS FAILED]"
 
