@@ -12,4 +12,5 @@ usr
 *.xcbkptlist
 *.xcworkspacedata
 system7-tests/integration/case7/*.actual
+system7-tests/integration/sandbox
 .last-s7-update-check-date
