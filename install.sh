@@ -30,7 +30,7 @@ function bootstrap() {
     rm -f "${HOME}/bin/update-s7.sh" > /dev/null
 
 
-    git clone -b master git@github.com:readdle/system7.git "${SYSTEM7_DIR}"
+    git clone -b main git@github.com:readdle/system7.git "${SYSTEM7_DIR}"
     if [ 0 -ne $? ]
     then
         echo "error: failed to clone System 7 repo. Check connection or VPN setup. Check if SSH is configured properly."
