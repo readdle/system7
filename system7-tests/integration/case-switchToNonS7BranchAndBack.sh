@@ -16,7 +16,7 @@ assert git commit -m '"add ReaddleLib subrepo"'
 assert git push -u origin s7
 
 
-git switch master
+git switch main
 
 assert test ! -d Dependencies/ReaddleLib
 assert test ! -f .s7control

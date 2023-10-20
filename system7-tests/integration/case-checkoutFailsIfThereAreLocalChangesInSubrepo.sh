@@ -32,8 +32,8 @@ pushd Dependencies/ReaddleLib > /dev/null
 popd > /dev/null
 
 echo
-git checkout master
+git checkout main
 
 assert test 1 -eq $?
 assert test experiment = `cat Dependencies/ReaddleLib/RDMath.h`
-assert test ! -f file.cpp # but Git still switched to master. Only subrepos are not in sync
+assert test ! -f file.cpp # but Git still switched to main. Only subrepos are not in sync

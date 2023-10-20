@@ -209,7 +209,7 @@
         XCTAssertNotNil(readdleLibRevision);
         commit(readdleLib, @"NSColor+RD.h", @"sRGB\n", @"newline!");
         
-        [repo checkoutExistingLocalBranch:@"master"];
+        [repo checkoutExistingLocalBranch:@"main"];
         XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
         
         [repo checkoutExistingLocalBranch:@"experiment/srgb"];
@@ -233,8 +233,8 @@
         [repo getCurrentRevision:&rootRevision];
         
         // Checkout and commit ReaddleLib.
-        NSString *const masterReaddeLibPath = @"Dependencies/ReaddleLib";
-        s7add_stage(masterReaddeLibPath,
+        NSString *const mainReaddeLibPath = @"Dependencies/ReaddleLib";
+        s7add_stage(mainReaddeLibPath,
                     self.env.githubReaddleLibRepo.absolutePath);
         [repo commitWithMessage:@"add Dependencies/ReaddleLib subrepo"];
         
@@ -256,9 +256,9 @@
         const NSUInteger originalFolderFSNumber = getFSNumber(featureReaddleLibPath);
         
         // Check that ReaddleLib folder is moved, not cloned during switch between by comparing file numbers.
-        [repo checkoutExistingLocalBranch:@"master"];
+        [repo checkoutExistingLocalBranch:@"main"];
         XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
-        XCTAssertEqual(originalFolderFSNumber, getFSNumber(masterReaddeLibPath));
+        XCTAssertEqual(originalFolderFSNumber, getFSNumber(mainReaddeLibPath));
         
         [repo checkoutExistingLocalBranch:@"feature"];
         XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);

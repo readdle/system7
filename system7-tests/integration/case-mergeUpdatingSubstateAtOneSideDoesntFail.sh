@@ -18,7 +18,7 @@ popd > /dev/null
 
 assert s7 rebind --stage
 
-echo master > main.m
+echo main > main.m
 git add main.m
 
 assert git commit -am '"add ReaddleLib subrepo"'
@@ -32,7 +32,7 @@ echo experiment > main.m
 assert git commit -am '"experiment in main.m"'
 
 echo
-git switch master
+git switch main
 
 pushd Dependencies/ReaddleLib > /dev/null
   echo log2 >> RDMath.h
@@ -46,7 +46,7 @@ assert git commit -am '"up ReaddleLib"'
 echo
 git switch experiment
 
-git merge --no-edit master
+git merge --no-edit main
 
 assert test 0 -eq $?
 

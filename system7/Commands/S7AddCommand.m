@@ -285,7 +285,7 @@ NS_ASSUME_NONNULL_BEGIN
                 // detached HEAD is an evil. If someone could share subrepo in a detached HEAD,
                 // then that person would share all pleasures of detached HEAD with others.
                 // Besides, I want to see how that person pushes the detached HEAD. Like this:
-                //  `git push origin HEAD:master`?
+                //  `git push origin HEAD:main`?
                 //
                 // Branch is required. No discussions.
                 //

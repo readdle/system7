@@ -16,7 +16,7 @@ assert git commit -m "\"deinit s7\""
 assert git clean -ffd
 assert test ! -d ReaddleLib
 
-assert git checkout master
+assert git checkout main
 assert git merge --no-edit no-s7
 assert test ! -f .s7substate
 assert test ! -f .s7control

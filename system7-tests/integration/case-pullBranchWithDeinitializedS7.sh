@@ -15,7 +15,7 @@ assert git commit -m "\"deinit s7\""
 assert git clean -ffd
 
 assert git push
-assert git checkout -B master HEAD~1
+assert git checkout -B main HEAD~1
 assert test -f .s7control
 assert test -d ReaddleLib
 

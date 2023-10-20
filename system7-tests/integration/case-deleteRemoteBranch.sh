@@ -66,7 +66,7 @@ assert git push origin --delete experiment
 
 
 
-assert git checkout master
+assert git checkout main
 
 echo asdf > file
 git add file

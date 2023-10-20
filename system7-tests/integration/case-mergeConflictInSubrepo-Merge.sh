@@ -42,11 +42,11 @@ assert git commit -m '"up ReaddleLib"'
 
 
 echo
-git checkout master
+git checkout main
 
 pushd Dependencies/ReaddleLib > /dev/null
-  echo master > RDMath.h
-  git commit -am"changes at master in ReaddleLib"
+  echo main > RDMath.h
+  git commit -am"changes at main in ReaddleLib"
 popd > /dev/null
 
 assert s7 rebind --stage
@@ -82,7 +82,7 @@ assert grep '"<<<"' .s7substate > /dev/null
 
 
 pushd Dependencies/ReaddleLib > /dev/null
-  echo "experiment+master" > RDMath.h
+  echo "experiment+main" > RDMath.h
   git commit -am"merge"
 popd > /dev/null
 
@@ -93,7 +93,7 @@ echo "resulting .s7substate:"
 cat .s7substate
 echo
 
-assert test "experiment+master" = `cat Dependencies/ReaddleLib/RDMath.h`
+assert test "experiment+main" = `cat Dependencies/ReaddleLib/RDMath.h`
 
 grep "Dependencies/ReaddleLib" .s7substate > /dev/null
 assert test 0 -eq $? # config must contain 'Dependencies/ReaddleLib'

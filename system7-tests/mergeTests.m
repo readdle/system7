@@ -82,7 +82,7 @@
 
 
 
-        [repo checkoutExistingLocalBranch:@"master"];
+        [repo checkoutExistingLocalBranch:@"main"];
 
         s7checkout(experimentBranchRD2Revision, initialRD2Revision);
 
@@ -611,25 +611,25 @@
              initWithPath:@"Dependencies/RDSFTP"
              url:self.env.githubRDSFTPRepo.absolutePath
              revision:sftp_niks_Revision
-             branch:@"master"],
+             branch:@"main"],
 
             [[S7SubrepoDescription alloc]
              initWithPath:@"Dependencies/RDPDFKit"
              url:self.env.githubRDPDFKitRepo.absolutePath
              revision:pdfkit_pasteys_Revision
-             branch:@"master"],
+             branch:@"main"],
 
             [[S7SubrepoDescriptionConflict alloc]
              initWithOurVersion:[[S7SubrepoDescription alloc] 
                                  initWithPath:@"Dependencies/ReaddleLib"
                                  url:self.env.githubReaddleLibRepo.absolutePath
                                  revision:readdleLib_pasteys_Revision
-                                 branch:@"master"]
+                                 branch:@"main"]
              theirVersion:[[S7SubrepoDescription alloc]
                            initWithPath:@"Dependencies/ReaddleLib"
                            url:self.env.githubReaddleLibRepo.absolutePath
                            revision:readdleLib_niks_Revision
-                           branch:@"master"]]
+                           branch:@"main"]]
         ]];
 
         XCTAssertEqualObjects(actualConfig, expectedConfig);
@@ -736,7 +736,7 @@
             [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
                                                    url:self.env.githubReaddleLibRepo.absolutePath
                                               revision:mergedReaddleLibRevision
-                                                branch:@"master"]
+                                                branch:@"main"]
         ]];
 
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
@@ -854,7 +854,7 @@
         NSString *readdleLibActualBranch = nil;
         BOOL dummy = NO;
         [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
-        XCTAssertEqualObjects(@"master", readdleLibActualBranch);
+        XCTAssertEqualObjects(@"main", readdleLibActualBranch);
 
         int gitExitStatus = 0;
         NSString *actualGeometryContents = [readdleLibSubrepoGit showFile:@"RDGeometry.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
@@ -959,7 +959,7 @@
         NSString *readdleLibActualBranch = nil;
         BOOL dummy = NO;
         [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
-        XCTAssertEqualObjects(@"master", readdleLibActualBranch);
+        XCTAssertEqualObjects(@"main", readdleLibActualBranch);
 
         int gitExitStatus = 0;
         NSString *actualGeometryContents = [readdleLibSubrepoGit showFile:@"RDGeometry.h" atRevision:readdleLibActualRevision exitStatus:&gitExitStatus];
@@ -1170,8 +1170,8 @@
         XCTAssertNotNil(parsedConfig);
 
         S7Config *expectedConfig = [[S7Config alloc] initWithSubrepoDescriptions:@[
-            [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:self.env.githubReaddleLibRepo.absolutePath revision:readdleLib_niks_Revision branch:@"master"],
-            [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/RDPDFKit" url:self.env.githubRDPDFKitRepo.absolutePath revision:pdfKit_initialRevision branch:@"master"],
+            [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:self.env.githubReaddleLibRepo.absolutePath revision:readdleLib_niks_Revision branch:@"main"],
+            [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/RDPDFKit" url:self.env.githubRDPDFKitRepo.absolutePath revision:pdfKit_initialRevision branch:@"main"],
         ]];
 
         XCTAssertEqualObjects(expectedConfig, parsedConfig);
@@ -1206,8 +1206,8 @@
         // git ci -am "init s7"
         s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
         [repo commitWithMessage:@"init s7"];
-        NSString *masterWithS7;
-        [repo getCurrentRevision:&masterWithS7];
+        NSString *mainWithS7;
+        [repo getCurrentRevision:&mainWithS7];
         
         // git co -b "no-s7"
         [repo checkoutNewLocalBranch:@"no-s7"];
@@ -1223,14 +1223,14 @@
         NSString *branchWithoutS7;
         [repo getCurrentRevision:&branchWithoutS7];
         
-        // git checkout master
-        [repo checkoutExistingLocalBranch:@"master"];
+        // git checkout main
+        [repo checkoutExistingLocalBranch:@"main"];
         XCTAssertEqual(S7ExitCodeSuccess, s7init_deactivateHooks());
         
         S7PostCheckoutHook *postCheckoutHook = [S7PostCheckoutHook new];
         int hookExitStatus = [postCheckoutHook runWithArguments:@[
             branchWithoutS7,
-            masterWithS7,
+            mainWithS7,
             @"1"
         ]];
         XCTAssertEqual(S7ExitCodeSuccess, hookExitStatus);

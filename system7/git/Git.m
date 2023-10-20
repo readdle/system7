@@ -207,7 +207,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         command = [command stringByAppendingString:@" --bare"];
     }
 
-    NSString *branch = defaultBranchName ?: @"master";
+    NSString *branch = defaultBranchName ?: @"main";
     command = [command stringByAppendingFormat:@" -b %@ %@", branch, path];
 
     const int gitInitResult = [self executeCommand:command];
@@ -679,7 +679,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 //        if (128 == revParseExitStatus) {
 //            // most likely – an empty repo. Let's make sure
 //            if ([self isEmptyRepo]) {
-//                *ppBranch = @"master";
+//                *ppBranch = @"main";
 //                return 0;
 //            }
 //        }

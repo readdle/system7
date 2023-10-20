@@ -91,7 +91,7 @@ echo
 echo
 
 
-git switch master
+git switch main
 
 pushd Dependencies/RDPDFKit > /dev/null
   assert test ! -f .s7bootstrap
@@ -109,7 +109,7 @@ pushd Dependencies/RDPDFKit > /dev/null
 popd > /dev/null
 
 
-git switch master
+git switch main
 
 pushd Dependencies/RDPDFKit > /dev/null
   assert test ! -f .s7bootstrap

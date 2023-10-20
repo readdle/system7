@@ -37,11 +37,11 @@
 
 - (void)testOnNotS7Repo {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        NSString *masterRevision = nil;
-        [repo getCurrentRevision:&masterRevision];
+        NSString *mainRevision = nil;
+        [repo getCurrentRevision:&mainRevision];
 
         S7PostCheckoutHook *command = [S7PostCheckoutHook new];
-        const int exitStatus = [command runWithArguments:@[ masterRevision, masterRevision, @"1" ]];
+        const int exitStatus = [command runWithArguments:@[ mainRevision, mainRevision, @"1" ]];
         XCTAssertEqual(S7ExitCodeSuccess, exitStatus);
 
         XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
@@ -170,7 +170,7 @@
         NSString *branchName = nil;
         BOOL dummy = NO;
         [pasteysReaddleLibSubrepo getCurrentBranch:&branchName isDetachedHEAD:&dummy isEmptyRepo:&dummy];
-        XCTAssertEqualObjects(branchName, @"master");
+        XCTAssertEqualObjects(branchName, @"main");
     }];
 }
 
@@ -257,7 +257,7 @@
     }];
 
     __block NSString *readdleLibRevisionThatWeShouldCheckoutInRD2 = nil;
-    __block NSString *readdleLibRevisionOnMasterPushedSeparately = nil;
+    __block NSString *readdleLibRevisionOnMainPushedSeparately = nil;
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
         [repo pull];
 
@@ -277,7 +277,7 @@
         s7push_currentBranch(repo);
 
         // make more changes to ReaddleLib, but commit and push them only to ReaddleLib repo
-        readdleLibRevisionOnMasterPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
+        readdleLibRevisionOnMainPushedSeparately = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"some changes", @"more changes");
 
         XCTAssertEqual(0, [readdleLibSubrepoGit pushCurrentBranch]);
     }];
@@ -303,9 +303,9 @@
         NSString *branchName = nil;
         BOOL dummy = NO;
         [pasteysReaddleLibSubrepo getCurrentBranch:&branchName isDetachedHEAD:&dummy isEmptyRepo:&dummy];
-        XCTAssertEqualObjects(branchName, @"master");
+        XCTAssertEqualObjects(branchName, @"main");
 
-        XCTAssertTrue([pasteysReaddleLibSubrepo isRevisionAvailableLocally:readdleLibRevisionOnMasterPushedSeparately]);
+        XCTAssertTrue([pasteysReaddleLibSubrepo isRevisionAvailableLocally:readdleLibRevisionOnMainPushedSeparately]);
 
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
@@ -1120,8 +1120,8 @@
 
 - (void)testSwitchToPreS7Branch {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
-        NSString *masterRevision = nil;
-        [repo getCurrentRevision:&masterRevision];
+        NSString *mainRevision = nil;
+        [repo getCurrentRevision:&mainRevision];
 
         [repo checkoutNewLocalBranch:@"s7"];
 
@@ -1135,10 +1135,10 @@
         NSString *s7Revision = nil;
         [repo getCurrentRevision:&s7Revision];
 
-        [repo checkoutExistingLocalBranch:@"master"];
+        [repo checkoutExistingLocalBranch:@"main"];
 
         S7PostCheckoutHook *postCheckoutHook = [S7PostCheckoutHook new];
-        [postCheckoutHook runWithArguments:@[s7Revision, masterRevision, @"1"]];
+        [postCheckoutHook runWithArguments:@[s7Revision, mainRevision, @"1"]];
 
         XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
         XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
@@ -1146,7 +1146,7 @@
         [repo checkoutExistingLocalBranch:@"s7"];
 
         postCheckoutHook = [S7PostCheckoutHook new];
-        [postCheckoutHook runWithArguments:@[masterRevision, s7Revision, @"1"]];
+        [postCheckoutHook runWithArguments:@[mainRevision, s7Revision, @"1"]];
 
         XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@"Dependencies/ReaddleLib"]);
         XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
@@ -1171,12 +1171,12 @@
         s7push_currentBranch(repo);
 
         // merge pull request in ReaddleLib
-        [readdleLibSubrepo checkoutExistingLocalBranch:@"master"];
+        [readdleLibSubrepo checkoutExistingLocalBranch:@"main"];
         [readdleLibSubrepo mergeWith:@"feature/god-forsaken-feature"];
         [readdleLibSubrepo deleteLocalBranch:@"feature/god-forsaken-feature"];
         [readdleLibSubrepo deleteRemoteBranch:@"feature/god-forsaken-feature"];
 
-        // and forget to rebind rd2 back to master of ReaddleLib...
+        // and forget to rebind rd2 back to main of ReaddleLib...
     }];
 
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
@@ -1352,8 +1352,8 @@
         // git push
         [repo pushCurrentBranch];
         
-        // git checkout -B master HEAD~1
-        [repo forceCheckoutLocalBranch:@"master" revision:revWithS7];
+        // git checkout -B main HEAD~1
+        [repo forceCheckoutLocalBranch:@"main" revision:revWithS7];
         XCTAssertEqual(S7ExitCodeSuccess, s7init_deactivateHooks());
         
         S7PostCheckoutHook *postCheckoutHook = [S7PostCheckoutHook new];
@@ -1373,8 +1373,8 @@
         XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7substate"]);
         XCTAssertFalse([NSFileManager.defaultManager fileExistsAtPath:@".s7control"]);
         
-        // git checkout -B master HEAD~1
-        [repo forceCheckoutLocalBranch:@"master" revision:revWithS7];
+        // git checkout -B main HEAD~1
+        [repo forceCheckoutLocalBranch:@"main" revision:revWithS7];
         XCTAssertEqual(S7ExitCodeSuccess, s7init_deactivateHooks());
         
         postCheckoutHook = [S7PostCheckoutHook new];

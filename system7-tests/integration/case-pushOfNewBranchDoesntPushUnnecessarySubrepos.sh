@@ -46,7 +46,7 @@ git pull
 cd "$S7_ROOT/nik/rd2"
 
 pushd Dependencies/RDPDFKit > /dev/null
-  git switch master
+  git switch main
   git merge --ff --no-edit experiment
 popd > /dev/null
 
