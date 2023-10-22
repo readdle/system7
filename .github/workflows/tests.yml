@@ -19,7 +19,7 @@ jobs:
       - name: Test
         run: |
           cd system7-tests/integration
-          sh test.sh
+          sh test.sh --no-parallel
           exit $?
   
   xctests:
