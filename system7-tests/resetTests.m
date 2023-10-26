@@ -334,11 +334,11 @@
             [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
                                                    url:self.env.githubReaddleLibRepo.absolutePath
                                               revision:initialReaddleLibRevision
-                                                branch:@"master"],
+                                                branch:@"main"],
             [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/RDPDFKit"
                                                    url:self.env.githubRDPDFKitRepo.absolutePath
                                               revision:expectedPdfKitCommit // PDFKit was not reset, so it should stay rebound
-                                                branch:@"master"]
+                                                branch:@"main"]
         ]];
 
         S7Config *mainConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];

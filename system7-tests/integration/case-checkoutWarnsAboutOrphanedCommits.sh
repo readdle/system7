@@ -25,7 +25,7 @@ git checkout -b experiment
 
 pushd Dependencies/ReaddleLib > /dev/null
   echo experiment > RDMath.h
-  git commit -am"one more commit at master in ReaddleLib"
+  git commit -am"one more commit at main in ReaddleLib"
 popd > /dev/null
 
 s7 rebind --stage Dependencies/ReaddleLib
@@ -34,7 +34,7 @@ git commit -m"experiment"
 
 echo
 
-git checkout master 2>&1 | tee checkout-output
+git checkout main 2>&1 | tee checkout-output
 
 grep "not connected" < checkout-output > /dev/null
 if [ 0 -ne $? ]; then

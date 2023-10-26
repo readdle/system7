@@ -49,7 +49,7 @@
         NSString *branch1;
         [repo getCurrentBranch:&branch1 isDetachedHEAD:&noop isEmptyRepo:&noop];
         XCTAssertNotNil(branch1);
-        XCTAssertEqualObjects(branch1, @"master");
+        XCTAssertEqualObjects(branch1, @"main");
         
         [self packRefsInRepo:repo];
         

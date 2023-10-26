@@ -89,7 +89,7 @@
                                                      initWithPath:@"Dependencies/ReaddleLib"
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:expectedInitialRevision
-                                                     branch:@"master"];
+                                                     branch:@"main"];
         XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 
@@ -173,7 +173,7 @@
                                                      initWithPath:@"Dependencies/ReaddleLib"
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:expectedInitialRevision
-                                                     branch:@"master"];
+                                                     branch:@"main"];
         XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 
@@ -203,7 +203,7 @@
                                                      initWithPath:@"Dependencies/ReaddleLib"
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:expectedInitialRevision
-                                                     branch:@"master"];
+                                                     branch:@"main"];
         XCTAssertEqualObjects(expectedDescription,
                               newConfig.subrepoDescriptions.firstObject);
 
@@ -283,7 +283,7 @@
         XCTAssertEqual(0, newConfig.subrepoDescriptions.count);
 
 
-        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"main"];
 
         command = [S7AddCommand new];
         addResult = [command runWithArguments:@[ @"Dependencies/ReaddleLib" ]];
@@ -402,7 +402,7 @@
                                                      initWithPath:@"Dependencies/ReaddleLib"
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:expectedReaddleLibRevision
-                                                     branch:@"master"];
+                                                     branch:@"main"];
         XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
 
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];

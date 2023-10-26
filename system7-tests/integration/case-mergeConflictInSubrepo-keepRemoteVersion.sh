@@ -33,11 +33,11 @@ assert git commit -m '"up ReaddleLib"'
 
 
 echo
-git checkout master
+git checkout main
 
 pushd Dependencies/ReaddleLib > /dev/null
-  echo master > RDMath.h
-  git commit -am"changes at master in ReaddleLib"
+  echo main > RDMath.h
+  git commit -am"changes at main in ReaddleLib"
 popd > /dev/null
 
 assert s7 rebind --stage

@@ -23,7 +23,7 @@ pushd pastey/rdpdfkit > /dev/null
     git commit -m"ar-ar"
 
 
-    git switch master
+    git switch main
 
     assert s7 init
     assert git add .
@@ -54,7 +54,7 @@ pushd pastey/rd2 > /dev/null
     assert git add .
     assert git commit -m "\"init s7\""
 
-    assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"' master
+    assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"' main
 
     assert test -d Dependencies/RDPDFKit/Dependencies/FormCalc
 

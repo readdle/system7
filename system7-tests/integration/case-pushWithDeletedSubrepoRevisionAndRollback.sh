@@ -40,7 +40,7 @@ git commit -m"up ReaddleLib (with bad commit)"
 # decide to burry the bad commit and rollback to an even older state of subrepo
 
 pushd Dependencies/ReaddleLib > /dev/null
-  git checkout -B master $ORIGINAL_COMMIT_IN_READDLE_LIB
+  git checkout -B main $ORIGINAL_COMMIT_IN_READDLE_LIB
 popd > /dev/null
 
 assert s7 rebind --stage

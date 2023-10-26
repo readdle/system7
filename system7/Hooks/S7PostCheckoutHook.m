@@ -802,13 +802,13 @@ parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
         return;
     }
 
-    // say you've been working on master branch in subrepo. You've created commits 4–6.
+    // say you've been working on main branch in subrepo. You've created commits 4–6.
     // someone else had been working on this subrepo, and created commit 7. They rebound
     // the subrepo and pushed.
     // Looks like this:
     //
-    //    * 7 origin/master
-    //    | * 6 master
+    //    * 7 origin/main
+    //    | * 6 main
     //    | * 5
     //    | * 4
     //     /
@@ -816,9 +816,9 @@ parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
     //    * 2
     //    * 1
     //
-    // You pulled in main repo and now, your local master would be forced to revision 7
+    // You pulled in main repo and now, your local main would be forced to revision 7
     //
-    //    * 7  master -> origin/master
+    //    * 7  main -> origin/main
     //    | * 6  [nothing is pointing here]
     //    | * 5
     //    | * 4

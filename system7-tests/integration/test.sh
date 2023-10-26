@@ -91,7 +91,11 @@ setupAndRunCase() {
 
     cd "$TEST_ROOT"
 
-    S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" >"$TEST_ROOT/log.txt" 2>&1
+    if [ 1 -eq $PARALLELIZE ]; then
+        S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" >"$TEST_ROOT/log.txt" 2>&1
+    else
+        S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" 2>&1
+    fi
 
     if [ -f "$TEST_ROOT/FAIL" ]; then
         printf "${red}x${noraml}"

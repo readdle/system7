@@ -61,7 +61,7 @@
 
         S7PrePushHook *command = [S7PrePushHook new];
 
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      revision,
                                      [GitRepository nullRevision]];
 
@@ -77,7 +77,7 @@
 
         S7PrePushHook *command = [S7PrePushHook new];
 
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      revision,
                                      [GitRepository nullRevision]];
 
@@ -99,7 +99,7 @@
 
         S7PrePushHook *command = [S7PrePushHook new];
 
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      currentRevision,
                                      [GitRepository nullRevision]];
 
@@ -124,7 +124,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoAdd,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -135,7 +135,7 @@
         NSString *rd2TechnicalCommitRevision = commit(repo, @"file", @"asdf", @"commit trying to fool s7 into pushing of ReaddleLib that is not rebound");
 
         command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2TechnicalCommitRevision,
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -159,7 +159,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoAdd,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -174,7 +174,7 @@
         NSString *rd2TechnicalCommitRevision = commit(repo, @"file", @"asdf", @"commit trying to fool s7 into pushing of ReaddleLib that is not rebound");
 
         command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2TechnicalCommitRevision,
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -199,7 +199,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoAdd,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -216,7 +216,7 @@
         [repo getCurrentRevision:&rd2Revision];
 
         command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2Revision,
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -240,7 +240,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoAdd,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -256,7 +256,7 @@
         [repo getCurrentRevision:&rd2Revision];
 
         command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2Revision,
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -280,7 +280,7 @@
         [repo getCurrentRevision:&pasteysLastPushedRD2Revision];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      pasteysLastPushedRD2Revision,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -307,7 +307,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoAdd,
                                      rd2RevisionAfterPull];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -329,7 +329,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoUpdate];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoUpdate,
                                      pasteysLastPushedRD2Revision];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -359,7 +359,7 @@
         [repo getCurrentRevision:&revisionAfterSubreposAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      revisionAfterSubreposAdd,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -378,7 +378,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoUpdate];
 
         command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoUpdate,
                                      revisionAfterSubreposAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -407,7 +407,7 @@
         [repo getCurrentRevision:&revisionAfterSubrepoAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      revisionAfterSubrepoAdd,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -527,7 +527,7 @@
         // эх, до чего же я люблю git...
         // git push --all [in ReaddleLib]
         // ...
-        // ! [rejected]    master -> master (non-fast-forward)
+        // ! [rejected]    main -> main (non-fast-forward)
         // только вот незадача – я нихуя не делал на мастере, но кто ж объяснит это авторам гита
         //
         XCTAssertEqual(0, s7push_currentBranch(repo));
@@ -549,7 +549,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterSubrepoAdd];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterSubrepoAdd,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -564,7 +564,7 @@
         [repo getCurrentRevision:&rd2Revision];
 
         command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2Revision,
                                      rd2RevisionAfterSubrepoAdd];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -705,7 +705,7 @@
         XCTAssertEqual(0, [repo deleteRemoteBranch:@"experiment"]);
         
 
-        [repo checkoutExistingLocalBranch:@"master"];
+        [repo checkoutExistingLocalBranch:@"main"];
 
         commit(repo, @"file", @"test", @"subrepos unrealted stuff");
 
@@ -722,7 +722,7 @@
         NSString *initialRevision = nil;
         [repo getCurrentRevision:&initialRevision];
 
-        NSString *masterRevision = commit(repo, @"test", @"test", @"test");
+        NSString *mainRevision = commit(repo, @"test", @"test", @"test");
 
 
         [repo checkoutNewLocalBranch:@"s7"];
@@ -734,9 +734,9 @@
 
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      initialRevision,
-                                     masterRevision];
+                                     mainRevision];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
     }];
 }
@@ -757,7 +757,7 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        [readdleLibSubrepoGit forceCheckoutLocalBranch:@"master" revision:initialReaddleLibRevision];
+        [readdleLibSubrepoGit forceCheckoutLocalBranch:@"main" revision:initialReaddleLibRevision];
         s7rebind_with_stage();
         [repo commitWithMessage:@"revert ReaddleLib"];
 
@@ -781,9 +781,9 @@
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib"];
 
-        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"main"];
         s7rebind_with_stage();
-        [repo commitWithMessage:@"switch ReaddleLib back to master"];
+        [repo commitWithMessage:@"switch ReaddleLib back to main"];
 
         XCTAssertEqual(0, s7push_currentBranch(repo));
     }];
@@ -800,21 +800,21 @@
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         [readdleLibSubrepoGit checkoutRemoteTrackingBranch:@"feature/system-info"];
-        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"main"];
         XCTAssertEqual(0, [readdleLibSubrepoGit mergeWith:@"feature/system-info"]);
         s7rebind_with_stage();
-        [repo commitWithMessage:@"merge System Info branch in ReaddleLib into master"];
+        [repo commitWithMessage:@"merge System Info branch in ReaddleLib into main"];
 
-        NSString *latestRevisionAtMaster = nil;
-        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&latestRevisionAtMaster]);
+        NSString *latestRevisionAtMain = nil;
+        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&latestRevisionAtMain]);
 
         [readdleLibSubrepoGit checkoutExistingLocalBranch:@"feature/system-info"];
         NSString *latestRevisionAtFeature = nil;
         XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&latestRevisionAtFeature]);
 
-        XCTAssertEqualObjects(latestRevisionAtFeature, latestRevisionAtMaster);
+        XCTAssertEqualObjects(latestRevisionAtFeature, latestRevisionAtMain);
 
-        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"master"];
+        [readdleLibSubrepoGit checkoutExistingLocalBranch:@"main"];
 
         XCTAssertEqual(0, s7push_currentBranch(repo));
     }];
@@ -828,16 +828,16 @@
     XCTAssertEqual(0, exitStatus);
 
     [readdleLibRepo run:^(GitRepository * _Nonnull repo) {
-        NSString *remoteRevisionAtMaster = nil;
-        [repo getLatestRemoteRevision:&remoteRevisionAtMaster atBranch:@"master"];
+        NSString *remoteRevisionAtMain = nil;
+        [repo getLatestRemoteRevision:&remoteRevisionAtMain atBranch:@"main"];
 
         NSString *remoteRevisionAtFeature = nil;
         [repo getLatestRemoteRevision:&remoteRevisionAtFeature atBranch:@"feature/system-info"];
 
-        XCTAssertNotNil(remoteRevisionAtMaster);
+        XCTAssertNotNil(remoteRevisionAtMain);
         XCTAssertNotNil(remoteRevisionAtFeature);
         // we used not to push 'feature/system-info' because of the way we detected which branches need push
-        XCTAssertEqualObjects(remoteRevisionAtMaster, remoteRevisionAtFeature);
+        XCTAssertEqualObjects(remoteRevisionAtMain, remoteRevisionAtFeature);
     }];
 }
 
@@ -856,7 +856,7 @@
         [repo getCurrentRevision:&revisionAfterAddedReaddleLib];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      revisionAfterAddedReaddleLib,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -884,8 +884,8 @@
         
         [repo pushCurrentBranch];
         
-        // Merge "pull request" in ReaddleLib subrepo into master and delete merged branch
-        [readdleLibSubrepo checkoutExistingLocalBranch:@"master"];
+        // Merge "pull request" in ReaddleLib subrepo into main and delete merged branch
+        [readdleLibSubrepo checkoutExistingLocalBranch:@"main"];
         [readdleLibSubrepo mergeWith:@"feature/dead-branch"];
         [readdleLibSubrepo deleteRemoteBranch:@"feature/dead-branch"];
         [readdleLibSubrepo deleteLocalBranch:@"feature/dead-branch"];
@@ -895,12 +895,12 @@
         s7rebind_with_stage();
         
         [repo commitWithMessage:@"up ReaddleLib"];
-        NSString *rd2RevisionWithMergedNonMasterInSubrepo = nil;
-        [repo getCurrentRevision:&rd2RevisionWithMergedNonMasterInSubrepo];
+        NSString *rd2RevisionWithMergedNonMainInSubrepo = nil;
+        [repo getCurrentRevision:&rd2RevisionWithMergedNonMainInSubrepo];
 
         command = [S7PrePushHook new];
         command.testStdinContents = [NSString stringWithFormat:@"refs/heads/feature/plus-button %@ refs/heads/feature/plus-button %@",
-                                     rd2RevisionWithMergedNonMasterInSubrepo,
+                                     rd2RevisionWithMergedNonMainInSubrepo,
                                      rd2RevisionWithDeadBranchInSubrepo];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
         
@@ -944,7 +944,7 @@
         [repo getCurrentRevision:&rd2RevisionAfterAddedReaddleLib];
 
         S7PrePushHook *command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2RevisionAfterAddedReaddleLib,
                                      [GitRepository nullRevision]];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
@@ -972,8 +972,8 @@
         
         [repo pushCurrentBranch];
         
-        // Merge "pull request" in ReaddleLib subrepo into master and delete merged branch
-        [readdleLibSubrepo checkoutExistingLocalBranch:@"master"];
+        // Merge "pull request" in ReaddleLib subrepo into main and delete merged branch
+        [readdleLibSubrepo checkoutExistingLocalBranch:@"main"];
         [readdleLibSubrepo mergeWith:@"feature/dead-branch"];
         [readdleLibSubrepo deleteRemoteBranch:@"feature/dead-branch"];
         [readdleLibSubrepo deleteLocalBranch:@"feature/dead-branch"];
@@ -983,19 +983,19 @@
         s7rebind_with_stage();
         
         [repo commitWithMessage:@"up ReaddleLib"];
-        NSString *rd2RevisionWithMergedNonMasterInSubrepo = nil;
-        [repo getCurrentRevision:&rd2RevisionWithMergedNonMasterInSubrepo];
+        NSString *rd2RevisionWithMergedNonMainInSubrepo = nil;
+        [repo getCurrentRevision:&rd2RevisionWithMergedNonMainInSubrepo];
 
         command = [S7PrePushHook new];
         command.testStdinContents = [NSString stringWithFormat:@"refs/heads/feature/plus-button %@ refs/heads/feature/plus-button %@",
-                                     rd2RevisionWithMergedNonMasterInSubrepo,
+                                     rd2RevisionWithMergedNonMainInSubrepo,
                                      rd2RevisionWithDeadBranchInSubrepo];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
         
         [repo pushCurrentBranch];
         
-        // Merge 'pull request' into master
-        [repo checkoutExistingLocalBranch:@"master"];
+        // Merge 'pull request' into main
+        [repo checkoutExistingLocalBranch:@"main"];
         [repo mergeWith:@"feature/plus-button"];
         
         [repo commitWithMessage:@"Merged Plus Button feature"];
@@ -1004,7 +1004,7 @@
         [repo getCurrentRevision:&rd2MergeCommit];
         
         command = [S7PrePushHook new];
-        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/master %@ refs/heads/master %@",
+        command.testStdinContents = [NSString stringWithFormat:@"refs/heads/main %@ refs/heads/main %@",
                                      rd2MergeCommit,
                                      rd2RevisionAfterAddedReaddleLib];
         XCTAssertEqual(0, [command runWithArguments:@[]]);

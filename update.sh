@@ -40,7 +40,7 @@ function update() {
     pushd "${SYSTEM7_DIR}" > /dev/null
         PREVIOUS_REVISION=$(git rev-parse HEAD)
 
-        git checkout master && git pull
+        git checkout main && git pull
 
         if [ 0 -ne $? ]
         then

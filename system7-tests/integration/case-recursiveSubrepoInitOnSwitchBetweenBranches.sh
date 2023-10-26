@@ -66,7 +66,7 @@ git clone github/rd2 vasya/rd2
 
 cd vasya/rd2
 
-assert test master = `git rev-parse --abbrev-ref HEAD`
+assert test main = `git rev-parse --abbrev-ref HEAD`
 
 assert test ! -d Dependencies
 
