@@ -17,7 +17,7 @@ After `s7` is installed, we recommend to run `git config --global filter.s7.smud
 
 ### HEAD/Development version install script
 
-`sh -c "$(curl -fsSL https://raw.githubusercontent.com/readdle/system7/master/install.sh)"`
+`sh -c "$(curl -fsSL https://raw.githubusercontent.com/readdle/system7/main/install.sh)"`
 
 > This command will do the following at your machine:
 >  - download System 7 repo to `${HOME}/.system7`
