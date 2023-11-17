@@ -285,6 +285,22 @@ typedef enum {
         }
     }
 
+    NSString *resultingBranchName = conflictToMerge.ourVersion.branch;
+
+    const char *intermediateBranchNameCString = getenv("S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
+    if (intermediateBranchNameCString) {
+        NSString *intermediateBranchName = [[NSString alloc]
+                                            initWithCString:intermediateBranchNameCString
+                                            encoding:NSUTF8StringEncoding];
+
+        if (0 != [subrepoGit checkoutNewLocalBranch:intermediateBranchName]) {
+            *exitStatus = S7ExitCodeGitOperationFailed;
+            return conflictToMerge;
+        }
+
+        resultingBranchName = intermediateBranchName;
+    }
+
     if (0 != [subrepoGit mergeWith:theirRevision]) {
         *exitStatus = S7ExitCodeGitOperationFailed;
         return conflictToMerge;
@@ -299,7 +315,7 @@ typedef enum {
     return [[S7SubrepoDescription alloc] initWithPath:subrepoPath
                                                   url:conflictToMerge.ourVersion.url
                                              revision:mergeRevision
-                                               branch:conflictToMerge.ourVersion.branch];
+                                               branch:resultingBranchName];
 }
 
 - (int)mergeRepo:(GitRepository *)repo
