@@ -804,19 +804,12 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     NSParameterAssert(40 == possibleAncestor.length);
     NSParameterAssert(40 == possibleDescendant.length);
 
-    NSString *stdOutOutput = nil;
-    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"merge-base %@ %@", possibleAncestor, possibleDescendant]
-                                  stdOutOutput:&stdOutOutput
+    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"merge-base --is-ancestor %@ %@",
+                                                possibleAncestor,
+                                                possibleDescendant]
+                                  stdOutOutput:NULL
                                   stdErrOutput:NULL];
-    if (0 != exitStatus) {
-        NSAssert(NO, @"");
-        return NO;
-    }
-
-    NSString *mergeBaseRevision = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSAssert(40 == mergeBaseRevision.length, @"");
-
-    return [possibleAncestor isEqualToString:mergeBaseRevision];
+    return 0 == exitStatus;
 }
 
 - (BOOL)isCurrentRevisionMerge {

@@ -81,8 +81,16 @@ void printHelp(void) {
     help_puts("    output (if any), and git return code.");
     help_puts("");
     help_puts(" S7_MERGE_DRIVER_RESPONSE");
-    help_puts("    Specifis response that automates s7 merge driver. Options are the same as");
+    help_puts("    Specific response that automates s7 merge driver. Options are the same as");
     help_puts("    driver's prompt input: (m)erge, keep (l)ocal or keep (r)emote.");
+    help_puts(" S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
+    help_puts("    If this option is set and user chooses (m)erge resolution. Then the merge is");
+    help_puts("    performed not directly to the <local>, but an intermediate branch named");
+    help_puts("    with the value from S7_MERGE_DRIVER_INTERMEDIATE_BRANCH is created from <local> state,");
+    help_puts("    and the actual merge is done to an intermediate branch.");
+    help_puts("    This is necessary if direct push to the <local> branch is restricted by the protection rules");
+    help_puts("    at Git hosting system. User will then create a PR from S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
+    help_puts("    to the branch from <local>.");
 }
 
 Class commandClassByName(NSString *commandName) {
