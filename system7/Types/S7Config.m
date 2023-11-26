@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (isDirectory) {
-        fprintf(stderr, "failed to load config at path '%s'. File is a directory.", configFilePath.fileSystemRepresentation);
+        logError("failed to load config at path '%s'. File is a directory.", configFilePath.fileSystemRepresentation);
         return nil;
     }
 
@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
                                                              encoding:NSUTF8StringEncoding
                                                                 error:&error];
     if (nil == fileContents || error) {
-        fprintf(stderr, "failed to load config at path '%s'. Failed to read string content.", configFilePath.fileSystemRepresentation);
+        logError("failed to load config at path '%s'. Failed to read string content.", configFilePath.fileSystemRepresentation);
         return nil;
     }
 
@@ -61,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 
         if ([trimmedLine hasPrefix:@"<<<<<<<"]) {
             if (inConflict) {
-                fprintf(stderr, "error: unexpected conflict marker. Already parsing conflict.\n");
+                logError("unexpected conflict marker. Already parsing conflict.\n");
                 return nil;
             }
 
@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
         }
         else if ([trimmedLine hasPrefix:@"======="]) {
             if (NO == inConflict) {
-                fprintf(stderr, "error: unexpected conflict separator marker. Not parsing conflict.\n");
+                logError("unexpected conflict separator marker. Not parsing conflict.\n");
                 return nil;
             }
 
@@ -85,12 +85,12 @@ NS_ASSUME_NONNULL_BEGIN
         }
         else if ([trimmedLine hasPrefix:@">>>>>>>"]) {
             if (NO == inConflict) {
-                fprintf(stderr, "error: unexpected conflict end marker. Not parsing conflict.\n");
+                logError("unexpected conflict end marker. Not parsing conflict.\n");
                 return nil;
             }
 
             if (collectingOurSideConflict) {
-                fprintf(stderr, "error: unexpected conflict end marker. Expected conflict separator '=====...' marker\n");
+                logError("unexpected conflict end marker. Expected conflict separator '=====...' marker\n");
                 return nil;
             }
 
@@ -152,7 +152,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (inConflict) {
-        fprintf(stderr, "not terminated conflict\n");
+        logError("not terminated conflict\n");
         return nil;
     }
 
@@ -210,7 +210,7 @@ NS_ASSUME_NONNULL_BEGIN
     if (NO == [configContents writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error]
         || error)
     {
-        fprintf(stderr, "failed to save %s to disk. Error: %s\n",
+        logError("failed to save %s to disk. Error: %s\n",
                 filePath.fileSystemRepresentation,
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;

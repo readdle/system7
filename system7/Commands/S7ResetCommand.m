@@ -82,10 +82,9 @@
                         ++i;
 
                         if (NO == [lastCommittedConfig.subrepoPathsSet containsObject:path]) {
-                            fprintf(stderr,
-                                    "there's no registered subrepo at path '%s'\n"
-                                    "maybe you wanted to use 'add'?\n",
-                                    [argument fileSystemRepresentation]);
+                            logError("there's no registered subrepo at path '%s'\n"
+                                     "maybe you wanted to use 'add'?\n",
+                                     [argument fileSystemRepresentation]);
                             return S7ExitCodeInvalidParameterValue;
                         }
 
@@ -98,8 +97,7 @@
                     continue;
                 }
                 else {
-                    fprintf(stderr,
-                            "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                    logError("option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
                     [[self class] printCommandHelp];
                     return S7ExitCodeUnrecognizedOption;
                 }
@@ -108,10 +106,9 @@
                 NSString *path = [argument stringByStandardizingPath];
 
                 if (NO == [lastCommittedConfig.subrepoPathsSet containsObject:path]) {
-                    fprintf(stderr,
-                            "there's no registered subrepo at path '%s'\n"
-                            "maybe you wanted to use 'add'?\n",
-                            [argument fileSystemRepresentation]);
+                    logError("there's no registered subrepo at path '%s'\n"
+                             "maybe you wanted to use 'add'?\n",
+                             [argument fileSystemRepresentation]);
                     return S7ExitCodeInvalidArgument;
                 }
 
@@ -121,10 +118,7 @@
     }
 
     if (resetAll && subreposToResetPaths.count > 0) {
-        fprintf(stderr,
-                "\033[31m"
-                "please specify EITHER '--all' OR PATH...\n\n"
-                "\033[0m");
+        logError("please specify EITHER '--all' OR PATH...\n\n");
         [[self class] printCommandHelp];
         return S7ExitCodeInvalidArgument;
     }
@@ -139,10 +133,7 @@
     [subreposToResetPaths minusSet:excludePaths];
 
     if (0 == subreposToResetPaths.count) {
-        fprintf(stderr,
-                "\033[31m"
-                "please specify subrepos to reset or '--all'. Read why below.\n\n"
-                "\033[0m");
+        logError("please specify subrepos to reset or '--all'. Read why below.\n\n");
         [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }

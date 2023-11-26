@@ -75,9 +75,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: pre-push hook start\n");
+    logInfo("s7: pre-push hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    fprintf(stdout, "s7: pre-push hook complete\n\n");
+    logInfo("s7: pre-push hook complete\n\n");
     return result;
 }
 
@@ -117,14 +117,14 @@
 //    }
 //
 //    if (status.count > 0) {
-//        fprintf(stderr, "some subrepos have not rebound/committed changes:\n");
+//        logError("some subrepos have not rebound/committed changes:\n");
 //        NSSet<NSString *> *dirtySubreposSet = [NSSet new];
 //        for (NSSet<NSString *> *subrepoPaths in status.allValues) {
 //            dirtySubreposSet = [dirtySubreposSet setByAddingObjectsFromSet:subrepoPaths];
 //        }
 //
 //        for (NSString *subrepoPath in dirtySubreposSet) {
-//            fprintf(stderr, " %s\n", subrepoPath.fileSystemRepresentation);
+//            logError(" %s\n", subrepoPath.fileSystemRepresentation);
 //        }
 //
 //        return S7ExitCodeSubrepoHasNotReboundChanges;
@@ -144,10 +144,9 @@
         //
         NSArray<NSString *> *lineComponents = [trimmedLine componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
         if (4 != lineComponents.count) {
-            fprintf(stderr,
-                    "failed to parse git `pre-push` stdin contents. \nLine: '%s'. \nFull stdin contents: '%s'",
-                    [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding],
-                    [stdinStringContent cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("failed to parse git `pre-push` stdin contents. \nLine: '%s'. \nFull stdin contents: '%s'",
+                     [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding],
+                     [stdinStringContent cStringUsingEncoding:NSUTF8StringEncoding]);
             NSAssert(NO, @"git got mad?");
 
             return S7ExitCodeGitOperationFailed;
@@ -206,7 +205,7 @@
     }
 
     if (0 == allRevisionsChangingConfigSinceLastPush.count) {
-        fprintf(stdout, " found no changes to subrepos in commits being pushed.\n");
+        logInfo(" found no changes to subrepos in commits being pushed.\n");
         return S7ExitCodeSuccess;
     }
 
@@ -304,18 +303,18 @@
               remoteRef:(NSString *)remoteRef
              remoteSha1:(NSString *)latestRemoteRevisionAtThisBranch
 {
-    fprintf(stdout, " processing '%s' -> '%s' push\n",
+    logInfo(" processing '%s' -> '%s' push\n",
             [localRef cStringUsingEncoding:NSUTF8StringEncoding],
             [remoteRef cStringUsingEncoding:NSUTF8StringEncoding]);
 
     if ([localSha1ToPush isEqualToString:[GitRepository nullRevision]]) {
-        fprintf(stdout, " remote branch delete. Nothing to do here.\n");
+        logInfo(" remote branch delete. Nothing to do here.\n");
         return S7ExitCodeSuccess;
     }
 
     if ([localRef hasPrefix:@"refs/tags/"]) {
         // ignore tag push. We won't do anything anyways, but why even try, if we can skip it right away
-        fprintf(stdout, " tag push. Nothing to do here.\n");
+        logInfo(" tag push. Nothing to do here.\n");
         return S7ExitCodeSuccess;
     }
 
@@ -333,7 +332,7 @@
         //     so user would be forced to push subrepo changes before rm
         //  2. user decided to pull the trigger and killed subrepos and .s7substate in
         //     a rude way. If they did this, there's no way we can help them 🤷‍♂️
-        fprintf(stdout, " not s7 branch. Nothing to do here.\n");
+        logInfo(" not s7 branch. Nothing to do here.\n");
         return S7ExitCodeSuccess;
     }
 
@@ -347,13 +346,12 @@
     }
 
     for (NSString *subrepoPath in subreposToPush) {
-        fprintf(stdout,
-                " checking '%s' ... ",
+        logInfo(" checking '%s' ... ",
                 subrepoPath.fileSystemRepresentation);
 
         GitRepository *subrepoGit = [GitRepository repoAtPath:subrepoPath];
         if (nil == subrepoGit) {
-            fprintf(stderr, "\nabort: '%s' is not a git repo\n", subrepoPath.fileSystemRepresentation);
+            logError("\nabort: '%s' is not a git repo\n", subrepoPath.fileSystemRepresentation);
             return S7ExitCodeSubrepoIsNotGitRepository;
         }
 
@@ -373,8 +371,7 @@
                 // See case-pushWithDeletedSubrepoRevisionAndRollback.sh for an example of
                 // situation where this check is important
                 //
-                fprintf(stdout,
-                        "\n  ⚠️  skipping push of %s as it's not referenced by the branch '%s' anymore\n",
+                logInfo("\n  ⚠️  skipping push of %s as it's not referenced by the branch '%s' anymore\n",
                         [subrepoDesc.revision cStringUsingEncoding:NSUTF8StringEncoding],
                         [branch cStringUsingEncoding:NSUTF8StringEncoding]);
                 continue;
@@ -384,10 +381,10 @@
         }
 
         if (branchesToPush.count > 0) {
-            fprintf(stdout, "\n"); // close the 'checking...'
+            logInfo("\n"); // close the 'checking...'
 
             for (NSString *branch in branchesToPush) {
-                fprintf(stdout, "  pushing '%s'...\n", [branch cStringUsingEncoding:NSUTF8StringEncoding]);
+                logInfo("  pushing '%s'...\n", [branch cStringUsingEncoding:NSUTF8StringEncoding]);
 
                 // if subrepo is a s7 repo itself, pre-push hook in it will do the rest for us
                 const int gitExitStatus = [subrepoGit pushBranch:branch];
@@ -396,10 +393,10 @@
                 }
             }
 
-            fprintf(stdout, " success\n");
+            logInfo(" success\n");
         }
         else {
-            fprintf(stdout, " already pushed.\n");
+            logInfo(" already pushed.\n");
         }
     }
 

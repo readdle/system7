@@ -31,7 +31,7 @@ static const char VERSION_DATE[] = "2021-02-04";
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7 version %s (%s)\n", VERSION_NUMBER, VERSION_DATE);
+    logInfo("s7 version %s (%s)\n", VERSION_NUMBER, VERSION_DATE);
     return S7ExitCodeSuccess;
 }
 

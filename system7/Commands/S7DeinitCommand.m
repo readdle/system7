@@ -78,10 +78,9 @@
         
         NSError *error = nil;
         if (NO == [NSFileManager.defaultManager removeItemAtPath:fileName error:&error]) {
-            fprintf(stderr,
-                    "Failed to remove file %s. Error: %s\n",
-                    fileName.fileSystemRepresentation,
-                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("Failed to remove file %s. Error: %s\n",
+                     fileName.fileSystemRepresentation,
+                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
 
             result = S7ExitCodeFileOperationFailed;
         }
@@ -137,10 +136,9 @@
     NSError *error = nil;
     NSString *existingHookContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
     if (error) {
-        fprintf(stderr,
-                "failed to read contents of %s. Error: %s\n",
-                [hookFileName fileSystemRepresentation],
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to read contents of %s. Error: %s\n",
+                 [hookFileName fileSystemRepresentation],
+                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;
     }
 
@@ -151,9 +149,8 @@
 
     NSRegularExpression *s7HookCallLineRegex = [NSRegularExpression regularExpressionWithPattern:@".+s7 [a-z-]+-hook" options:0 error:&error];
     if (nil == s7HookCallLineRegex || error) {
-        fprintf(stderr,
-                "fatal: failed to compile s7-hook line regex. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("fatal: failed to compile s7-hook line regex. Error: %s\n",
+                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInternalError;
     }
 
@@ -174,20 +171,18 @@
 
     if (0 == numberOfLeavingNonEmptyLines) {
         if (NO == [NSFileManager.defaultManager removeItemAtPath:hookFilePath error:&error]) {
-            fprintf(stderr,
-                    "failed to remove %s. Error: %s\n",
-                    [hookFileName fileSystemRepresentation],
-                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("failed to remove %s. Error: %s\n",
+                     [hookFileName fileSystemRepresentation],
+                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeFileOperationFailed;
         }
     }
     else {
         NSString *resultingHookContents = [resultingHookLines componentsJoinedByString:@"\n"];
         if (NO == [resultingHookContents writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-            fprintf(stderr,
-                    "failed to update %s contents. Error: %s\n",
-                    [hookFileName fileSystemRepresentation],
-                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("failed to update %s contents. Error: %s\n",
+                     [hookFileName fileSystemRepresentation],
+                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeFileOperationFailed;
         }
     }

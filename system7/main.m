@@ -134,7 +134,7 @@ Class commandClassByName(NSString *commandName) {
     }
 
     if (0 == possibleCommandClasses.count) {
-        fprintf(stderr, "unknown command '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("unknown command '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
         return nil;
     }
     else if (1 == possibleCommandClasses.count) {
@@ -143,8 +143,8 @@ Class commandClassByName(NSString *commandName) {
     else {
         NSString *possibleCommands = [[possibleCommandNames allObjects] componentsJoinedByString:@", "];
 
-        fprintf(stderr, "s7: command '%s' is ambiguous:\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
-        fprintf(stderr, "    %s\n", possibleCommands.fileSystemRepresentation);
+        logError("s7: command '%s' is ambiguous:\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("    %s\n", possibleCommands.fileSystemRepresentation);
         return nil;
     }
 }
@@ -235,7 +235,7 @@ int main(int argc, const char * argv[]) {
     NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
-        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        logError("s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
     }
 
@@ -243,7 +243,7 @@ int main(int argc, const char * argv[]) {
         commandName = [commandName stringByReplacingOccurrencesOfString:@"-hook" withString:@""];
         Class<S7Hook> hookClass = hookClassByName(commandName);
         if (nil == hookClass) {
-            fprintf(stderr, "unknown hook '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("unknown hook '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
             NSCAssert(NO, @"unknown hook");
             return S7ExitCodeUnknownCommand;
         }

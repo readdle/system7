@@ -30,6 +30,11 @@ void withTTYLockDo(void(NS_NOESCAPE ^block)(void)) {
     [ttyLock unlock];
 }
 
+BOOL canUseColorForOutputToFile(int fileno) {
+    const char *const term = getenv("TERM");
+    return isatty(fileno) && term != NULL && strcasecmp(term, "dumb") != 0;
+}
+
 void logInfo(const char * __restrict format, ...) {
     va_list va_args;
     va_start(va_args, format);
@@ -50,10 +55,17 @@ void logError(const char * __restrict format, ...) {
     va_end(va_args);
 
     withTTYLockDo(^{
-        fprintf(stderr,
-                "\033[31m"
-                "%s"
-                "\033[0m",
-                [message cStringUsingEncoding:NSUTF8StringEncoding]);
+        if (canUseColorForOutputToFile(fileno(stderr))) {
+            fprintf(stderr,
+                    "\033[31m"
+                    "%s"
+                    "\033[0m",
+                    [message cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
+        else {
+            fprintf(stderr,
+                    "ERROR: %s",
+                    [message cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
     });
 }

@@ -32,9 +32,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: config merge driver start\n");
+    logInfo("s7: config merge driver start\n");
     const int result = [self doRunWithArguments:arguments];
-    fprintf(stdout, "s7: config merge driver complete\n");
+    logInfo("s7: config merge driver complete\n");
     return result;
 }
 
@@ -45,15 +45,14 @@
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
-        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        logError("s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
     }
 
     if (arguments.count < 3) {
         char *names[] = { "BASE", "OUR", "THEIR" };
-        fprintf(stderr,
-                "required argument %s is missing\n",
-                names[arguments.count]);
+        logError("required argument %s is missing\n",
+                 names[arguments.count]);
         return S7ExitCodeMissingRequiredArgument;
     }
 
@@ -265,8 +264,7 @@ typedef enum {
     NSString *theirRevision = conflictToMerge.theirVersion.revision;
 
     if (NO == [subrepoGit isRevisionAvailableLocally:theirRevision]) {
-        fprintf(stdout,
-                "fetching '%s'\n",
+        logInfo("fetching '%s'\n",
                 [subrepoPath fileSystemRepresentation]);
 
         if (0 != [subrepoGit fetch]) {
@@ -275,10 +273,9 @@ typedef enum {
         }
 
         if (NO == [subrepoGit isRevisionAvailableLocally:theirRevision]) {
-            fprintf(stderr,
-                    "revision '%s' does not exist in '%s'\n",
-                    [theirRevision cStringUsingEncoding:NSUTF8StringEncoding],
-                    subrepoPath.fileSystemRepresentation);
+            logError("revision '%s' does not exist in '%s'\n",
+                     [theirRevision cStringUsingEncoding:NSUTF8StringEncoding],
+                     subrepoPath.fileSystemRepresentation);
 
             *exitStatus = S7ExitCodeInvalidSubrepoRevision;
             return conflictToMerge;
@@ -392,9 +389,8 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     if (S7ExitCodeSuccess != [mergeResult saveToFileAtPath:S7ControlFileName]) {
-        fprintf(stderr,
-                "failed to save %s to disk.\n",
-                S7ControlFileName.fileSystemRepresentation);
+        logError("failed to save %s to disk.\n",
+                 S7ControlFileName.fileSystemRepresentation);
 
         return S7ExitCodeFileOperationFailed;
     }
@@ -420,13 +416,10 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     if (!isatty(fileno(stdin))) {
-        fprintf(stderr,
-                "\033[31m"
-                "to run interactive merge of s7 subrepos, please run the following command in Terminal:\n"
+        logError("to run interactive merge of s7 subrepos, please run the following command in Terminal:\n"
                 "\033[1m"
                 "  git checkout -m .s7substate\n\n"
-                "\033[m"
-                "\033[0m");
+                "\033[m");
         return S7ConflictResolutionOptionKeepConflict;
     }
 
@@ -437,8 +430,7 @@ saveResultToFilePath:(NSString *)resultFilePath
         S7ConflictResolutionOptionMerge;
 
         // should write this to stdout or stderr?
-        fprintf(stdout,
-                "\n"
+        logInfo("\n"
                 " subrepo '%s' has diverged\n"
                 "  local revision: %s\n"
                 "  remote revision: %s\n"
@@ -462,14 +454,12 @@ saveResultToFilePath:(NSString *)resultFilePath
         S7ConflictResolutionOptionDelete;
 
         if (ourVersion) {
-            fprintf(stdout,
-                    "  local changed subrepository '%s' which remote removed\n"
+            logInfo("  local changed subrepository '%s' which remote removed\n"
                     "  use (c)hanged version or (d)elete? ",
                     ourVersion.path.fileSystemRepresentation);
         }
         else {
-            fprintf(stdout,
-                    "  remote changed subrepository '%s' which local removed\n"
+            logInfo("  remote changed subrepository '%s' which local removed\n"
                     "  use (c)hanged version or (d)elete? ",
                     ourVersion.path.fileSystemRepresentation);
         }
@@ -515,8 +505,7 @@ saveResultToFilePath:(NSString *)resultFilePath
                     break;
             }
 
-            fprintf(stdout,
-                    "\n"
+            logInfo("\n"
                     " subrepo '%s' has diverged\n"
                     "  local revision: %s\n"
                     "  remote revision: %s\n"
@@ -531,11 +520,8 @@ saveResultToFilePath:(NSString *)resultFilePath
             return YES;
         }
         else {
-            fprintf(stderr,
-                    "\033[31m"
-                    "  failed to recognize S7_MERGE_DRIVER_RESPONSE: '%s'\n"
-                    "\033[0m",
-                    [response cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("  failed to recognize S7_MERGE_DRIVER_RESPONSE: '%s'\n",
+                     [response cStringUsingEncoding:NSUTF8StringEncoding]);
         }
     }
 
@@ -563,11 +549,11 @@ saveResultToFilePath:(NSString *)resultFilePath
             return resolution;
         }
 
-        fprintf(stdout, "%s", [prompt cStringUsingEncoding:NSUTF8StringEncoding]);
+        logInfo("%s", [prompt cStringUsingEncoding:NSUTF8StringEncoding]);
     }
     while (numberOfTries < 5);
 
-    fprintf(stderr, "too many attempts – will leave the conflict unresolved\n");
+    logError("too many attempts – will leave the conflict unresolved\n");
 
     return S7ConflictResolutionOptionKeepConflict;
 }

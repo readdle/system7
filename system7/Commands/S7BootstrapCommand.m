@@ -85,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
         // Maybe something wrong with the permissions?
         // Anyway, if we cannot read .gitattributes, then we better avoid bootstrap.
         //
-        fprintf(stderr, "s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
+        logError("s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return YES;
     }

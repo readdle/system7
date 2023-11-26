@@ -42,7 +42,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     });
     
     if (nil == gitExecutablePath) {
-        fprintf(stderr, "failed to locate 'git' executable in your system. Looked through PATH – nothing there.\n");
+        logError("failed to locate 'git' executable in your system. Looked through PATH – nothing there.\n");
         exit(1);
     }
     
@@ -77,7 +77,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[repoPath stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory]
             || NO == isDirectory)
         {
-            fprintf(stderr, "'%s' is not a git repository.\n", [repoPath fileSystemRepresentation]);
+            logError("'%s' is not a git repository.\n", [repoPath fileSystemRepresentation]);
             return nil;
         }
     }
@@ -383,7 +383,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
     NSError *error = nil;
     if (NO == [task launchAndReturnError:&error]) {
-        fprintf(stderr, "failed to run git command. Error = %s", [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to run git command. Error = %s", [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return 1;
     }
     
@@ -525,7 +525,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
         
     if ([self doesBranchExist:[NSString stringWithFormat:@"origin/%@", branchName]] == NO) {
-        fprintf(stderr, "failed to checkout remote tracking branch: remote branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to checkout remote tracking branch: remote branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeGitOperationFailed;
     }
     
@@ -550,7 +550,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
 
     if (NO == [self doesBranchExist:branchName]) {
-        fprintf(stderr, "failed to setup remote branch tracking: local branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to setup remote branch tracking: local branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
 
@@ -1149,8 +1149,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
 
     if (nil == currentBranchName) {
-        fprintf(stderr,
-                "failed to push. No current branch in the repository.\n");
+        logError("failed to push. No current branch in the repository.\n");
         return S7ExitCodeGitOperationFailed;
     }
 
