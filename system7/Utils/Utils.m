@@ -38,11 +38,10 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
             configContents = @"";
         }
         else {
-            fprintf(stderr,
-                    "failed to retrieve .s7substate config at revision %s.\n"
-                    "Git exit status: %d\n",
-                    [revision cStringUsingEncoding:NSUTF8StringEncoding],
-                    showExitStatus);
+            logError("failed to retrieve .s7substate config at revision %s.\n"
+                     "Git exit status: %d\n",
+                     [revision cStringUsingEncoding:NSUTF8StringEncoding],
+                     showExitStatus);
             return S7ExitCodeGitOperationFailed;
         }
     }
@@ -62,21 +61,21 @@ int addLineToGitIgnore(NSString *lineToAppend) {
                    contents:nil
                    attributes:nil])
         {
-            fprintf(stderr, "failed to create .gitignore file\n");
+            logError("failed to create .gitignore file\n");
             return 1;
         }
     }
 
     if (isDirectory) {
-        fprintf(stderr, ".gitignore is a directory!?\n");
+        logError(".gitignore is a directory!?\n");
         return 2;
     }
 
     NSError *error = nil;
     NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:gitIgnoreFileName encoding:NSUTF8StringEncoding error:&error];
     if (nil != error) {
-        fprintf(stderr, "failed to read contents of .gitignore file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to read contents of .gitignore file. Error: %s\n",
+                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return 3;
     }
 
@@ -96,8 +95,8 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     [newContent appendString:lineToAppend];
 
     if (NO == [newContent writeToFile:gitIgnoreFileName atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
-        fprintf(stderr, "failed to write contents of .gitignore file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to write contents of .gitignore file. Error: %s\n",
+                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return 4;
     }
 
@@ -119,8 +118,8 @@ int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove) {
                                                             encoding:NSUTF8StringEncoding
                                                                error:&error];
     if (nil == gitignoreContents || error) {
-        fprintf(stderr, "failed to remove lines from .gitignore. File read failed. Error: %s\n",
-                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to remove lines from .gitignore. File read failed. Error: %s\n",
+                 [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;
     }
 
@@ -133,10 +132,9 @@ int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove) {
     }];
 
     if (NO == [newContents writeToFile:@".gitignore" atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        fprintf(stderr,
-                "abort: failed to save updated .gitignore\n"
-                "error: %s\n",
-                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to save updated .gitignore\n"
+                 "error: %s\n",
+                 [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;
     }
 
@@ -163,7 +161,7 @@ int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove) {
                                                            encoding:NSUTF8StringEncoding
                                                               error:&error];
     if (nil == existingContents || error) {
-        fprintf(stderr, "failed to remove files from .gitattributes. File read failed. Error: %s\n",
+        logError("failed to remove files from .gitattributes. File read failed. Error: %s\n",
                 [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;
     }
@@ -185,10 +183,9 @@ int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove) {
     }];
 
     if (NO == [newContents writeToFile:@".gitattributes" atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        fprintf(stderr,
-                "abort: failed to save updated .gitattributes\n"
-                "error: %s\n",
-                [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to save updated .gitattributes\n"
+                 "error: %s\n",
+                 [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;
     }
 
@@ -209,20 +206,14 @@ BOOL isS7Repo(GitRepository *repo) {
 int s7RepoPreconditionCheck(void) {
     if (NO == isCurrentDirectoryS7RepoRoot())
     {
-        fprintf(stderr,
-                "\033[31m"
-                "abort: not s7 repo root\n"
-                "\033[0m");
+        logError("abort: not s7 repo root\n");
         return S7ExitCodeNotS7Repo;
     }
 
     const BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
     if (NO == controlFileExists) {
-        fprintf(stderr,
-                "\033[31m"
-                "abort: s7 repo is corrupted.\n"
-                "(most likely 's7 init' failed to install git hooks)\n"
-                "\033[0m");
+        logError("abort: s7 repo is corrupted.\n"
+                 "(most likely 's7 init' failed to install git hooks)\n");
         return S7ExitCodeNotS7Repo;
     }
 
@@ -276,11 +267,8 @@ int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, 
     if (NO == forceOverwrite && [NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
         NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
         if (NO == [existingContents hasPrefix:@"#!/bin/sh\n"]) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "hook %s already exists and it's not a shell script, so we cannot merge s7 call into it\n"
-                    "\033[0m",
-                    hookFilePath.fileSystemRepresentation);
+            logError("hook %s already exists and it's not a shell script, so we cannot merge s7 call into it\n",
+                     hookFilePath.fileSystemRepresentation);
 
             return S7ExitCodeFileOperationFailed;
         }
@@ -323,29 +311,26 @@ int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, 
                    attributes:nil
                    error:&error])
         {
-            fprintf(stderr,
-                    "'.git/hooks' directory doesn't exist. Failed to create it. Error: %s\n",
-                    [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("'.git/hooks' directory doesn't exist. Failed to create it. Error: %s\n",
+                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
 
             return S7ExitCodeFileOperationFailed;
         }
     }
 
     if (NO == [contentsToWrite writeToFile:hookFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
-        fprintf(stderr,
-                "failed to save %s to disk. Error: %s\n",
-                hookFilePath.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to save %s to disk. Error: %s\n",
+                 hookFilePath.fileSystemRepresentation,
+                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
 
         return S7ExitCodeFileOperationFailed;
     }
 
     NSUInteger posixPermissions = [NSFileManager.defaultManager attributesOfItemAtPath:hookFilePath error:&error].filePosixPermissions;
     if (error) {
-        fprintf(stderr,
-                "failed to read %s posix permissions. Error: %s\n",
-                hookFilePath.fileSystemRepresentation,
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to read %s posix permissions. Error: %s\n",
+                 hookFilePath.fileSystemRepresentation,
+                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
 
         return S7ExitCodeFileOperationFailed;
     }
@@ -356,9 +341,8 @@ int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, 
                                              ofItemAtPath:hookFilePath
                                                     error:&error])
     {
-        fprintf(stderr,
-                "failed to make hook %s executable. Error: %s\n",
-                hookFilePath.fileSystemRepresentation,
+        logError("failed to make hook %s executable. Error: %s\n",
+                 hookFilePath.fileSystemRepresentation,
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
 
         return S7ExitCodeFileOperationFailed;

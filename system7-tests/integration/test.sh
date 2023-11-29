@@ -98,9 +98,9 @@ setupAndRunCase() {
     fi
 
     if [ -f "$TEST_ROOT/FAIL" ]; then
-        printf "${red}x${noraml}"
+        printf "${red}x${normal}"
     else
-        printf "${green}v${noraml}"
+        printf "${green}v${normal}"
     fi
 }
 

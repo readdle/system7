@@ -6,3 +6,4 @@
 #import "S7Types.h"
 #import "S7SubrepoDescription.h"
 #import "Utils.h"
+#import "S7Logging.h"

@@ -31,21 +31,21 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: prepare-commit-msg hook start\n");
+    logInfo("s7: prepare-commit-msg hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    fprintf(stdout, "s7: prepare-commit-msg hook complete\n");
+    logInfo("s7: prepare-commit-msg hook complete\n");
     return result;
 }
 
 - (int)doRunWithArguments:(NSArray<NSString *> *)arguments {
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
-        fprintf(stderr, "s7: hook – ran in not git repo root!\n");
+        logError("s7: hook – ran in not git repo root!\n");
         return S7ExitCodeNotGitRepository;
     }
 
     if (NO == isCurrentDirectoryS7RepoRoot()) {
-        fprintf(stdout, " doing nothing, no s7 at this branch.\n");
+        logInfo(" doing nothing, no s7 at this branch.\n");
         return 0;
     }
 

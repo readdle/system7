@@ -99,12 +99,8 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
             [errorMessage appendFormat:@" '%@'", protocol];
         }
         
-        fprintf(stderr,
-                "\033[31m"
-                "%s\n"
-                "\033[0m",
-                [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
-        
+        logError("%s\n", [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
+
         handleParsingCompletion(nil);
         return nil;
     }
@@ -133,12 +129,8 @@ static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
             [NSString stringWithFormat:@"error: unsupported filter detected during '%@' option parsing.",
              S7IniConfigOptionsGitCommandFilter];
             
-            fprintf(stderr,
-                    "\033[31m"
-                    "%s\n"
-                    "\033[0m",
-                    [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
-            
+            logError("%s\n", [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
+
             _filter = GitFilterUnspecified;
         }
     }

@@ -17,9 +17,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: post-commit hook start\n");
+    logInfo("s7: post-commit hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    fprintf(stdout, "s7: post-commit hook complete\n");
+    logInfo("s7: post-commit hook complete\n");
     return result;
 }
 
@@ -28,7 +28,7 @@
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
-        fprintf(stderr, "s7: post-commit hook – ran in not git repo root!\n");
+        logError("s7: post-commit hook – ran in not git repo root!\n");
         return S7ExitCodeNotGitRepository;
     }
     

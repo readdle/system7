@@ -83,10 +83,9 @@
 
                     NSAssert(reason, @"");
 
-                    fprintf(stderr,
-                            "⚠️  not removing repo '%s' directory because it has %s.\n",
-                            path.fileSystemRepresentation,
-                            reason);
+                    logError("⚠️  not removing repo '%s' directory because it has %s.\n",
+                             path.fileSystemRepresentation,
+                             reason);
 
                     canRemoveSubrepoDirectory = NO;
                 }
@@ -95,9 +94,8 @@
             if (canRemoveSubrepoDirectory) {
                 NSError *error = nil;
                 if (NO == [NSFileManager.defaultManager removeItemAtPath:path error:&error]) {
-                    fprintf(stderr,
-                            "abort: failed to remove subrepo '%s' directory\n"
-                            "error: %s\n",
+                    logError("failed to remove subrepo '%s' directory\n"
+                             "error: %s\n",
                             [path fileSystemRepresentation],
                             [error.description cStringUsingEncoding:NSUTF8StringEncoding]);
                     return S7ExitCodeFileOperationFailed;

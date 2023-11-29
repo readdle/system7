@@ -68,8 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
                 stageConfig = YES;
             }
             else {
-                fprintf(stderr,
-                        "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                logError("option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
                 [[self class] printCommandHelp];
                 return S7ExitCodeUnrecognizedOption;
             }
@@ -85,9 +84,8 @@ NS_ASSUME_NONNULL_BEGIN
                 branch = argument;
             }
             else {
-                fprintf(stderr,
-                        "redundant argument %s\n",
-                        [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                logError("redundant argument %s\n",
+                         [argument cStringUsingEncoding:NSUTF8StringEncoding]);
                 [[self class] printCommandHelp];
                 return S7ExitCodeInvalidArgument;
             }
@@ -95,7 +93,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (nil == path) {
-        fprintf(stderr, "missing required argument PATH\n");
+        logError("missing required argument PATH\n");
         [[self class] printCommandHelp];
         return S7ExitCodeMissingRequiredArgument;
     }
@@ -106,12 +104,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)doAddSubrepo:(NSString *)path url:(NSString * _Nullable)url branch:(NSString * _Nullable)branch stageConfig:(BOOL)stageConfig {
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
-        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        logError("s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
     }
 
     if ([path hasPrefix:@"/"]) {
-        fprintf(stderr, "only relative paths are expected\n");
+        logError("only relative paths are expected\n");
         return S7ExitCodeInvalidArgument;
     }
 
@@ -120,7 +118,7 @@ NS_ASSUME_NONNULL_BEGIN
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
     for (S7SubrepoDescription *subrepoDesc in parsedConfig.subrepoDescriptions) {
         if ([subrepoDesc.path isEqualToString:path]) {
-            fprintf(stderr, "subrepo at path '%s' already registered in %s.\n",
+            logError("subrepo at path '%s' already registered in %s.\n",
                     [path cStringUsingEncoding:NSUTF8StringEncoding],
                     [S7ConfigFileName cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeSubrepoAlreadyExists;
@@ -138,11 +136,10 @@ NS_ASSUME_NONNULL_BEGIN
         }
         
         if (NO == S7URLStringMatchesTransportProtocolNames(url, options.allowedTransportProtocols)) {
-            fprintf(stderr,
-                    "URL '%s' does not match allowed transport protocol(s): %s.\n",
-                    [url cStringUsingEncoding:NSUTF8StringEncoding],
-                    [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
-                     cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("URL '%s' does not match allowed transport protocol(s): %s.\n",
+                     [url cStringUsingEncoding:NSUTF8StringEncoding],
+                     [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
+                      cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeInvalidArgument;
         }
 
@@ -171,9 +168,8 @@ NS_ASSUME_NONNULL_BEGIN
                                                        isDirectory:&isDirectory]
             || NO == isDirectory)
         {
-            fprintf(stderr,
-                    "folder at path '%s' already exists, but it's not a git repo\n",
-                    [path cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("folder at path '%s' already exists, but it's not a git repo\n",
+                     [path cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeSubrepoIsNotGitRepository;
         }
 
@@ -186,11 +182,10 @@ NS_ASSUME_NONNULL_BEGIN
         }
         
         if (NO == S7URLStringMatchesTransportProtocolNames(actualRemoteUrl, options.allowedTransportProtocols)) {
-            fprintf(stderr,
-                    "cloned subrepo URL '%s' does not match allowed transport protocol(s): %s.\n",
-                    [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
-                    [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
-                     cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("cloned subrepo URL '%s' does not match allowed transport protocol(s): %s.\n",
+                     [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
+                     [[options.allowedTransportProtocols.allObjects componentsJoinedByString:@", "]
+                      cStringUsingEncoding:NSUTF8StringEncoding]);
             return S7ExitCodeInvalidArgument;
         }
 
@@ -217,13 +212,12 @@ NS_ASSUME_NONNULL_BEGIN
                     }
                 }
 
-                fprintf(stderr,
-                        "inconsistency:"
-                        "git remote at path '%s' has been cloned from '%s'.\n"
-                        "repo requested to add should be cloned from '%s'\n",
-                        [path cStringUsingEncoding:NSUTF8StringEncoding],
-                        [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
-                        [url cStringUsingEncoding:NSUTF8StringEncoding]);
+                logError("inconsistency:"
+                         "git remote at path '%s' has been cloned from '%s'.\n"
+                         "repo requested to add should be cloned from '%s'\n",
+                         [path cStringUsingEncoding:NSUTF8StringEncoding],
+                         [actualRemoteUrl cStringUsingEncoding:NSUTF8StringEncoding],
+                         [url cStringUsingEncoding:NSUTF8StringEncoding]);
                 return S7ExitCodeInvalidArgument;
             } while(0);
         }
@@ -232,7 +226,7 @@ NS_ASSUME_NONNULL_BEGIN
     NSCAssert(gitSubrepo, @"");
 
     if ([gitSubrepo isBareRepo]) {
-        fprintf(stderr, "adding bare git repo as a subrepo is not supported. What do you plan to develop in it?\n");
+        logError("adding bare git repo as a subrepo is not supported. What do you plan to develop in it?\n");
         return S7ExitCodeInvalidArgument;
     }
 
@@ -269,16 +263,13 @@ NS_ASSUME_NONNULL_BEGIN
                 //  2. switches to do some work on a different branch
                 //  3. switches back to the original branch where he added an empty subrepo. How do we checkout NULL?
                 //
-                fprintf(stderr,
-                        "\033[31m"
-                        " Adding empty git repo as a subrepo is not allowed.\n"
-                        "\n"
-                        " There will be no chance for you and your fellow developers\n"
-                        " to checkout this subrepo properly in some situations.\n"
-                        "\n"
-                        " Please add any commit to this subrepo.\n"
-                        " For example, adding .gitignore is always a good idea.\n"
-                        "\033[0m");
+                logError(" Adding empty git repo as a subrepo is not allowed.\n"
+                         "\n"
+                         " There will be no chance for you and your fellow developers\n"
+                         " to checkout this subrepo properly in some situations.\n"
+                         "\n"
+                         " Please add any commit to this subrepo.\n"
+                         " For example, adding .gitignore is always a good idea.\n");
                 return S7ExitCodeInvalidArgument;
             }
             else {
@@ -290,13 +281,10 @@ NS_ASSUME_NONNULL_BEGIN
                 // Branch is required. No discussions.
                 //
                 NSAssert(isDetachedHEAD, @"");
-                fprintf(stderr,
-                        "\033[31m"
-                        " Adding subrepo with a detached HEAD is not allowed.\n"
-                        "\n"
-                        " Please, as the courtesy to fellow developers,\n"
-                        " checkout a named branch in this subrepo.\n"
-                        "\033[0m");
+                logError(" Adding subrepo with a detached HEAD is not allowed.\n"
+                         "\n"
+                         " Please, as the courtesy to fellow developers,\n"
+                         " checkout a named branch in this subrepo.\n");
                 return S7ExitCodeInvalidArgument;
             }
         }
@@ -324,10 +312,9 @@ NS_ASSUME_NONNULL_BEGIN
 
     if ([NSFileManager.defaultManager fileExistsAtPath:[path stringByAppendingPathComponent:S7ConfigFileName] isDirectory:&isDirectory]) {
         if (isDirectory) {
-            fprintf(stderr,
-                    "warn: added subrepo '%s' contains %s, but that's a directory\n",
-                    path.fileSystemRepresentation,
-                    S7ConfigFileName.fileSystemRepresentation);
+            logError("warn: added subrepo '%s' contains %s, but that's a directory\n",
+                     path.fileSystemRepresentation,
+                     S7ConfigFileName.fileSystemRepresentation);
         }
         else {
             const int subrepoS7InitExitCode =
@@ -352,7 +339,7 @@ NS_ASSUME_NONNULL_BEGIN
             });
 
             if (0 != subrepoS7InitExitCode) {
-                fprintf(stderr, "failed to init system 7 in subrepo '%s'\n", path.fileSystemRepresentation);
+                logError("failed to init system 7 in subrepo '%s'\n", path.fileSystemRepresentation);
                 return subrepoS7InitExitCode;
             }
         }
@@ -368,8 +355,7 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
     else {
-        fprintf(stdout,
-                "please, don't forget to commit the %s and .gitignore\n",
+        logInfo("please, don't forget to commit the %s and .gitignore\n",
                 S7ConfigFileName.fileSystemRepresentation);
     }
 

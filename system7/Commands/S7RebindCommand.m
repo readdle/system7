@@ -42,7 +42,7 @@
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
-        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        logError("s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
     }
 
@@ -64,10 +64,9 @@
             NSString *path = [argument stringByStandardizingPath];
 
             if (NO == [parsedConfig.subrepoPathsSet containsObject:path]) {
-                fprintf(stderr,
-                        "there's no registered subrepo at path '%s'\n"
-                        "maybe you wanted to use 'add'?\n",
-                        [argument fileSystemRepresentation]);
+                logError("there's no registered subrepo at path '%s'\n"
+                         "maybe you wanted to use 'add'?\n",
+                         [argument fileSystemRepresentation]);
                 return S7ExitCodeInvalidArgument;
             }
 
@@ -91,7 +90,7 @@
             continue;
         }
 
-        fprintf(stdout, "checking subrepo '%s'... ", [subrepoPath fileSystemRepresentation]);
+        logInfo("checking subrepo '%s'... ", [subrepoPath fileSystemRepresentation]);
 
         GitRepository *gitSubrepo = [[GitRepository alloc] initWithRepoPath:subrepoPath];
         if (nil == gitSubrepo) {
@@ -113,22 +112,20 @@
 
         if (nil == branch) {
             if (isDetachedHEAD) {
-                fprintf(stderr,
-                        " ⚠️ '%s' is in 'detached HEAD' state\n"
-                        "     1. you won't be able to push changes in this repo.\n"
-                        "        (at least using s7)\n"
-                        "     2. even if you do push, as the courtesy to fellow developers,\n"
-                        "        s7 won't allow you to rebind subrepo with the detached HEAD\n"
-                        "        as this will cause too much trouble to others\n\n"
-                        "     So, please, checkout a named branch in this subrepo.\n",
-                        [subrepoPath fileSystemRepresentation]);
+                logError(" ⚠️ '%s' is in 'detached HEAD' state\n"
+                         "     1. you won't be able to push changes in this repo.\n"
+                         "        (at least using s7)\n"
+                         "     2. even if you do push, as the courtesy to fellow developers,\n"
+                         "        s7 won't allow you to rebind subrepo with the detached HEAD\n"
+                         "        as this will cause too much trouble to others\n\n"
+                         "     So, please, checkout a named branch in this subrepo.\n",
+                         [subrepoPath fileSystemRepresentation]);
                 return S7ExitCodeDetachedHEAD;
             }
             else {
                 NSAssert(NO, @"WTF?");
-                fprintf(stderr,
-                        "unexpected subrepo '%s' state. Failed to detect current branch.\n",
-                        subrepoPath.fileSystemRepresentation);
+                logError("unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                         subrepoPath.fileSystemRepresentation);
                 return S7ExitCodeGitOperationFailed;
             }
         }
@@ -140,22 +137,21 @@
                                                            branch:branch];
 
         if ([updatedSubrepoDescription isEqual:subrepoDescription]) {
-            fprintf(stdout, "up to date.\n");
+            logInfo("up to date.\n");
             [newConfigSubrepoDescriptions addObject:subrepoDescription];
             continue;
         }
 
-        fprintf(stdout, "detected an update:\n");
-        fprintf(stdout, " old state %s\n", [subrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
-        fprintf(stdout, " new state %s\n", [updatedSubrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
+        logInfo("detected an update:\n");
+        logInfo(" old state %s\n", [subrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
+        logInfo(" new state %s\n", [updatedSubrepoDescription.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]);
 
         [reboundSubrepoPaths addObject:updatedSubrepoDescription.path];
         [newConfigSubrepoDescriptions addObject:updatedSubrepoDescription];
     }
 
     if ([newConfigSubrepoDescriptions isEqual:parsedConfig.subrepoDescriptions]) {
-        fprintf(stdout,
-                "(seems like there's nothing to rebind)\n");
+        logInfo("(seems like there's nothing to rebind)\n");
         return S7ExitCodeSuccess;
     }
 
@@ -169,12 +165,11 @@
         }
     }
     else {
-        fprintf(stdout, "\nrebound the following subrepos:\n");
+        logInfo("\nrebound the following subrepos:\n");
         for (NSString *path in reboundSubrepoPaths) {
-            fprintf(stdout, " %s\n", path.fileSystemRepresentation);
+            logInfo(" %s\n", path.fileSystemRepresentation);
         }
-        fprintf(stdout,
-                "\nplease, don't forget to commit the %s\n",
+        logInfo("\nplease, don't forget to commit the %s\n",
                 S7ConfigFileName.fileSystemRepresentation);
     }
 

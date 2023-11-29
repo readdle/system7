@@ -40,7 +40,7 @@
                                                              encoding:NSUTF8StringEncoding
                                                                 error:&error];
     if (nil == fileContents || error) {
-        fprintf(stderr, "failed to load config at path '%s'. Failed to read string content.", filePath.fileSystemRepresentation);
+        logError("failed to load config at path '%s'. Failed to read string content.", filePath.fileSystemRepresentation);
         return nil;
     }
 
@@ -77,9 +77,8 @@
                 }
             }
             else {
-                fprintf(stderr,
-                        "skipped ill-formed section line '%s'\n",
-                        [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
+                logError("skipped ill-formed section line '%s'\n",
+                         [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
             }
         }
         else if (currentSectionTitle) {
@@ -89,15 +88,13 @@
                 [parsedConfig[currentSectionTitle] addEntriesFromDictionary:kv];
             }
             else {
-                fprintf(stderr,
-                        "skipped ill-formed key-value line '%s'\n",
-                        [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
+                logError("skipped ill-formed key-value line '%s'\n",
+                         [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
             }
         }
         else {
-            fprintf(stderr,
-                    "skipped out of section line '%s'\n",
-                    [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("skipped out of section line '%s'\n",
+                     [trimmedLine cStringUsingEncoding:NSUTF8StringEncoding]);
         }
     }];
 
