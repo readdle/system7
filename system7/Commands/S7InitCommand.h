@@ -12,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface S7InitCommand : NSObject <S7Command>
 
+- (int)runWithArguments:(NSArray<NSString *> *)arguments inRepo:(GitRepository *)repo;
+
 @property (nonatomic, assign) BOOL installFakeHooks;
 
 @end

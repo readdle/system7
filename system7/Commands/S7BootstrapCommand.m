@@ -38,7 +38,16 @@ NS_ASSUME_NONNULL_BEGIN
         // we may still fail to install bootstrap, for example, if post-checkout hook exists
         // and it's not a shell script (where we can merge in)
         //
-        installHook(@"post-checkout", [[self class] bootstrapCommandLine], NO, NO);
+        GitRepository *repo = [GitRepository repoAtPath:@"."];
+        if (nil == repo) {
+            return S7ExitCodeNotGitRepository;
+        }
+
+        installHook(repo,
+                    @"post-checkout",
+                    [[self class] bootstrapCommandLine],
+                    NO,
+                    NO);
     }
 
     // according to https://git-scm.com/docs/gitattributes

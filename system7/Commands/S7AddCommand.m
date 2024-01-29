@@ -305,7 +305,7 @@ NS_ASSUME_NONNULL_BEGIN
 
     // do this in transaction? all or nothing?
 
-    const int gitignoreAddResult = addLineToGitIgnore(path);
+    const int gitignoreAddResult = addLineToGitIgnore(repo, path);
     if (0 != gitignoreAddResult) {
         return gitignoreAddResult;
     }

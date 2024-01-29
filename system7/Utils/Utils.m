@@ -51,13 +51,13 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
     return 0;
 }
 
-int addLineToGitIgnore(NSString *lineToAppend) {
-    static NSString *gitIgnoreFileName = @".gitignore";
+int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend) {
+    NSString *gitignoreAbsoluteFilePath = [repo.absolutePath stringByAppendingPathComponent:@".gitignore"];
 
     BOOL isDirectory = NO;
-    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:gitIgnoreFileName isDirectory:&isDirectory]) {
+    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:gitignoreAbsoluteFilePath isDirectory:&isDirectory]) {
         if (NO == [[NSFileManager defaultManager]
-                   createFileAtPath:gitIgnoreFileName
+                   createFileAtPath:gitignoreAbsoluteFilePath
                    contents:nil
                    attributes:nil])
         {
@@ -72,7 +72,7 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     }
 
     NSError *error = nil;
-    NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:gitIgnoreFileName encoding:NSUTF8StringEncoding error:&error];
+    NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:gitignoreAbsoluteFilePath encoding:NSUTF8StringEncoding error:&error];
     if (nil != error) {
         logError("failed to read contents of .gitignore file. Error: %s\n",
                  [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
@@ -94,7 +94,7 @@ int addLineToGitIgnore(NSString *lineToAppend) {
     }
     [newContent appendString:lineToAppend];
 
-    if (NO == [newContent writeToFile:gitIgnoreFileName atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
+    if (NO == [newContent writeToFile:gitignoreAbsoluteFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
         logError("failed to write contents of .gitignore file. Error: %s\n",
                  [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return 4;
@@ -139,6 +139,58 @@ int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove) {
     }
 
     return S7ExitCodeSuccess;
+}
+
+int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend) {
+    NSString *gitattributesFilePath = [repo.absolutePath stringByAppendingPathComponent:@".gitattributes"];
+
+    BOOL isDirectory = NO;
+    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:gitattributesFilePath isDirectory:&isDirectory]) {
+        if (NO == [[NSFileManager defaultManager]
+                   createFileAtPath:gitattributesFilePath
+                   contents:nil
+                   attributes:nil])
+        {
+            logError("failed to create .gitattributes file\n");
+            return 1;
+        }
+    }
+
+    if (isDirectory) {
+        logError(".gitattributes is a directory!?\n");
+        return 2;
+    }
+
+    NSError *error = nil;
+    NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:gitattributesFilePath encoding:NSUTF8StringEncoding error:&error];
+    if (nil != error) {
+        logError("failed to read contents of .gitattributes file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return 3;
+    }
+
+    NSArray<NSString *> *existingGitattributeLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+    if ([existingGitattributeLines containsObject:lineToAppend]) {
+        // do not add twice
+        return 0;
+    }
+
+    if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
+        [newContent appendString:@"\n"];
+    }
+
+    if (NO == [lineToAppend hasSuffix:@"\n"]) {
+        lineToAppend = [lineToAppend stringByAppendingString:@"\n"];
+    }
+    [newContent appendString:lineToAppend];
+
+    if (NO == [newContent writeToFile:gitattributesFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
+        logError("failed to write contents of .gitattributes file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return 4;
+    }
+
+    return 0;
 }
 
 int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove) {
@@ -255,12 +307,13 @@ NSString *getGlobalGitConfigValue(NSString *key) {
     return [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 }
 
-int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks) {
+int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks) {
     if (installFakeHooks) {
         return S7ExitCodeSuccess;
     }
     
-    NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:hookName];
+    NSString *const hooksDirAbsolutePath = [repo.absolutePath stringByAppendingPathComponent:@".git/hooks"];
+    NSString *hookFilePath = [hooksDirAbsolutePath stringByAppendingPathComponent:hookName];
 
     NSString *contentsToWrite = [NSString stringWithFormat:@"#!/bin/sh\n\n%@\n", commandLine];
 
@@ -304,9 +357,9 @@ int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, 
     }
     
     NSError *error = nil;
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks"]) {
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:hooksDirAbsolutePath]) {
         if (NO == [NSFileManager.defaultManager
-                   createDirectoryAtPath:@".git/hooks"
+                   createDirectoryAtPath:hooksDirAbsolutePath
                    withIntermediateDirectories:NO
                    attributes:nil
                    error:&error])

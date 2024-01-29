@@ -16,12 +16,13 @@ int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void));
 
 int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __autoreleasing * _Nonnull ppConfig);
 
-int addLineToGitIgnore(NSString *lineToAppend);
+int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend);
 int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove);
 
+int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend);
 int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove);
 
-int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
+int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
 
 BOOL isCurrentDirectoryS7RepoRoot(void);
 BOOL isS7Repo(GitRepository *repo);

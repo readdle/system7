@@ -871,23 +871,16 @@ parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
 + (int)initS7InSubrepos:(NSArray<GitRepository *> *)subrepos {
     int result = S7ExitCodeSuccess;
 
-    NSAssert(NSThread.isMainThread,
-             @"if someday this code gets parrallelized, we will have to remove `executeInDirectory` here."
-              "Different threads will mess with it, resulting in undefined (read bad) checkout/init results.");
-
     for (GitRepository *subrepoGit in subrepos) {
         NSAssert([NSFileManager.defaultManager fileExistsAtPath:[subrepoGit.absolutePath stringByAppendingPathComponent:S7ConfigFileName]], @"");
 
-        const int initExitStatus =
-        executeInDirectory(subrepoGit.absolutePath, ^int{
-            S7InitCommand *initCommand = [S7InitCommand new];
-            // do not automatically create .s7bootstrap in subrepos. This makes uncomitted local changes
-            // in subrepos. Especially inconvinient when you switch to some old revision.
-            // Let user decide which repo should contain .s7bootstrap, by explicit invocation of
-            // `s7 init` and add of .s7bootstap to the repo.
-            //
-            return [initCommand runWithArguments:@[ @"--no-bootstrap" ]];
-        });
+        S7InitCommand *initCommand = [S7InitCommand new];
+        // do not automatically create .s7bootstrap in subrepos. This makes uncommitted local changes
+        // in subrepos. Especially inconvenient when you switch to some old revision.
+        // Let user decide which repo should contain .s7bootstrap, by explicit invocation of
+        // `s7 init` and add of .s7bootstrap to the repo.
+        //
+        const int initExitStatus = [initCommand runWithArguments:@[ @"--no-bootstrap" ] inRepo:subrepoGit];
 
         if (0 != initExitStatus) {
             result = initExitStatus;
