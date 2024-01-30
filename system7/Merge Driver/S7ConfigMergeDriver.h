@@ -27,6 +27,7 @@ typedef NS_OPTIONS(uint32_t, S7ConflictResolutionOption) {
 
 @property (nonatomic) S7ConflictResolutionOption (^resolveConflictBlock)(S7SubrepoDescription * _Nullable ourVersion,
                                                                          S7SubrepoDescription * _Nullable theirVersion);
+@property (nonatomic) BOOL (^isTerminalInteractive)(void);
 
 + (S7Config *)mergeOurConfig:(S7Config *)ourLines
                  theirConfig:(S7Config *)theirConfig

@@ -43,6 +43,7 @@
 
 - (void)tearDown {
     unsetenv("S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
+    unsetenv("S7_MERGE_DRIVER_RESPONSE");
 }
 
 #pragma mark -
@@ -1350,6 +1351,95 @@
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
 
         XCTAssertEqualObjects(actualConfig, expectedConfig);
+    }];
+}
+
+- (void)testOneSideUpdateOtherSideDeleteConflictResolution_UnexpectedEnvResolutionOptionIsIgnored {
+    __block S7Config *baseConfig = nil;
+    __block NSString *readdleLib_initialRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        baseConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        s7push_currentBranch(repo);
+    }];
+
+    NSString *expectedRDGeometryContents = @"xyz";
+    __block S7Config *niksConfig = nil;
+    __block NSString *readdleLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        s7init_deactivateHooks();
+
+        S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
+        const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
+        XCTAssertEqual(0, mergeHookExitStatus);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", expectedRDGeometryContents, @"some useful math func");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        niksConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7remove(@"Dependencies/ReaddleLib");
+
+        [repo add:@[ S7ConfigFileName, @".gitignore" ]];
+        [repo commitWithMessage:@"drop ReaddleLib subrepo"];
+
+        const int pushExitStatus = s7push_currentBranch(repo);
+        XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
+
+        [repo fetch];
+
+        S7Config *ourConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        // possible options here are: S7ConflictResolutionOptionKeepChanged (c) | S7ConflictResolutionOptionDelete (d)
+        // and we are saying to use 'l'. If driver naively follows such command, then it will take nil (ourVersion)
+        // and put it into merge results array – i.e. cause crash.
+        //
+        setenv("S7_MERGE_DRIVER_RESPONSE", "l", 1);
+
+        S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
+        configMergeDriver.isTerminalInteractive = ^{ return NO; };
+
+        const int mergeExitStatus = [configMergeDriver
+                                     mergeRepo:repo
+                                     baseConfig:baseConfig
+                                     ourConfig:ourConfig
+                                     theirConfig:niksConfig
+                                     saveResultToFilePath:S7ConfigFileName];
+        XCTAssertNotEqual(0, mergeExitStatus);
+
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        S7Config *expectedConfig = [[S7Config alloc] initWithSubrepoDescriptions:@[
+            [[S7SubrepoDescriptionConflict alloc]
+             initWithOurVersion:nil
+             theirVersion:[[S7SubrepoDescription alloc]
+                           initWithPath:@"Dependencies/ReaddleLib"
+                           url:self.env.githubReaddleLibRepo.absolutePath
+                           revision:readdleLib_niks_Revision
+                           branch:@"main"]]
+        ]];
+
+        XCTAssertEqualObjects(actualConfig, expectedConfig);
+
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig);
     }];
 }
 

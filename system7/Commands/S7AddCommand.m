@@ -131,7 +131,7 @@ NS_ASSUME_NONNULL_BEGIN
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]) {
         if (0 == url.length) {
-            NSLog(@"ERROR: failed to add subrepo. Non-empty url expected.");
+            logError("failed to add subrepo. Non-empty url expected.");
             return S7ExitCodeInvalidArgument;
         }
         
@@ -154,7 +154,8 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
     else if (NO == isDirectory) {
-        NSLog(@"ERROR: failed to add subrepo at path '%@'. File exists and it's not a directory.", path);
+        logError("failed to add subrepo at path '%s'. File exists and it's not a directory.", 
+                 path.fileSystemRepresentation);
         return S7ExitCodeInvalidArgument;
     }
     else {
