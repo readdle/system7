@@ -75,8 +75,8 @@
              "=======\n"
              "%@\n"
              ">>>>>>> theirs",
-            self.ourVersion,
-            self.theirVersion ];
+            self.ourVersion ? self.ourVersion.stringRepresentation : @"",
+            self.theirVersion ? self.theirVersion.stringRepresentation : @"" ];
 }
 
 

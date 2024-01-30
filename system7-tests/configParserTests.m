@@ -203,6 +203,30 @@
     XCTAssertEqualObjects(parsedConfig.subrepoDescriptions, expectedParsedConfig);
 }
 
+- (void)testConfigWithConflictOneSideRemoveWritesAndReadsBackFromDisk {
+    S7Config *originalConfig =
+    [[S7Config alloc]
+     initWithSubrepoDescriptions:@[
+            [[S7SubrepoDescriptionConflict alloc]
+             initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
+                                                                       url:@"git@github.com:readdle/readdlelib"
+                                                                  revision:@"1d55eede9471fc9245de5bd85b55102684c8c300"
+                                                                    branch:@"main"]
+             theirVersion:nil]
+        ]
+    ];
+
+    NSString *configFilePath = @"./config";
+
+    if (0 != [originalConfig saveToFileAtPath:configFilePath]) {
+        XCTAssert(NO, @"");
+    }
+
+    S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
+    XCTAssertNotNil(parsedConfig);
+    XCTAssertEqualObjects(parsedConfig, originalConfig);
+}
+
 - (void)testInvalidConflicts {
     // unterminated conflict
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsString:
