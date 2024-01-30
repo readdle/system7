@@ -489,7 +489,7 @@ saveResultToFilePath:(NSString *)resultFilePath
         else {
             logInfo("  remote changed subrepository '%s' which local removed\n"
                     "  use (c)hanged version or (d)elete? ",
-                    ourVersion.path.fileSystemRepresentation);
+                    theirVersion.path.fileSystemRepresentation);
         }
 
         return [S7ConfigMergeDriver
