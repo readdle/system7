@@ -22,11 +22,17 @@
         return nil;
     }
 
+    __weak __auto_type weakSelf = self;
     [self setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nullable ourVersion,
                                                               S7SubrepoDescription * _Nullable theirVersion)
      {
-        return [S7ConfigMergeDriver resolveConflictBetweenOurVersion:ourVersion theirVersion:theirVersion];
+        __strong __auto_type strongSelf = weakSelf;
+        return [strongSelf resolveConflictBetweenOurVersion:ourVersion theirVersion:theirVersion];
      }];
+
+    self.isTerminalInteractive = ^ BOOL {
+        return isatty(fileno(stdin));
+    };
 
     return self;
 }
@@ -418,20 +424,35 @@ saveResultToFilePath:(NSString *)resultFilePath
     return [S7PostCheckoutHook checkoutSubreposForRepo:repo fromConfig:ourConfig toConfig:mergeResult];
 }
 
-+ (S7ConflictResolutionOption)resolveConflictBetweenOurVersion:(S7SubrepoDescription * _Nullable)ourVersion
+- (S7ConflictResolutionOption)resolveConflictBetweenOurVersion:(S7SubrepoDescription * _Nullable)ourVersion
                                                   theirVersion:(S7SubrepoDescription * _Nullable)theirVersion
 {
+    S7ConflictResolutionOption possibleConflictResolutionOptions = 0;
+    if (ourVersion && theirVersion) {
+        possibleConflictResolutionOptions =
+            S7ConflictResolutionOptionKeepLocal |
+            S7ConflictResolutionOptionKeepRemote |
+            S7ConflictResolutionOptionMerge;
+    }
+    else {
+        NSCAssert(ourVersion || theirVersion, @"");
+        possibleConflictResolutionOptions =
+            S7ConflictResolutionOptionKeepChanged |
+            S7ConflictResolutionOptionDelete;
+    }
+
     {
         S7ConflictResolutionOption resolutionFromEnv;
-        if ([self readMergeResolutionFromEnvironmentVariable:&resolutionFromEnv
-                                                  ourVersion:ourVersion
-                                                theirVersion:theirVersion])
+        if ([self.class readMergeResolutionFromEnvironmentVariable:&resolutionFromEnv
+                                                        ourVersion:ourVersion
+                                                      theirVersion:theirVersion
+                                                allowedResolutions:possibleConflictResolutionOptions])
         {
             return resolutionFromEnv;
         }
     }
 
-    if (!isatty(fileno(stdin))) {
+    if (NO == self.isTerminalInteractive()) {
         logError("to run interactive merge of s7 subrepos, please run the following command in Terminal:\n"
                 "\033[1m"
                 "  git checkout -m .s7substate\n\n"
@@ -440,11 +461,6 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     if (ourVersion && theirVersion) {
-        S7ConflictResolutionOption possibleConflictResolutionOptions =
-        S7ConflictResolutionOptionKeepLocal |
-        S7ConflictResolutionOptionKeepRemote |
-        S7ConflictResolutionOptionMerge;
-
         // should write this to stdout or stderr?
         logInfo("\n"
                 " subrepo '%s' has diverged\n"
@@ -465,10 +481,6 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
     else {
         NSCAssert(ourVersion || theirVersion, @"");
-        S7ConflictResolutionOption possibleConflictResolutionOptions =
-        S7ConflictResolutionOptionKeepChanged |
-        S7ConflictResolutionOptionDelete;
-
         if (ourVersion) {
             logInfo("  local changed subrepository '%s' which remote removed\n"
                     "  use (c)hanged version or (d)elete? ",
@@ -490,6 +502,7 @@ saveResultToFilePath:(NSString *)resultFilePath
 + (BOOL)readMergeResolutionFromEnvironmentVariable:(S7ConflictResolutionOption *)pResolution
                                         ourVersion:(S7SubrepoDescription * _Nullable)ourVersion
                                       theirVersion:(S7SubrepoDescription * _Nullable)theirVersion
+                                allowedResolutions:(S7ConflictResolutionOption)allowedResolutions
 {
     NSString *const response = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_RESPONSE"];
     if (response) {
@@ -497,7 +510,7 @@ saveResultToFilePath:(NSString *)resultFilePath
         if (response.length > 0 &&
             [S7ConfigMergeDriver mergeResolution:&resolution
                                     forUserInput:[response characterAtIndex:0]
-                              allowedResolutions:~0])
+                              allowedResolutions:allowedResolutions])
         {
             NSString *resolutionString;
             switch (resolution) {
