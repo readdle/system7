@@ -134,7 +134,7 @@ NS_ASSUME_NONNULL_BEGIN
 
         S7SubrepoDescription *subrepoDesc = [[S7SubrepoDescription alloc] initWithConfigLine:trimmedLine];
         if (nil == subrepoDesc) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'", line);
+            logError("failed to parse config. Invalid line '%s'", [line cStringUsingEncoding:NSUTF8StringEncoding]);
             return nil;
         }
 
@@ -178,7 +178,7 @@ NS_ASSUME_NONNULL_BEGIN
 
     for (S7SubrepoDescription *subrepoDesc in subrepoDescriptions) {
         if ([subrepoPathsSet containsObject:subrepoDesc.path]) {
-            NSLog(@"ERROR: duplicate path '%@' in config.", subrepoDesc.path);
+            logError("duplicate path '%s' in config.", subrepoDesc.path.fileSystemRepresentation);
             return nil;
         }
 
