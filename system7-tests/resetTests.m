@@ -404,7 +404,11 @@
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init_deactivateHooks();
 
+        // add RDPDFKit twice to be sure that we also test dispatch_apply parallel work inside reset.
+        // If we have just one subrepo, then dispatch_apply is too smart and simply runs the only operation
+        // straight on the calling thread.
         s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        s7add_stage(@"Dependencies/RDPDFKit2", self.env.githubRDPDFKitRepo.absolutePath);
 
         GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit/Dependencies/FormCalc"];
         XCTAssertNotNil(formCalcSubrepoGit);
