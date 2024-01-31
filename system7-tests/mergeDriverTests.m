@@ -1,5 +1,5 @@
 //
-//  mergeTests.m
+//  mergeDriverTests.m
 //  system7-tests
 //
 //  Created by Pavlo Shkrabliuk on 07.05.2020.
@@ -27,11 +27,11 @@
 #import "S7SubrepoDescriptionConflict.h"
 
 
-@interface mergeTests : XCTestCase
+@interface mergeDriverTests : XCTestCase
 @property (nonatomic, strong) TestReposEnvironment *env;
 @end
 
-@implementation mergeTests
+@implementation mergeDriverTests
 
 - (void)setUp {
     self.env = [[TestReposEnvironment alloc] initWithTestCaseName:self.className];

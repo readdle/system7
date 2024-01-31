@@ -1,5 +1,5 @@
 //
-//  mergeAlgorithmTests.m
+//  defaultMergeStrategyTests.m
 //  system7-tests
 //
 //  Created by Pavlo Shkrabliuk on 15.05.2020.
@@ -8,27 +8,30 @@
 
 #import <XCTest/XCTest.h>
 
-#import "S7ConfigMergeDriver.h"
+#import "S7DefaultMergeStrategy.h"
 #import "S7SubrepoDescriptionConflict.h"
 
-@interface mergeAlgorithmTests : XCTestCase
+@interface defaultMergeStrategyTests : XCTestCase
+@property (nonatomic) S7DefaultMergeStrategy *mergeStrategy;
 @end
 
-@implementation mergeAlgorithmTests
+@implementation defaultMergeStrategyTests
 
 - (void)setUp {
     S7Config.allowNon40DigitRevisions = YES;
+    self.mergeStrategy = [S7DefaultMergeStrategy new];
 }
 
 - (void)tearDown {
     S7Config.allowNon40DigitRevisions = NO;
+    self.mergeStrategy = nil;
 }
 
 #pragma - sanity -
 
 - (void)testAllEmpty {
     S7Config *emptyConfig = [S7Config emptyConfig];
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:emptyConfig theirConfig:emptyConfig baseConfig:emptyConfig];
+    S7Config *result = [self mergeOurConfig:emptyConfig theirConfig:emptyConfig baseConfig:emptyConfig];
     XCTAssertEqualObjects(emptyConfig, result, @"");
 }
 
@@ -38,7 +41,7 @@
     S7Config *our   = base;
     S7Config *their = base;
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(base, result, @"");
 }
@@ -52,7 +55,7 @@
     S7Config *their = [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } \n"
                                                   " pdfkit = { github/pdfkit, ee7812, release/pdfexpert-7.3 }  "];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(their, result, @"");
 }
@@ -63,7 +66,7 @@
     S7Config *our   = base;
     S7Config *their = [S7Config configWithString:@" keychain = { github/keychain, b16ff, main } "];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(their, result, @"");
 }
@@ -75,7 +78,7 @@
     S7Config *our   = base;
     S7Config *their = [S7Config configWithString:@" pdfkit = { github/pdfkit, ee7812, release/pdfexpert-7.3 }  "];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(their, result, @"");
 }
@@ -89,7 +92,7 @@
     S7Config *our  =  [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } "];
     S7Config *their   = our;
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(our, result, @"");
 }
@@ -105,7 +108,7 @@
     S7Config *their  = [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } \n"
                                                     " pdfkit = { github/pdfkit, ee7812, release/pdfexpert-7.3 }  \n"];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     S7Config *exp   = [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } \n"];
 
@@ -123,7 +126,7 @@
     S7Config *their = [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } \n"
                                                   " rduikit = { github/rduikit, 1234, main } \n"];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     S7Config *exp   = [S7Config configWithString:@" keychain = { github/keychain, 8888, main } \n"
                                                   " rduikit = { github/rduikit, 1234, main } \n"];
@@ -141,7 +144,7 @@
 
     S7Config *their = our;
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(our, result, @"");
 }
@@ -160,7 +163,7 @@
                                                   " rduikit = { github/rduikit, 47ae, main } \n"
                                                   " pdfkit = { github/pdfkit, ee16, main } \n"];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(exp, result, @"");
 }
@@ -174,7 +177,7 @@
 
     S7Config *their = our;
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(our, result, @"");
 }
@@ -187,7 +190,7 @@
     S7Config *our   = [S7Config configWithString:@" keychain = { github/keychain, 12345, main } \n"];
     S7Config *their = [S7Config configWithString:@" keychain = { github/keychain, 54321, main } \n"];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqual(1lu, result.subrepoDescriptions.count);
     XCTAssertTrue([result.subrepoDescriptions[0] isKindOfClass:[S7SubrepoDescriptionConflict class]]);
@@ -208,7 +211,7 @@
                                                   " rduikit = { github/rduikit, 2345, main } \n"];
 
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     S7Config *exp   =  [[S7Config alloc]
                         initWithSubrepoDescriptions:
@@ -231,7 +234,7 @@
     S7Config *their  = [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } \n"
                                                    " rduikit = { github/rduikit, 8888, main } \n"];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     S7Config *exp   =  [[S7Config alloc]
                         initWithSubrepoDescriptions:
@@ -254,7 +257,7 @@
     S7Config *their  = [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } \n"
                                                    " rduikit = { github/rduikit, 7777, huyaster } \n"];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     S7Config *exp   =  [[S7Config alloc]
                         initWithSubrepoDescriptions:
@@ -282,7 +285,7 @@
 
     S7Config *their  = base;
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
 
     XCTAssertEqualObjects(our, result, @"");
 }
@@ -305,7 +308,7 @@
                                                   " pdfkit = { github/pdfkit, 2346, main } \n"
                                                   " rdintegration = { github/rdintegration, 7de5, main } \n"];
 
-    S7Config *result = [S7ConfigMergeDriver mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
     S7Config *exp    = [S7Config configWithString:@" readdleLib = { github/readdleLib, ab12, main } \n"
                                                   " rduikit = { github/rduikit, 7777, main } \n"
                                                   " pdfkit = { github/pdfkit, 2346, main } \n"
@@ -315,5 +318,13 @@
 
     XCTAssertEqualObjects(exp, result, @"");
 }
+
+#pragma mark - utils -
+
+- (S7Config *)mergeOurConfig:(S7Config *)ourConfig theirConfig:(S7Config *)theirConfig baseConfig:(S7Config *)baseConfig {
+    BOOL dummy = NO;
+    return [self.mergeStrategy mergeOurConfig:ourConfig theirConfig:theirConfig baseConfig:baseConfig detectedConflict:&dummy];
+}
+
 
 @end
