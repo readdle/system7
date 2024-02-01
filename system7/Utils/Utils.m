@@ -403,3 +403,9 @@ int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, 
 
     return S7ExitCodeSuccess;
 }
+
+BOOL S7ArgumentMatchesFlag(NSString *argument, NSString *longFlag, NSString *shortFlag) {
+    argument = [argument stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-"]];
+
+    return [argument isEqualToString:shortFlag] || [argument isEqualToString:longFlag];
+}
