@@ -237,8 +237,12 @@ int main(int argc, const char * argv[]) {
         [arguments addObject:argument];
     }
 
-    if ([commandName isEqualToString:@"help"]) {
+    if (S7ArgumentMatchesFlag(commandName, @"help", @"h")) {
         return helpCommand(arguments);
+    }
+
+    if (S7ArgumentMatchesFlag(commandName, @"version", @"v")) {
+        return [[S7VersionCommand new] runWithArguments:@[]];
     }
 
     NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];

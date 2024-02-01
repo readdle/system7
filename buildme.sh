@@ -29,8 +29,9 @@ xcodebuild_cmd() {
     # these headers are unwanted and may cause module import conflicts  
     unset USER_HEADER_SEARCH_PATHS
     unset HEADER_SEARCH_PATHS
+    S7_OTHER_CFLAGS="-DCOMMIT_HASH=\\\"$(git rev-parse --short HEAD)\\\""
     xcodebuild -target system7 -configuration Release clean
-    xcodebuild -target system7 -configuration Release DSTROOT="$HOME" install
+    xcodebuild -target system7 -configuration Release DSTROOT="$HOME" OTHER_CFLAGS="$S7_OTHER_CFLAGS" install
 }
 
 if ! xcodebuild_cmd
