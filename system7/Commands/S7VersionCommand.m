@@ -10,8 +10,9 @@
 
 #import "HelpPager.h"
 
+#ifndef VERSION_NUMBER
 static const char VERSION_NUMBER[] = "1.0";
-static const char VERSION_DATE[] = "2021-02-04";
+#endif
 
 @implementation S7VersionCommand
 
@@ -31,7 +32,11 @@ static const char VERSION_DATE[] = "2021-02-04";
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    logInfo("s7 version %s (%s)\n", VERSION_NUMBER, VERSION_DATE);
+    logInfo("s7 version %s", VERSION_NUMBER);
+#ifdef COMMIT_HASH
+    logInfo(" (%s)", COMMIT_HASH);
+#endif
+    logInfo("\n");
     return S7ExitCodeSuccess;
 }
 

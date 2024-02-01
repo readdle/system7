@@ -31,6 +31,8 @@ int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
 
 NSString *_Nullable getGlobalGitConfigValue(NSString *key);
 
+BOOL S7ArgumentMatchesFlag(NSString *argument, NSString *longFlag, NSString *shortFlag);
+
 #define S7_REPO_PRECONDITION_CHECK()                    \
     do {                                                \
         const int result = s7RepoPreconditionCheck();   \
