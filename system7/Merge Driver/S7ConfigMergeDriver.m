@@ -14,6 +14,7 @@
 #import "S7SubrepoDescriptionConflict.h"
 #import "S7MergeStrategy.h"
 #import "S7DefaultMergeStrategy.h"
+#import "S7KeepTargetBranchMergeStrategy.h"
 
 @interface S7ConfigMergeDriver ()
 @property (nonatomic) NSObject<S7MergeStrategy> *mergeStrategy;
@@ -39,7 +40,13 @@
         return isatty(fileno(stdin));
     };
 
-    self.mergeStrategy = [S7DefaultMergeStrategy new];
+    NSString *targetBranch = NSProcessInfo.processInfo.environment[@"S7_MERGE_DRIVER_KEEP_TARGET_BRANCH"];
+    if (targetBranch.length > 0) {
+        self.mergeStrategy = [[S7KeepTargetBranchMergeStrategy alloc] initWithTargetBranchName:targetBranch];
+    }
+    else {
+        self.mergeStrategy = [S7DefaultMergeStrategy new];
+    }
 
     return self;
 }
