@@ -196,6 +196,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)saveToFileAtPath:(NSString *)filePath {
     NSMutableString *configContents = [[NSMutableString alloc] initWithCapacity:self.subrepoDescriptions.count * 100]; // quick approximation
     for (S7SubrepoDescription *subrepoDescription in self.subrepoDescriptions) {
+        if (subrepoDescription.comment) {
+            [configContents appendString:@"# "];
+            [configContents appendString:subrepoDescription.comment];
+            [configContents appendString:@"\n"];
+        }
         [configContents appendString:[subrepoDescription stringRepresentation]];
         [configContents appendString:@"\n"];
     }

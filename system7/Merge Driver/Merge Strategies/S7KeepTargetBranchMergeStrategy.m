@@ -129,12 +129,30 @@ typedef enum {
         // either both sides have changed this line, but in a different way,
         // or one side have changed and the other have deleted
         // so this is a conflict
-        S7SubrepoDescription *theirOnTargetBranch = [[S7SubrepoDescription alloc] initWithPath:theirVersion.path
-                                                                                           url:theirVersion.url
-                                                                                      revision:theirVersion.revision
-                                                                                        branch:self.targetBranchName];
 
-        recordConflict(ourVersion, theirOnTargetBranch);
+        if (DELETED == ourChanges && UPDATED == theirChanges) {
+            // the result of a keep-target-branch strategy should not prone user to make an error and leave
+            // not the target branch in the resulting .s7substate file.
+            // In this case (our delete, their update), user will be asked to make a choice:
+            //  (d)elete or use a (c)hanged version ?
+            // if user decides to keep a changed version and theirVersion is not at the targetBranch, then we have
+            // high chance for the wrong branch to slip into to the resulting file.
+            // To prevent this, we slightly fool the user (and the merge driver) into thinking that he's deciding
+            // between (d)elete and (c)hanged, where changed points to the targetBranch.
+            //
+            S7SubrepoDescription *theirVersionOnTargetBranch = [[S7SubrepoDescription alloc]
+                                                                initWithPath:theirVersion.path
+                                                                url:theirVersion.url
+                                                                revision:theirVersion.revision
+                                                                branch:self.targetBranchName];
+            theirVersionOnTargetBranch.comment = [NSString stringWithFormat:@"Originally from `%@` branch.",
+                                                  theirVersion.branch];
+
+            recordConflict(ourVersion, theirVersionOnTargetBranch);
+        }
+        else {
+            recordConflict(ourVersion, theirVersion);
+        }
     }
 
     NSMutableDictionary<NSString *, NSNumber *> *sortHint = [NSMutableDictionary dictionaryWithCapacity:ourConfig.subrepoDescriptions.count];

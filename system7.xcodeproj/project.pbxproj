@@ -60,8 +60,7 @@
 		BE82188E2452C1ED00E878A8 /* S7Config.m in Sources */ = {isa = PBXBuildFile; fileRef = BE8218802452C16A00E878A8 /* S7Config.m */; };
 		BE84F1F02B6A3FCC002D440A /* S7DefaultMergeStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = BE84F1EE2B6A3FCC002D440A /* S7DefaultMergeStrategy.m */; };
 		BE84F1F12B6A3FCC002D440A /* S7DefaultMergeStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = BE84F1EE2B6A3FCC002D440A /* S7DefaultMergeStrategy.m */; };
-		BE84F1F32B6A431D002D440A /* keepTargetBranchMergeStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = BE84F1F22B6A431D002D440A /* keepTargetBranchMergeStrategy.m */; };
-		BE84F1F42B6A431D002D440A /* keepTargetBranchMergeStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = BE84F1F22B6A431D002D440A /* keepTargetBranchMergeStrategy.m */; };
+		BE84F1F42B6A431D002D440A /* keepTargetBranchMergeStrategyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE84F1F22B6A431D002D440A /* keepTargetBranchMergeStrategyTests.m */; };
 		BE84F1F72B6A4351002D440A /* S7KeepTargetBranchMergeStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = BE84F1F62B6A4351002D440A /* S7KeepTargetBranchMergeStrategy.m */; };
 		BE84F1F82B6A4352002D440A /* S7KeepTargetBranchMergeStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = BE84F1F62B6A4351002D440A /* S7KeepTargetBranchMergeStrategy.m */; };
 		BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE90D38F258F470900186E86 /* S7BootstrapCommand.m */; };
@@ -179,7 +178,7 @@
 		BE84F1ED2B6A3FCC002D440A /* S7DefaultMergeStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = S7DefaultMergeStrategy.h; sourceTree = "<group>"; };
 		BE84F1EE2B6A3FCC002D440A /* S7DefaultMergeStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7DefaultMergeStrategy.m; sourceTree = "<group>"; };
 		BE84F1EF2B6A3FCC002D440A /* S7MergeStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = S7MergeStrategy.h; sourceTree = "<group>"; };
-		BE84F1F22B6A431D002D440A /* keepTargetBranchMergeStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = keepTargetBranchMergeStrategy.m; sourceTree = "<group>"; };
+		BE84F1F22B6A431D002D440A /* keepTargetBranchMergeStrategyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = keepTargetBranchMergeStrategyTests.m; sourceTree = "<group>"; };
 		BE84F1F52B6A4351002D440A /* S7KeepTargetBranchMergeStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = S7KeepTargetBranchMergeStrategy.h; sourceTree = "<group>"; };
 		BE84F1F62B6A4351002D440A /* S7KeepTargetBranchMergeStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = S7KeepTargetBranchMergeStrategy.m; sourceTree = "<group>"; };
 		BE90D38E258F470900186E86 /* S7BootstrapCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7BootstrapCommand.h; sourceTree = "<group>"; };
@@ -344,7 +343,7 @@
 				BED36BE2246D8A4B00D6EB1C /* postCheckoutHookTests.m */,
 				BE4BB43D246166CE00545358 /* pushHookTests.m */,
 				BED36BEC246E908300D6EB1C /* defaultMergeStrategyTests.m */,
-				BE84F1F22B6A431D002D440A /* keepTargetBranchMergeStrategy.m */,
+				BE84F1F22B6A431D002D440A /* keepTargetBranchMergeStrategyTests.m */,
 				BE172C4824642C3B00B57557 /* mergeDriverTests.m */,
 				BEE1CD02246A9F6F00E2CC3B /* controlTests.m */,
 				BE0173E024864DF300BA4B2F /* resetTests.m */,
@@ -550,7 +549,6 @@
 				BED36BEA246E904E00D6EB1C /* S7PostMergeHook.m in Sources */,
 				BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE0173E424864EBF00BA4B2F /* S7ResetCommand.m in Sources */,
-				BE84F1F32B6A431D002D440A /* keepTargetBranchMergeStrategy.m in Sources */,
 				BE90D390258F470900186E86 /* S7BootstrapCommand.m in Sources */,
 				BE734D2025C34EAD00660FBA /* S7VersionCommand.m in Sources */,
 				6DD4A8302750DC3B0050F3FD /* S7TransportProtocolName.m in Sources */,
@@ -608,7 +606,7 @@
 				BEBE40C42576D04D00E39755 /* deinitTests.m in Sources */,
 				BED60FBB245AC222008EA752 /* Git.m in Sources */,
 				BE3A29F224607234004A2B31 /* initTests.m in Sources */,
-				BE84F1F42B6A431D002D440A /* keepTargetBranchMergeStrategy.m in Sources */,
+				BE84F1F42B6A431D002D440A /* keepTargetBranchMergeStrategyTests.m in Sources */,
 				BE3A29E924604D1B004A2B31 /* S7StatusCommand.m in Sources */,
 				BE3891042461690500394CA8 /* TestUtils.m in Sources */,
 				BE172CD324657CA700B57557 /* S7Diff.m in Sources */,

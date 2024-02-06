@@ -286,6 +286,15 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     if (ourVersion && theirVersion) {
+        __auto_type formatDescription = ^const char *(S7SubrepoDescription *change) {
+            __auto_type string = [NSMutableString new];
+            [string appendString:change.humanReadableRevisionAndBranchState];
+            if (change.comment.length > 0) {
+                [string appendString:[NSString stringWithFormat:@" (%@)", change.comment]];
+            }
+            return [string cStringUsingEncoding:NSUTF8StringEncoding];
+        };
+
         // should write this to stdout or stderr?
         logInfo("\n"
                 " subrepo '%s' has diverged\n"
@@ -294,8 +303,8 @@ saveResultToFilePath:(NSString *)resultFilePath
                 "  you can (m)erge, keep (l)ocal or keep (r)emote.\n"
                 "  what do you want to do? ",
                 ourVersion.path.fileSystemRepresentation,
-                [ourVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding],
-                [theirVersion.humanReadableRevisionAndBranchState cStringUsingEncoding:NSUTF8StringEncoding]
+                formatDescription(ourVersion),
+                formatDescription(theirVersion)
                 );
 
         return [S7ConfigMergeDriver

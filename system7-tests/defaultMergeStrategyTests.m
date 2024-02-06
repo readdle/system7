@@ -85,7 +85,7 @@
 
 #pragma mark - two sides changes - no conflicts -
 
-- (void)testTwoSidesDelSameSubrepo
+- (void)testTwoSidesDeleteSameSubrepo
 {
     S7Config *base  = [S7Config configWithString:@" keychain = { github/keychain, a7d43, main } \n"
                                                   " pdfkit = { github/pdfkit, ee7812, release/pdfexpert-7.3 }  \n"];

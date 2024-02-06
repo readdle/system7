@@ -47,6 +47,18 @@
     [self assertNoSubrepoNotOnTrunk:result];
 }
 
+- (void)testOurSideUpdate
+{
+    S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 11111, trunk } "];
+    S7Config *our   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 22222, trunk } "];
+    S7Config *their = base;
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    XCTAssertEqualObjects(our, result, @"");
+    [self assertNoSubrepoNotOnTrunk:result];
+}
+
 - (void)testOurSideUpdateTheirSideFormalUpdateOfBranch
 {
     S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 11111, trunk } "];
@@ -57,6 +69,27 @@
 
     XCTAssertEqualObjects(our, result, @"");
     [self assertNoSubrepoNotOnTrunk:result];
+}
+
+- (void)testOurSideFormalUpdateTheirSideUpdateOfBranch
+{
+    S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 11111, trunk } "];
+    // emulate merge of trunk to release branch
+    S7Config *our   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 11111, release } "];
+    S7Config *their = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 22222, trunk } "];
+
+    self.mergeStrategy = [[S7KeepTargetBranchMergeStrategy alloc] initWithTargetBranchName:@"release"];
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    S7Config *exp   =  [[S7Config alloc]
+                        initWithSubrepoDescriptions:@[
+        [[S7SubrepoDescriptionConflict alloc]
+         initWithOurVersion:[[S7SubrepoDescription alloc] initWithConfigLine:@" ReaddleLib = { github/ReaddleLib, 11111, release } "]
+         theirVersion:[[S7SubrepoDescription alloc] initWithConfigLine:@" ReaddleLib = { github/ReaddleLib, 22222, trunk } "]]
+    ]];
+
+    XCTAssertEqualObjects(exp, result, @"");
+    [self assertNoSubrepoNotOnBranch:@"release" inConfig:result];
 }
 
 - (void)testNoChanges
@@ -102,6 +135,18 @@
     S7Config *exp = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 1111, trunk }  "];
 
     XCTAssertEqualObjects(exp, result, @"");
+    [self assertNoSubrepoNotOnTrunk:result];
+}
+
+- (void)testOurSideAdd
+{
+    S7Config *base  = [S7Config emptyConfig];
+    S7Config *our   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 1111, trunk }  "];
+    S7Config *their = base;
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    XCTAssertEqualObjects(our, result, @"");
     [self assertNoSubrepoNotOnTrunk:result];
 }
 
@@ -152,9 +197,22 @@
     [self assertNoSubrepoNotOnTrunk:result];
 }
 
+- (void)testOurSideDelete
+{
+    S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, 1111, trunk }"];
+    S7Config *our   = [S7Config emptyConfig];
+    S7Config *their = base;
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    XCTAssertEqualObjects(our, result, @"");
+    [self assertNoSubrepoNotOnTrunk:result];
+}
+
+
 #pragma mark - two sides changes - no conflicts -
 
-- (void)testTwoSidesDelSameSubrepo
+- (void)testTwoSidesDeleteSameSubrepo
 {
     S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
                                                   " pdfkit = { github/pdfkit, ee7812, release/pdfexpert-7.3 }  \n"];
@@ -288,7 +346,7 @@
     [self assertNoSubrepoNotOnTrunk:result];
 }
 
-- (void)testOneSideDelOtherSideUpdateConflict {
+- (void)testOurSideDeleteTheirSideUpdateConflict {
     S7Config *base  = [S7Config configWithString:@" rduikit = { github/rduikit, 7777, trunk } \n"];
 
     S7Config *our   = [S7Config emptyConfig];
@@ -300,115 +358,125 @@
 
     S7Config *exp   =  [[S7Config alloc]
                         initWithSubrepoDescriptions:
+                            @[
+        [[S7SubrepoDescriptionConflict alloc]
+         initWithOurVersion:nil
+         theirVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"2345" branch:@"trunk"]]
+    ]];
+
+    XCTAssertEqualObjects(exp, result, @"");
+
+    S7SubrepoDescriptionConflict *resultingConflict = (S7SubrepoDescriptionConflict *)result.subrepoDescriptions.firstObject;
+    XCTAssert(resultingConflict.theirVersion.comment.length > 0);
+
+    [self assertNoSubrepoNotOnTrunk:result];
+}
+
+- (void)testOurSideDeleteTheirSideFormalUpdateBranchConflict {
+    S7Config *base  = [S7Config configWithString:@" rduikit = { github/rduikit, 7777, trunk } \n"];
+
+    S7Config *our   = [S7Config emptyConfig];
+
+    S7Config *their = [S7Config configWithString:@" rduikit = { github/rduikit, 7777, release } \n"];
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    XCTAssertEqualObjects(our, result, @"");
+    [self assertNoSubrepoNotOnTrunk:result];
+}
+
+- (void)testOurSideUpdateTheirSideDeleteConflict {
+    S7Config *base  = [S7Config configWithString:@" rduikit = { github/rduikit, 7777, trunk } \n"];
+
+    S7Config *our   = [S7Config configWithString:@" rduikit = { github/rduikit, 2345, trunk } \n"];
+
+    S7Config *their = [S7Config emptyConfig];
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    S7Config *exp   =  [[S7Config alloc]
+                        initWithSubrepoDescriptions:
+                            @[
+        [[S7SubrepoDescriptionConflict alloc]
+         initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"2345" branch:@"trunk"]
+         theirVersion:nil]
+    ]];
+
+    XCTAssertEqualObjects(exp, result, @"");
+
+    [self assertNoSubrepoNotOnTrunk:result];
+}
+
+- (void)testTwoSidesAddSameSubrepoWithDifferentStateConflict {
+    S7Config *base  = [S7Config emptyConfig];
+
+    S7Config *our  = [S7Config configWithString:@" rduikit = { github/rduikit, 7777, trunk } \n"];
+
+    S7Config *their  = [S7Config configWithString:@" rduikit = { github/rduikit, 8888, release } \n"];
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    S7Config *exp   =  [[S7Config alloc]
+                        initWithSubrepoDescriptions:
                         @[
                             [[S7SubrepoDescriptionConflict alloc]
-                             initWithOurVersion:nil
-                             // the result of a keep-target-branch strategy should never point to anything
-                             // but the target branch which is why 
-                             theirVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"2345" branch:@"trunk"]]
+                             initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"7777" branch:@"trunk"]
+                             theirVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"8888" branch:@"release"] ]
                         ]];
 
     XCTAssertEqualObjects(exp, result, @"");
     [self assertNoSubrepoNotOnTrunk:result];
 }
 
-//- (void)testTwoSidesAddSameSubrepoWithDifferentStateConflict {
-//    S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"];
-//
-//    S7Config *our  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                 " rduikit = { github/rduikit, 7777, trunk } \n"];
-//
-//    S7Config *their  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                   " rduikit = { github/rduikit, 8888, trunk } \n"];
-//
-//    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
-//
-//    S7Config *exp   =  [[S7Config alloc]
-//                        initWithSubrepoDescriptions:
-//                        @[
-//                            [[S7SubrepoDescription alloc] initWithPath:@"ReaddleLib" url:@"github/ReaddleLib" revision:@"a7d43" branch:@"main"],
-//                            [[S7SubrepoDescriptionConflict alloc]
-//                             initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"7777" branch:@"main"]
-//                             theirVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"8888" branch:@"main"] ]
-//                        ]];
-//
-//    XCTAssertEqualObjects(exp, result, @"");
-//    [self assertNoSubrepoNotOnTrunk:result];
-//}
-//
-//- (void)testTwoSidesAddSameSubrepoWithDifferentBranchButSameRevisionConflict {
-//    S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"];
-//
-//    S7Config *our  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                 " rduikit = { github/rduikit, 7777, i-love-git } \n"];
-//
-//    S7Config *their  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                   " rduikit = { github/rduikit, 7777, huyaster } \n"];
-//
-//    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
-//
-//    S7Config *exp   =  [[S7Config alloc]
-//                        initWithSubrepoDescriptions:
-//                        @[
-//                            [[S7SubrepoDescription alloc] initWithPath:@"ReaddleLib" url:@"github/ReaddleLib" revision:@"a7d43" branch:@"main"],
-//                            [[S7SubrepoDescriptionConflict alloc]
-//                             initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"7777" branch:@"i-love-git"]
-//                             theirVersion:[[S7SubrepoDescription alloc] initWithPath:@"rduikit" url:@"github/rduikit" revision:@"7777" branch:@"huyaster"] ]
-//                        ]];
-//
-//    XCTAssertEqualObjects(exp, result, @"");
-//    [self assertNoSubrepoNotOnTrunk:result];
-//}
-//
-//- (void)testMergeKeepsOurAddedLinesAtTheirPositionInFile {
-//    // this is important to have sane diff that people can read easily
-//    S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                  " rduikit = { github/rduikit, 7777, trunk } \n"];
-//
-//    S7Config *our   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
-//                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
-//                                                  " readdleLib = { github/readdleLib, ab12, trunk } \n"
-//                                                  " syncLib = { github/syncLib, ed67, trunk } \n"
-//                                                  " rdintegration = { github/rdintegration, 7de5, trunk } \n"];
-//
-//    S7Config *their  = base;
-//
-//    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
-//
-//    XCTAssertEqualObjects(our, result, @"");
-//    [self assertNoSubrepoNotOnTrunk:result];
-//}
-//
-//- (void)testMergeKeepsOurLinesOrder {
-//    // say, someone has decided to 'refactor' our config order to make it easier for human beeings.
-//    // we will try to keep this order
-//    S7Config *base   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
-//                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"];
-//
-//    S7Config *our   = [S7Config configWithString:@" readdleLib = { github/readdleLib, ab12, trunk } \n"
-//                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
-//                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
-//                                                  " ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                  " syncLib = { github/syncLib, ed67, trunk } \n"];
-//
-//    S7Config *their   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
-//                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
-//                                                  " rdintegration = { github/rdintegration, 7de5, trunk } \n"];
-//
-//    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
-//    S7Config *exp    = [S7Config configWithString:@" readdleLib = { github/readdleLib, ab12, trunk } \n"
-//                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
-//                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
-//                                                  " ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
-//                                                  " syncLib = { github/syncLib, ed67, trunk } \n"
-//                                                  " rdintegration = { github/rdintegration, 7de5, trunk } \n"];
-//
-//    XCTAssertEqualObjects(exp, result, @"");
-//    [self assertNoSubrepoNotOnTrunk:result];
-//}
+- (void)testMergeKeepsOurAddedLinesAtTheirPositionInFile {
+    // this is important to have sane diff that people can read easily
+    S7Config *base  = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
+                                                  " rduikit = { github/rduikit, 7777, trunk } \n"];
+
+    S7Config *our   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
+                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
+                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
+                                                  " readdleLib = { github/readdleLib, ab12, trunk } \n"
+                                                  " syncLib = { github/syncLib, ed67, trunk } \n"
+                                                  " rdintegration = { github/rdintegration, 7de5, trunk } \n"];
+
+    S7Config *their  = base;
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+
+    XCTAssertEqualObjects(our, result, @"");
+    [self assertNoSubrepoNotOnTrunk:result];
+}
+
+- (void)testMergeKeepsOurLinesOrder {
+    // say, someone has decided to 'refactor' our config order to make it easier for human beeings.
+    // we will try to keep this order
+    S7Config *base   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
+                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
+                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"];
+
+    S7Config *our   = [S7Config configWithString:@" readdleLib = { github/readdleLib, ab12, trunk } \n"
+                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
+                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
+                                                  " ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
+                                                  " syncLib = { github/syncLib, ed67, trunk } \n"];
+
+    S7Config *their   = [S7Config configWithString:@" ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
+                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
+                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
+                                                  " rdintegration = { github/rdintegration, 7de5, trunk } \n"];
+
+    S7Config *result = [self mergeOurConfig:our theirConfig:their baseConfig:base];
+    S7Config *exp    = [S7Config configWithString:@" readdleLib = { github/readdleLib, ab12, trunk } \n"
+                                                  " rduikit = { github/rduikit, 7777, trunk } \n"
+                                                  " pdfkit = { github/pdfkit, 2346, trunk } \n"
+                                                  " ReaddleLib = { github/ReaddleLib, a7d43, trunk } \n"
+                                                  " syncLib = { github/syncLib, ed67, trunk } \n"
+                                                  " rdintegration = { github/rdintegration, 7de5, trunk } \n"];
+
+    XCTAssertEqualObjects(exp, result, @"");
+    [self assertNoSubrepoNotOnTrunk:result];
+}
 
 #pragma mark - utils -
 
@@ -418,15 +486,19 @@
 }
 
 - (void)assertNoSubrepoNotOnTrunk:(S7Config *)config {
+    [self assertNoSubrepoNotOnBranch:@"trunk" inConfig:config];
+}
+
+- (void)assertNoSubrepoNotOnBranch:(NSString *)targetBranch inConfig:(S7Config *)config  {
     for (S7SubrepoDescription *desc in config.subrepoDescriptions) {
         if ([desc isKindOfClass:[S7SubrepoDescriptionConflict class]]) {
             S7SubrepoDescriptionConflict *conflict = (S7SubrepoDescriptionConflict *)desc;
             if (conflict.ourVersion) {
-                XCTAssertEqualObjects(conflict.ourVersion.branch, @"trunk");
+                XCTAssertEqualObjects(conflict.ourVersion.branch, targetBranch);
             }
         }
         else {
-            XCTAssertEqualObjects(desc.branch, @"trunk");
+            XCTAssertEqualObjects(desc.branch, targetBranch);
         }
     }
 }

@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSString *revision;
 @property (nonatomic, readonly) NSString *branch;
 
+@property (nonatomic) NSString *comment;
+
 - (instancetype)initWithConfigLine:(NSString *)trimmedLine;
 
 - (instancetype)initWithPath:(NSString *)path
