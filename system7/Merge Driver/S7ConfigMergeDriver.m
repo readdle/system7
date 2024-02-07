@@ -47,6 +47,7 @@
     else {
         self.mergeStrategy = [S7DefaultMergeStrategy new];
     }
+    logInfo("Using %s.\n", [self.mergeStrategy.className cStringUsingEncoding:NSUTF8StringEncoding]);
 
     return self;
 }
