@@ -261,7 +261,7 @@
     if (nil != error) {
         logError("failed to read contents of .git/config file. Error: %s\n",
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 3;
+        return S7ExitCodeFileOperationFailed;
     }
 
     NSString *mergeDriverDeclarationHeader = @"[merge \"s7\"]";

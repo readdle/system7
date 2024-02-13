@@ -29,10 +29,6 @@ typedef NS_OPTIONS(uint32_t, S7ConflictResolutionOption) {
                                                                          S7SubrepoDescription * _Nullable theirVersion);
 @property (nonatomic) BOOL (^isTerminalInteractive)(void);
 
-+ (S7Config *)mergeOurConfig:(S7Config *)ourLines
-                 theirConfig:(S7Config *)theirConfig
-                  baseConfig:(S7Config *)baseConfig;
-
 - (int)mergeRepo:(GitRepository *)repo
       baseConfig:(S7Config *)baseConfig
        ourConfig:(S7Config *)ourConfig

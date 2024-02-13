@@ -1,5 +1,5 @@
 //
-//  mergeTests.m
+//  mergeDriverTests.m
 //  system7-tests
 //
 //  Created by Pavlo Shkrabliuk on 07.05.2020.
@@ -27,11 +27,11 @@
 #import "S7SubrepoDescriptionConflict.h"
 
 
-@interface mergeTests : XCTestCase
+@interface mergeDriverTests : XCTestCase
 @property (nonatomic, strong) TestReposEnvironment *env;
 @end
 
-@implementation mergeTests
+@implementation mergeDriverTests
 
 - (void)setUp {
     self.env = [[TestReposEnvironment alloc] initWithTestCaseName:self.className];
@@ -43,6 +43,7 @@
 
 - (void)tearDown {
     unsetenv("S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
+    unsetenv("S7_MERGE_DRIVER_KEEP_TARGET_BRANCH");
     unsetenv("S7_MERGE_DRIVER_RESPONSE");
 }
 
@@ -1443,4 +1444,98 @@
     }];
 }
 
+- (void)testMergeKeepTargetBranch {
+    setenv("S7_MERGE_DRIVER_KEEP_TARGET_BRANCH", "main", 1);
+
+    __block S7Config *baseConfig = nil;
+    __block NSString *readdleLib_initialRevision = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLib_initialRevision];
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add ReaddleLib subrepo"];
+
+        baseConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        s7push_currentBranch(repo);
+    }];
+    
+    __block S7Config *niksConfig = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        s7init_deactivateHooks();
+
+        S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
+        const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
+        XCTAssertEqual(0, mergeHookExitStatus);
+
+        [repo checkoutNewLocalBranch:@"release"];
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        [readdleLibSubrepoGit checkoutNewLocalBranch:@"release"];
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        niksConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+
+        NSString *readdleLib_pasteys_Revision = commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"iPhone 15", @"add new device");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        S7Config *ourConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        [repo fetch];
+
+        S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
+        [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                                          S7SubrepoDescription * _Nonnull theirVersion)
+         {
+            XCTFail(@"Keep Target Branch strategy should not produce merge conflicts in this scenario.");
+            return S7ConflictResolutionOptionMerge;
+         }];
+
+        XCTAssertNotEqual(0, [repo mergeWith:@"release"]);
+
+        const int mergeExitStatus = [configMergeDriver
+                                     mergeRepo:repo
+                                     baseConfig:baseConfig
+                                     ourConfig:ourConfig
+                                     theirConfig:niksConfig
+                                     saveResultToFilePath:S7ConfigFileName];
+        XCTAssertEqual(S7ExitCodeSuccess, mergeExitStatus);
+
+        NSString *readdleLibActualRevision = nil;
+        [readdleLibSubrepoGit getCurrentRevision:&readdleLibActualRevision];
+
+        XCTAssertEqualObjects(readdleLibActualRevision, readdleLib_pasteys_Revision);
+
+        NSString *readdleLibActualBranch = nil;
+        BOOL dummy = NO;
+        [readdleLibSubrepoGit getCurrentBranch:&readdleLibActualBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy];
+        XCTAssertEqualObjects(readdleLibActualBranch, @"main");
+
+        S7Config *expectedConfig = [[S7Config alloc] initWithSubrepoDescriptions:@[
+            [[S7SubrepoDescription alloc]
+             initWithPath:@"Dependencies/ReaddleLib"
+             url:self.env.githubReaddleLibRepo.absolutePath
+             revision:readdleLib_pasteys_Revision
+             branch:@"main"]
+        ]];
+
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        XCTAssertEqualObjects(actualConfig, expectedConfig);
+    }];
+}
 @end

@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSString *revision;
 @property (nonatomic, readonly) NSString *branch;
 
+@property (nonatomic, nullable) NSString *comment;
+
 - (instancetype)initWithConfigLine:(NSString *)trimmedLine;
 
 - (instancetype)initWithPath:(NSString *)path
@@ -29,6 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSString *)stringRepresentation;
 - (NSString *)humanReadableRevisionAndBranchState;
+
+- (BOOL)isEqual:(id)object ignoreBranches:(BOOL)shouldIgnoreBranches;
 
 @end
 

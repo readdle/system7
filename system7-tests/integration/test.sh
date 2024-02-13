@@ -33,6 +33,10 @@ then
     TESTS_TO_RUN=`ls case*.sh`
 fi
 
+if [ ${#TESTS_TO_RUN[@]} -eq 1 ]; then
+    PARALLELIZE=0
+fi
+
 prepareTemplateRepos() {
     git init -q --bare templates/rd2
     git init -q --bare templates/ReaddleLib

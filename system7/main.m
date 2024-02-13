@@ -91,6 +91,11 @@ void printHelp(void) {
     help_puts("    This is necessary if direct push to the <local> branch is restricted by the protection rules");
     help_puts("    at Git hosting system. User will then create a PR from S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
     help_puts("    to the branch from <local>.");
+    help_puts("");
+    help_puts(" S7_MERGE_DRIVER_KEEP_TARGET_BRANCH");
+    help_puts("    When provided, forces the merge driver to use a strategy that resolves conflicts in subrepo");
+    help_puts("    references by favoring the branch specified in the variable, as well as retargeting \"their\"");
+    help_puts("    added subrepos to the branch in question.");
 }
 
 Class commandClassByName(NSString *commandName) {

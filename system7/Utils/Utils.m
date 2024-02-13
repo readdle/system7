@@ -12,8 +12,8 @@
 int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void)) {
     NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
     if (NO == [[NSFileManager defaultManager] changeCurrentDirectoryPath:directory]) {
-        NSCAssert(NO, @"todo: add logs");
-        return 3;
+        logError("failed to change current directory to %s.", directory.fileSystemRepresentation);
+        return S7ExitCodeFileOperationFailed;
     }
 
     int operationReturnValue = 128;
@@ -23,7 +23,8 @@ int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void)) {
     }
     @finally {
         if (NO == [[NSFileManager defaultManager] changeCurrentDirectoryPath:cwd]) {
-            NSCAssert(NO, @"failed to return CWD to the old state");
+            logError("failed to return current directory to %s.", cwd.fileSystemRepresentation);
+            return S7ExitCodeFileOperationFailed;
         }
     }
 }
@@ -76,7 +77,7 @@ int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend) {
     if (nil != error) {
         logError("failed to read contents of .gitignore file. Error: %s\n",
                  [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 3;
+        return S7ExitCodeFileOperationFailed;
     }
 
     NSArray<NSString *> *existingGitIgnoreLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
@@ -166,7 +167,7 @@ int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend) {
     if (nil != error) {
         logError("failed to read contents of .gitattributes file. Error: %s\n",
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 3;
+        return S7ExitCodeFileOperationFailed;
     }
 
     NSArray<NSString *> *existingGitattributeLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];

@@ -117,6 +117,10 @@
 #pragma mark -
 
 - (BOOL)isEqual:(id)object {
+    return [self isEqual:object ignoreBranches:NO];
+}
+
+- (BOOL)isEqual:(id)object ignoreBranches:(BOOL)shouldIgnoreBranches {
     if (NO == [object isKindOfClass:[S7SubrepoDescription class]]) {
         return NO;
     }
@@ -126,7 +130,7 @@
     return [self.path isEqualToString:other.path] &&
            [self.url isEqualToString:other.url] &&
            [self.revision isEqualToString:other.revision] &&
-           [self.branch isEqualToString:other.branch];
+           ([self.branch isEqualToString:other.branch] || shouldIgnoreBranches);
 }
 
 - (NSUInteger)hash {
