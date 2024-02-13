@@ -32,7 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *)stringRepresentation;
 - (NSString *)humanReadableRevisionAndBranchState;
 
-// TODO: Naming? NS_OPTION?
 - (BOOL)isEqual:(id)object ignoreBranches:(BOOL)shouldIgnoreBranches;
 
 @end

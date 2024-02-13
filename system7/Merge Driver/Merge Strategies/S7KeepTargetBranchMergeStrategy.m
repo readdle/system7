@@ -52,7 +52,6 @@ typedef enum {
     NSMutableDictionary<NSString *, S7SubrepoDescription *> *theirUpdate = nil;
     diffConfigs(baseConfig, theirConfig, &theirDelete, &theirUpdate, &theirAdd);
 
-    // TODO: Extract
     NSMutableSet<NSString *> *formallyUpdatedSubrepos = [NSMutableSet new];
     [theirUpdate enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull subrepoPath, S7SubrepoDescription * _Nonnull desc, BOOL * _Nonnull _) {
         S7SubrepoDescription *baseDesc = baseConfig.pathToDescriptionMap[subrepoPath];
@@ -62,7 +61,6 @@ typedef enum {
     }];
 
     [theirUpdate removeObjectsForKeys:formallyUpdatedSubrepos.allObjects];
-    // TODO: -
 
     NSMutableArray<S7SubrepoDescription *> * result = [NSMutableArray arrayWithCapacity:ourConfig.subrepoDescriptions.count];
 
