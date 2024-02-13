@@ -106,7 +106,6 @@
 
 #pragma mark - their side changes -
 
-// TODO: проверить как это сработает на настоящих репозиториях в обоих сценариях
 - (void)testTheirSideAdd
 {
     S7Config *base  = [S7Config emptyConfig];
