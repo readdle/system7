@@ -33,7 +33,7 @@
     }
     
     if ([S7PostCommitHook shouldSkipExecutionInRepo:repo]) {
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
     if (self.hookWillUpdateSubrepos) {

@@ -191,18 +191,18 @@ int helpCommand(NSArray<NSString *> *arguments) {
     return withHelpPaginationDo(^int {
         if (arguments.count < 1) {
             printHelp();
-            return 0;
+            return S7ExitCodeSuccess;
         }
         
         NSString *commandName = arguments.firstObject;
         Class<S7Command> commandClass = commandClassByName(commandName);
         if (commandClass) {
             [commandClass printCommandHelp];
-            return 0;
+            return S7ExitCodeSuccess;
         }
         else {
             printHelp();
-            return 1;
+            return S7ExitCodeUnknownCommand;
         }
     });
 }

@@ -56,7 +56,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         //
         S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
         if ([actualConfig isEqual:lastSavedS7Config]) {
-            return 0;
+            return S7ExitCodeSuccess;
         }
     }
 
@@ -142,7 +142,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 + (int)checkoutSubreposForRepo:(GitRepository *)repo

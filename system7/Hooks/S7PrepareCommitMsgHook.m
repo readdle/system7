@@ -46,7 +46,7 @@
 
     if (NO == isCurrentDirectoryS7RepoRoot()) {
         logInfo(" doing nothing, no s7 at this branch.\n");
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
     const char *GIT_REFLOG_ACTION = getenv("GIT_REFLOG_ACTION");
@@ -83,7 +83,7 @@
         return [postRevertConfig saveToFileAtPath:S7ControlFileName];
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 @end

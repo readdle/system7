@@ -64,7 +64,7 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (BOOL)shouldInstallBootstrap {
