@@ -9,7 +9,7 @@
 #import "S7PostCheckoutHook.h"
 
 #import "S7Diff.h"
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7InitCommand.h"
 #import "S7BootstrapCommand.h"
 #import "S7Options.h"

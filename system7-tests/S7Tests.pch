@@ -6,7 +6,7 @@
 #import "Git.h"
 #import "Git+Tests.h"
 #import "S7Config.h"
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7Types.h"
 #import "S7Logging.h"
 #import "S7SubrepoDescription.h"

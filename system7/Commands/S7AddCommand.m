@@ -10,7 +10,7 @@
 #import "S7Config.h"
 #import "S7Options.h"
 #import "Git.h"
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7InitCommand.h"
 #import "S7PostCheckoutHook.h"
 #import "HelpPager.h"

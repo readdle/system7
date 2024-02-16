@@ -1,5 +1,5 @@
 //
-//  Utils.h
+//  S7Utils.h
 //  system7
 //
 //  Created by Pavlo Shkrabliuk on 28.04.2020.

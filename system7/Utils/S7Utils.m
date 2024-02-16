@@ -1,12 +1,12 @@
 //
-//  Utils.m
+//  S7Utils.m
 //  system7
 //
 //  Created by Pavlo Shkrabliuk on 28.04.2020.
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7BootstrapCommand.h"
 
 int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void)) {

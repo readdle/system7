@@ -8,7 +8,7 @@
 
 #import "S7InitCommand.h"
 
-#import "Utils.h"
+#import "S7Utils.h"
 #import "HelpPager.h"
 
 #import "S7PrePushHook.h"

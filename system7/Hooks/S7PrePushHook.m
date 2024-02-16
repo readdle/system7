@@ -8,7 +8,7 @@
 
 #import "S7PrePushHook.h"
 
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7Diff.h"
 #import "S7StatusCommand.h"
 
