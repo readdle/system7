@@ -29,7 +29,7 @@
 
 #import "S7ConfigMergeDriver.h"
 
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 void printHelp(void) {
     help_puts("");

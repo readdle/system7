@@ -13,7 +13,7 @@
 #import "S7Utils.h"
 #import "S7InitCommand.h"
 #import "S7PostCheckoutHook.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

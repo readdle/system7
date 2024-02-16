@@ -9,7 +9,7 @@
 #import "S7InitCommand.h"
 
 #import "S7Utils.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"

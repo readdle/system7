@@ -9,7 +9,7 @@
 #import "S7BootstrapCommand.h"
 
 #import "S7Utils.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

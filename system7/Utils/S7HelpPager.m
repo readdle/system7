@@ -1,12 +1,12 @@
 //
-//  HelpPager.m
+//  S7HelpPager.m
 //  system7
 //
 //  Created by Nik on 24.07.2020.
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 static FILE *_s7helpFile = NULL;
 

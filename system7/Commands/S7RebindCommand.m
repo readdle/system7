@@ -9,7 +9,7 @@
 #import "S7RebindCommand.h"
 #import "S7Config.h"
 #import "Git.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 @implementation S7RebindCommand
 

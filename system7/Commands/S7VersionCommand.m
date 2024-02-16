@@ -8,7 +8,7 @@
 
 #import "S7VersionCommand.h"
 
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 #ifndef VERSION_NUMBER
 static const char VERSION_NUMBER[] = "1.0";
