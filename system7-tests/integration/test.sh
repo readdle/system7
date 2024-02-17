@@ -33,7 +33,7 @@ then
     TESTS_TO_RUN=`ls case*.sh`
 fi
 
-if [ ${#TESTS_TO_RUN[@]} -eq 1 ]; then
+if [ ${#CASES_ARRAY[@]} -eq 1 ]; then
     PARALLELIZE=0
 fi
 
