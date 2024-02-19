@@ -365,11 +365,13 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         ppStdErrOutput = &__stdErrOutputGuarantee;
     }
 
+    NSUInteger numberOfPipesToWait = 0;
     __block NSMutableData *outputData = nil;
     if (ppStdOutOutput) {
         outputData = [NSMutableData new];
         NSPipe *outputPipe = [NSPipe new];
         task.standardOutput = outputPipe;
+        ++numberOfPipesToWait;
         setUpPipeReadabilityHandler(outputPipe, outputData);
     }
 
@@ -378,6 +380,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         errorData = [NSMutableData new];
         NSPipe *errorPipe = [NSPipe new];
         task.standardError = errorPipe;
+        ++numberOfPipesToWait;
         setUpPipeReadabilityHandler(errorPipe, errorData);
     }
 
@@ -391,16 +394,18 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
     [task waitUntilExit];
 
-    if (ppStdOutOutput) {
+    // we don't know the order in which the pipes will close. Wait for both and only then we can be sure that
+    // both datas can be read safely.
+    for (NSUInteger i=0; i<numberOfPipesToWait; ++i) {
         dispatch_semaphore_wait(pipeCloseSemaphore, DISPATCH_TIME_FOREVER);
+    }
 
+    if (ppStdOutOutput) {
         NSString *stdOutOutput = [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding];
         *ppStdOutOutput = stdOutOutput;
     }
 
     if (ppStdErrOutput) {
-        dispatch_semaphore_wait(pipeCloseSemaphore, DISPATCH_TIME_FOREVER);
-
         NSString *stdErrorOutput = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];
         *ppStdErrOutput = stdErrorOutput;
     }

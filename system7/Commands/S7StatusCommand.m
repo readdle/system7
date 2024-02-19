@@ -295,7 +295,7 @@
         if ([NSFileManager.defaultManager fileExistsAtPath:[absoluteSubrepoPath stringByAppendingPathComponent:S7ConfigFileName]]) {
             NSDictionary<NSString *, NSNumber *> *subrepoStatus = nil;
             const int subrepoStatusExitCode = [self repo:subrepoGit calculateStatus:&subrepoStatus];
-            if (0 != subrepoStatusExitCode) {
+            if (S7ExitCodeSuccess != subrepoStatusExitCode) {
                 @synchronized (self) {
                     error = subrepoStatusExitCode;
                 }
