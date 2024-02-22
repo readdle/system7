@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
-		24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* HelpPager.m */; };
+		2465939C24CA336700EFC5A0 /* S7HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* S7HelpPager.m */; };
+		24689D5D24D1C914004DDB91 /* S7HelpPager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2465939B24CA336700EFC5A0 /* S7HelpPager.m */; };
 		40183E542915558200009EFD /* GitFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = 40183E532915558200009EFD /* GitFilter.m */; };
 		40183E552915558200009EFD /* GitFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = 40183E532915558200009EFD /* GitFilter.m */; };
 		6D73D3B1270702D0009AE0B9 /* S7IniConfigOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D73D3B0270702D0009AE0B9 /* S7IniConfigOptions.m */; };
@@ -79,8 +79,8 @@
 		BED36BEA246E904E00D6EB1C /* S7PostMergeHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BE9246E904E00D6EB1C /* S7PostMergeHook.m */; };
 		BED36BEB246E904E00D6EB1C /* S7PostMergeHook.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BE9246E904E00D6EB1C /* S7PostMergeHook.m */; };
 		BED36BED246E908300D6EB1C /* defaultMergeStrategyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BED36BEC246E908300D6EB1C /* defaultMergeStrategyTests.m */; };
-		BED60E162458811A008EA752 /* Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60E152458811A008EA752 /* Utils.m */; };
-		BED60E172458811A008EA752 /* Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60E152458811A008EA752 /* Utils.m */; };
+		BED60E162458811A008EA752 /* S7Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60E152458811A008EA752 /* S7Utils.m */; };
+		BED60E172458811A008EA752 /* S7Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60E152458811A008EA752 /* S7Utils.m */; };
 		BED60FB5245AB8F9008EA752 /* S7AddCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FB4245AB8F9008EA752 /* S7AddCommand.m */; };
 		BED60FB6245AB8F9008EA752 /* S7AddCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FB4245AB8F9008EA752 /* S7AddCommand.m */; };
 		BED60FB9245ABB43008EA752 /* S7RebindCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BED60FB8245ABB43008EA752 /* S7RebindCommand.m */; };
@@ -112,8 +112,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2465939A24CA336700EFC5A0 /* HelpPager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HelpPager.h; sourceTree = "<group>"; };
-		2465939B24CA336700EFC5A0 /* HelpPager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HelpPager.m; sourceTree = "<group>"; };
+		2465939A24CA336700EFC5A0 /* S7HelpPager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7HelpPager.h; sourceTree = "<group>"; };
+		2465939B24CA336700EFC5A0 /* S7HelpPager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7HelpPager.m; sourceTree = "<group>"; };
 		2493CEE029EE88C500B9ECD8 /* Git+Tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Git+Tests.h"; sourceTree = "<group>"; };
 		40183E522915551100009EFD /* GitFilter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GitFilter.h; sourceTree = "<group>"; };
 		40183E532915558200009EFD /* GitFilter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GitFilter.m; sourceTree = "<group>"; };
@@ -197,8 +197,8 @@
 		BED36BE8246E904E00D6EB1C /* S7PostMergeHook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7PostMergeHook.h; sourceTree = "<group>"; };
 		BED36BE9246E904E00D6EB1C /* S7PostMergeHook.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7PostMergeHook.m; sourceTree = "<group>"; };
 		BED36BEC246E908300D6EB1C /* defaultMergeStrategyTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = defaultMergeStrategyTests.m; sourceTree = "<group>"; };
-		BED60E152458811A008EA752 /* Utils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Utils.m; sourceTree = "<group>"; };
-		BED60E192458813F008EA752 /* Utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Utils.h; sourceTree = "<group>"; };
+		BED60E152458811A008EA752 /* S7Utils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7Utils.m; sourceTree = "<group>"; };
+		BED60E192458813F008EA752 /* S7Utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Utils.h; sourceTree = "<group>"; };
 		BED60F2E2459CE7D008EA752 /* S7Types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Types.h; sourceTree = "<group>"; };
 		BED60FB2245AB866008EA752 /* S7Command.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7Command.h; sourceTree = "<group>"; };
 		BED60FB3245AB8F9008EA752 /* S7AddCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7AddCommand.h; sourceTree = "<group>"; };
@@ -370,12 +370,12 @@
 		BED60E1824588122008EA752 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				BED60E192458813F008EA752 /* Utils.h */,
-				BED60E152458811A008EA752 /* Utils.m */,
+				BED60E192458813F008EA752 /* S7Utils.h */,
+				BED60E152458811A008EA752 /* S7Utils.m */,
 				BE172CD424657CE900B57557 /* S7Diff.h */,
 				BE172CD124657CA700B57557 /* S7Diff.m */,
-				2465939A24CA336700EFC5A0 /* HelpPager.h */,
-				2465939B24CA336700EFC5A0 /* HelpPager.m */,
+				2465939A24CA336700EFC5A0 /* S7HelpPager.h */,
+				2465939B24CA336700EFC5A0 /* S7HelpPager.m */,
 				BEBC62E12AC57662005979E8 /* S7Logging.h */,
 				BEBC62E22AC57662005979E8 /* S7Logging.m */,
 			);
@@ -563,14 +563,14 @@
 				BEE1CD09246AEE9E00E2CC3B /* S7Command.m in Sources */,
 				BEBC62E32AC57662005979E8 /* S7Logging.m in Sources */,
 				BE8218782452BA7300E878A8 /* main.m in Sources */,
-				BED60E162458811A008EA752 /* Utils.m in Sources */,
+				BED60E162458811A008EA752 /* S7Utils.m in Sources */,
 				BED60FB9245ABB43008EA752 /* S7RebindCommand.m in Sources */,
 				BE84F1F72B6A4351002D440A /* S7KeepTargetBranchMergeStrategy.m in Sources */,
 				BE1079C02466C557002A2A45 /* S7SubrepoDescription.m in Sources */,
 				6DD4A82D2750DAB00050F3FD /* S7DefaultOptions.m in Sources */,
 				BED36BE6246E809000D6EB1C /* S7PostCommitHook.m in Sources */,
 				6DD4A8332750E3070050F3FD /* S7Options.m in Sources */,
-				2465939C24CA336700EFC5A0 /* HelpPager.m in Sources */,
+				2465939C24CA336700EFC5A0 /* S7HelpPager.m in Sources */,
 				BE394D3C2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -627,10 +627,10 @@
 				6DD4A8392750E8A40050F3FD /* S7IniConfigOptions.m in Sources */,
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,
 				BE84F1F82B6A4352002D440A /* S7KeepTargetBranchMergeStrategy.m in Sources */,
-				24689D5D24D1C914004DDB91 /* HelpPager.m in Sources */,
+				24689D5D24D1C914004DDB91 /* S7HelpPager.m in Sources */,
 				BEBE40CA2576D0B900E39755 /* S7DeinitCommand.m in Sources */,
 				BE3A29F02460712F004A2B31 /* S7InitCommand.m in Sources */,
-				BED60E172458811A008EA752 /* Utils.m in Sources */,
+				BED60E172458811A008EA752 /* S7Utils.m in Sources */,
 				BE28CB332472C16200DCA875 /* S7ConfigMergeDriver.m in Sources */,
 				BE84F1F12B6A3FCC002D440A /* S7DefaultMergeStrategy.m in Sources */,
 				BED60FBA245ABB43008EA752 /* S7RebindCommand.m in Sources */,

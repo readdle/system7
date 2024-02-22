@@ -8,8 +8,8 @@
 
 #import "S7InitCommand.h"
 
-#import "Utils.h"
-#import "HelpPager.h"
+#import "S7Utils.h"
+#import "S7HelpPager.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -234,7 +234,7 @@
 
 - (int)installS7ConfigMergeDriverInRepo:(GitRepository *)repo {
     if (self.installFakeHooks) {
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
     NSString *configFilePath = [repo.absolutePath stringByAppendingPathComponent:@".git/config"];
@@ -247,13 +247,13 @@
                    attributes:nil])
         {
             logError("failed to create .git/config file\n");
-            return 1;
+            return S7ExitCodeFileOperationFailed;
         }
     }
 
     if (isDirectory) {
         logError(".git/config is a directory!?\n");
-        return 2;
+        return S7ExitCodeGitOperationFailed;
     }
 
     NSError *error = nil;
@@ -280,7 +280,7 @@
         if (NO == [newContent writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
             logError("failed to write contents of .git/config file. Error: %s\n",
                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-            return 4;
+            return S7ExitCodeFileOperationFailed;
         }
     }
 
@@ -290,7 +290,7 @@
         return gitattributesUpdateExitCode;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (int)createBootstrapFileInRepo:(GitRepository *)repo {

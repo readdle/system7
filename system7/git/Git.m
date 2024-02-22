@@ -8,7 +8,7 @@
 
 #import "Git+Tests.h"
 #import "GitFilter.h"
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7IniConfig.h"
 
 #include <stdlib.h>

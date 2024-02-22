@@ -8,8 +8,8 @@
 
 #import "S7BootstrapCommand.h"
 
-#import "Utils.h"
-#import "HelpPager.h"
+#import "S7Utils.h"
+#import "S7HelpPager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -64,7 +64,7 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (BOOL)shouldInstallBootstrap {

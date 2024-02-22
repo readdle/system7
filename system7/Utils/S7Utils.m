@@ -1,12 +1,12 @@
 //
-//  Utils.m
+//  S7Utils.m
 //  system7
 //
 //  Created by Pavlo Shkrabliuk on 28.04.2020.
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7BootstrapCommand.h"
 
 int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void)) {
@@ -49,7 +49,7 @@ int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __au
 
     *ppConfig = [[S7Config alloc] initWithContentsString:configContents];
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend) {
@@ -63,13 +63,13 @@ int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend) {
                    attributes:nil])
         {
             logError("failed to create .gitignore file\n");
-            return 1;
+            return S7ExitCodeFileOperationFailed;
         }
     }
 
     if (isDirectory) {
         logError(".gitignore is a directory!?\n");
-        return 2;
+        return S7ExitCodeGitOperationFailed;
     }
 
     NSError *error = nil;
@@ -83,7 +83,7 @@ int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend) {
     NSArray<NSString *> *existingGitIgnoreLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
     if ([existingGitIgnoreLines containsObject:lineToAppend]) {
         // do not add twice
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
     if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
@@ -101,7 +101,7 @@ int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend) {
         return 4;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove) {
@@ -153,13 +153,13 @@ int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend) {
                    attributes:nil])
         {
             logError("failed to create .gitattributes file\n");
-            return 1;
+            return S7ExitCodeFileOperationFailed;
         }
     }
 
     if (isDirectory) {
         logError(".gitattributes is a directory!?\n");
-        return 2;
+        return S7ExitCodeGitOperationFailed;
     }
 
     NSError *error = nil;
@@ -173,7 +173,7 @@ int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend) {
     NSArray<NSString *> *existingGitattributeLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
     if ([existingGitattributeLines containsObject:lineToAppend]) {
         // do not add twice
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
     if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
@@ -191,7 +191,7 @@ int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend) {
         return 4;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove) {

@@ -11,7 +11,7 @@
 #import "S7StatusCommand.h"
 
 #import "TestReposEnvironment.h"
-#import "Utils.h"
+#import "S7Utils.h"
 #import "Git.h"
 
 @interface statusTests : XCTestCase

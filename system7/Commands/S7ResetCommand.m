@@ -8,9 +8,9 @@
 
 #import "S7ResetCommand.h"
 
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7PostCheckoutHook.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 @implementation S7ResetCommand
 

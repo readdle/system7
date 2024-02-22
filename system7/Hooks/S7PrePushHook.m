@@ -8,7 +8,7 @@
 
 #import "S7PrePushHook.h"
 
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7Diff.h"
 #import "S7StatusCommand.h"
 
@@ -91,7 +91,7 @@
     NSString *stdinStringContent = [[self stdinContents] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (0 == stdinStringContent.length) {
         // user is playing with `git push` on an up-to-date repo
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
     // pastey:
@@ -168,7 +168,7 @@
         }
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (int)calculateSubreposToPushFromMainRepo:(GitRepository *)repo

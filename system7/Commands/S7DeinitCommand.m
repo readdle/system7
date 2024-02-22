@@ -8,7 +8,7 @@
 
 #import "S7DeinitCommand.h"
 
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 // I considered if deinit should remove all actual subrepo directories
 // and decided not to do that. I don't know what will the user do next:

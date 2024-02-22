@@ -9,7 +9,7 @@
 #import "S7KeepTargetBranchMergeStrategy.h"
 
 #import "S7Diff.h"
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7SubrepoDescriptionConflict.h"
 
 

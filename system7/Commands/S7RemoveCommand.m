@@ -7,7 +7,7 @@
 //
 
 #import "S7RemoveCommand.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 @implementation S7RemoveCommand
 
