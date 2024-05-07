@@ -774,7 +774,7 @@ parentRepoAbsolutePath:(NSString *)parentRepoAbsolutePath
         }
     }
 
-    logInfo("  cloned subrepo '%s'", [subrepoDesc.path fileSystemRepresentation]);
+    logInfo("  cloned subrepo '%s'\n", [subrepoDesc.path fileSystemRepresentation]);
 
     NSAssert(subrepoGit, @"");
     *ppSubrepoGit = subrepoGit;
