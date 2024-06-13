@@ -199,6 +199,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
     }
 
+    NSArray<S7SubrepoDescription *> *subreposWithNotCommittedLocalChanges = nil;
+
     {
         // checking for uncommitted changes is an expensive operation
         // as we must run real git command. We are running this check
@@ -243,24 +245,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         if (subreposWithUncommittedChangesIndices.count > 0) {
-            logError("\n"
-                     "  subrepos with uncommitted local changes were not updated\n"
-                     "  to prevent possible data loss:\n\n");
-
-            [subreposToCheckout
-             enumerateObjectsAtIndexes:subreposWithUncommittedChangesIndices
-             options:0
-             usingBlock:^(S7SubrepoDescription * _Nonnull subrepoDesc, NSUInteger idx, BOOL * _Nonnull stop) {
-                logError("    %s\n", [subrepoDesc.path fileSystemRepresentation]);
-             }];
-
-            logError(
-                    "\n"
-                    "  Use `s7 reset` to discard subrepo changes.\n"
-                    "  (see `s7 help reset` for more info)\n"
-                    "\n"
-                    "  Or you can run `git reset REV && git reset --hard REV`\n"
-                    "  in subrepo yourself.\n");
+            subreposWithNotCommittedLocalChanges = [subreposToCheckout objectsAtIndexes:subreposWithUncommittedChangesIndices];
 
             [subreposToCheckout removeObjectsAtIndexes:subreposWithUncommittedChangesIndices];
         }
@@ -374,6 +359,30 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     const S7ExitCode initExitCode = [self initS7InSubrepos:subreposToInit];
     if (S7ExitCodeSuccess != initExitCode) {
         exitCode = initExitCode;
+    }
+
+    if (subreposWithNotCommittedLocalChanges.count > 0) {
+        logError("\n"
+                 "\033[1m"
+                 "  Subrepos with uncommitted local changes were not updated\n"
+                 "  to prevent possible data loss:\n\n"
+                 "\033[0m");
+
+        for (S7SubrepoDescription *subrepoDesc in subreposWithNotCommittedLocalChanges) {
+            logError("    %s\n", [subrepoDesc.path fileSystemRepresentation]);
+        }
+
+        logError(
+                "\n"
+                ""
+                "  Please check if that is something you still need.\n"
+                "\n"
+                "  If changes are not necessary, then you can either:\n"
+                "\n"
+                "   - Discard changes yourself.\n"
+                "   - Use `s7 reset <repo(s)>`. It will nuke changes for you.\n"
+                "     Please, read `s7 help reset` before using the `reset` command.\n"
+                "\n");
     }
 
     return exitCode;
@@ -530,7 +539,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
 
         if (NO == clean) {
-            logError("  uncommited local changes in subrepo '%s'\n",
+            logError("  uncommitted local changes in subrepo '%s'\n",
                      subrepoDesc.path.fileSystemRepresentation);
 
             @synchronized (self) {
@@ -540,7 +549,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         else {
             const int resetExitStatus = [subrepoGit resetLocalChanges];
             if (0 != resetExitStatus) {
-                logError("  failed to discard uncommited changes in subrepo '%s'\n",
+                logError("  failed to discard uncommitted changes in subrepo '%s'\n",
                          subrepoDesc.path.fileSystemRepresentation);
 
                 @synchronized (self) {
