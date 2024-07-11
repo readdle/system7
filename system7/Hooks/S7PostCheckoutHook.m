@@ -11,6 +11,7 @@
 #import "S7Diff.h"
 #import "S7Utils.h"
 #import "S7InitCommand.h"
+#import "S7DeinitCommand.h"
 #import "S7BootstrapCommand.h"
 #import "S7Options.h"
 #import "S7Logging.h"
@@ -132,14 +133,12 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             return S7ExitCodeFileOperationFailed;
         }
     }
-    else if ([NSFileManager.defaultManager fileExistsAtPath:controlFileAbsolutePath]) {
-        NSError *error = nil;
-        if (NO == [NSFileManager.defaultManager removeItemAtPath:controlFileAbsolutePath error:&error]) {
-            logError("failed to remove %s. Error: %s\n",
-                     S7ControlFileName.fileSystemRepresentation,
-                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-            return S7ExitCodeFileOperationFailed;
-        }
+    else {
+        // switch to a pre-s7 state. Let's call deinit.
+        // It will remove all untracked s7 system files, s7 hooks, merge driver, etc.
+        //
+        S7DeinitCommand *command = [S7DeinitCommand new];
+        return [command runWithArguments:@[]];
     }
 
     return S7ExitCodeSuccess;
