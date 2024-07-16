@@ -68,6 +68,10 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (BOOL)shouldInstallBootstrap {
+    if ([self isS7PostCheckoutAlreadyInstalled]) {
+        return NO;
+    }
+
     if ([self willBootstrapConflictWithGitLFS]) {
         return NO;
     }
@@ -83,6 +87,28 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     return YES;
+}
+
+- (BOOL)isS7PostCheckoutAlreadyInstalled {
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks/post-checkout"]) {
+        return NO;
+    }
+
+    NSError *error = nil;
+    NSString *postCheckoutContent = [[NSString alloc] initWithContentsOfFile:@".git/hooks/post-checkout"
+                                                                    encoding:NSUTF8StringEncoding
+                                                                       error:&error];
+    if (nil != error) {
+        logError("s7 bootstrap: failed to read contents of the post-checkout hook file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return NO;
+    }
+
+    if ([postCheckoutContent containsString:@"s7 post-checkout"]) {
+        return YES;
+    }
+
+    return NO;
 }
 
 - (BOOL)willBootstrapConflictWithGitLFS {

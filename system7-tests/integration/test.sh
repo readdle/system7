@@ -98,15 +98,25 @@ setupAndRunCase() {
 
     if [ 1 -eq $PARALLELIZE ]; then
         S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" >"$TEST_ROOT/log.txt" 2>&1
+
+        if [ -f "$TEST_ROOT/FAIL" ]; then
+            printf "${red}x${normal}"
+        else
+            printf "${green}v${normal}"
+        fi
     else
+        echo
+        echo "$CASE"
+        echo "============="
         S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" 2>&1
+        echo
+        if [ -f "$TEST_ROOT/FAIL" ]; then
+            printf "❌\n"
+        else
+            printf "✅\n"
+        fi
     fi
 
-    if [ -f "$TEST_ROOT/FAIL" ]; then
-        printf "${red}x${normal}"
-    else
-        printf "${green}v${normal}"
-    fi
 }
 
 for CASE in $TESTS_TO_RUN; do
