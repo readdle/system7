@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*.*.*
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build executable for release
+        run: |
+          sh buildme.sh
+      - name: Compress archive
+        run: |
+          tar -czf s7.tar.gz -C "$HOME/bin/" s7
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: s7.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: s7
+          homebrew-tap: readdle/homebrew-readdle
+          base-branch: main
+          download-url: https://github.com/readdle/system7/releases/download/${{ github.ref_name }}/s7.tar.gz
+        env:
+          COMMITTER_TOKEN: ${{ secrets.S7_BREW_FORMULA_AUTOMATION }}
