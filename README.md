@@ -12,7 +12,7 @@ You use System 7 via a CLI tool named `s7`.
 ### Homebrew
 
 > [!WARNING]  
-> Readdle employees must use the [**HEAD/Development version install script.**]([HEAD/Development version install script](#headdevelopment-version-install-script))
+> **Readdle employees must use the [HEAD/Development version install script](#headdevelopment-version-install-script)**
 
 `brew install readdle/readdle/s7`. To get upgrades later, run `brew upgrade s7`.
 
