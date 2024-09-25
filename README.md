@@ -11,6 +11,9 @@ You use System 7 via a CLI tool named `s7`.
 
 ### Homebrew
 
+> [!WARNING]  
+> **Readdle employees must use the [HEAD/Development version install script](#headdevelopment-version-install-script)**
+
 `brew install readdle/readdle/s7`. To get upgrades later, run `brew upgrade s7`.
 
 After `s7` is installed, we recommend to run `git config --global filter.s7.smudge "s7 bootstrap"`. This is optional, but will save you some extra keystrokes when you get a fresh clone of an s7-driven repo.
