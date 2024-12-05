@@ -251,6 +251,12 @@ saveResultToFilePath:(NSString *)resultFilePath
     }
 
     if (NO == conflictResolved) {
+        [S7PostCheckoutHook checkoutSubreposForRepo:repo
+                                         fromConfig:ourConfig
+                                           toConfig:mergeResult
+                                              clean:NO
+                                      skipConflicts:YES];
+
         return S7ExitCodeMergeFailed;
     }
 

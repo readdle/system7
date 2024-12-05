@@ -159,6 +159,29 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                       toConfig:(S7Config *)toConfig
                          clean:(BOOL)clean
 {
+    return [self checkoutSubreposForRepo:repo
+                              fromConfig:fromConfig
+                                toConfig:toConfig
+                                   clean:clean
+                           skipConflicts:NO];
+}
+
++ (int)checkoutSubreposForRepo:(GitRepository *)repo
+                    fromConfig:(S7Config *)fromConfig
+                      toConfig:(S7Config *)toConfig
+                         clean:(BOOL)clean
+                 skipConflicts:(BOOL)skipConflicts
+{
+    if (skipConflicts) {
+        NSAssert(0 == [[self findConflictsInConfig:fromConfig] count], @"");
+
+        NSArray<S7SubrepoDescription *> *const subrepoConflicts = [self findConflictsInConfig:toConfig];
+        if (0 != subrepoConflicts.count) {
+            fromConfig = [self makeConfigWithConfig:fromConfig removingSubrepoDescriptions:subrepoConflicts];
+            toConfig = [self makeConfigWithConfig:toConfig removingSubrepoDescriptions:subrepoConflicts];
+        }
+    }
+
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *dummy = nil;
     diffConfigs(fromConfig,
@@ -385,6 +408,35 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 
     return exitCode;
+}
+
++ (NSArray<S7SubrepoDescription *> *)findConflictsInConfig:(S7Config *)config {
+    NSPredicate *const conflictPredicate = [NSPredicate predicateWithBlock:
+                                            ^BOOL(S7SubrepoDescription *  _Nullable subrepoDescription,
+                                                  NSDictionary<NSString *,id> * _Nullable bindings) {
+        return subrepoDescription.hasConflict;
+    }];
+
+    return [config.subrepoDescriptions filteredArrayUsingPredicate:conflictPredicate];
+}
+
++ (S7Config *)makeConfigWithConfig:(S7Config *)config
+       removingSubrepoDescriptions:(NSArray<S7SubrepoDescription *> *)subrepoDescriptionsToRemove
+{
+    NSMutableSet<NSString *> *pathsToRemove = [NSMutableSet set];
+    for (S7SubrepoDescription *const subrepoDescription in subrepoDescriptionsToRemove) {
+        [pathsToRemove addObject:subrepoDescription.path];
+    }
+
+    NSPredicate *const predicate = [NSPredicate predicateWithBlock:
+                                    ^BOOL(S7SubrepoDescription *  _Nullable subrepoDescription,
+                                          NSDictionary<NSString *,id> * _Nullable bindings) {
+        return NO == [pathsToRemove containsObject:subrepoDescription.path];
+    }];
+
+    NSArray<S7SubrepoDescription *> *subrepoDescriptionsToRetain = [config.subrepoDescriptions
+                                                                    filteredArrayUsingPredicate:predicate];
+    return [[S7Config alloc] initWithSubrepoDescriptions:subrepoDescriptionsToRetain];
 }
 
 + (int)tryMovingSameOriginSubrepos:(NSArray<S7SubrepoDescription *> *)subrepos
