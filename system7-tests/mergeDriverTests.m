@@ -657,10 +657,11 @@
     }];
 }
 
-- (void)testTheirAddNewSubrepoBothSideUpdateSubrepoToDifferentRevisionConflictResolution_KeepConflict {
+- (void)testTheirAddNewSubrepoBothSideUpdateSubrepoSameFileConflictResolution_Merge {
     __block S7Config *baseConfig = nil;
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        s7add(@"Dependencies/RDSFTP", self.env.githubRDSFTPRepo.absolutePath);
 
         [repo add:@[S7ConfigFileName, @".gitignore"]];
         [repo commitWithMessage:@"add subrepos"];
@@ -672,6 +673,7 @@
 
     __block S7Config *niksConfig = nil;
     __block NSString *readdleLib_niks_Revision = nil;
+    __block NSString *rdsftpLib_niks_Revistion = nil;
     __block NSString *rdpdfKitLib_niks_Revision = nil;
     [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
         [repo pull];
@@ -684,11 +686,13 @@
 
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         XCTAssertNotNil(readdleLibSubrepoGit);
-
         readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"xyz", @"some useful math func");
 
-        s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        GitRepository *rdsftpLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDSFTP"];
+        XCTAssertNotNil(rdsftpLibSubrepoGit);
+        rdsftpLib_niks_Revistion = commit(rdsftpLibSubrepoGit, @"RDConfiguration.h", @"config", @"some changes");
 
+        s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
         GitRepository *rdpdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
         XCTAssertEqual(0, [rdpdfKitSubrepoGit getCurrentRevision:&rdpdfKitLib_niks_Revision]);
 
@@ -703,7 +707,7 @@
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
         NSString *readdleLib_pasteys_Revision =
-            commit(readdleLibSubrepoGit, @"RDSystemInfo.h", @"iPad 11''", @"add support for a new iPad model");
+            commit(readdleLibSubrepoGit, @"RDGeometry.h", @"zyx", @"another useful math func");
 
         s7rebind_with_stage();
         [repo commitWithMessage:@"up ReaddleLib and RDPDFKit"];
@@ -722,7 +726,7 @@
          {
             XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
 
-            return S7ConflictResolutionOptionKeepConflict;
+            return S7ConflictResolutionOptionMerge;
          }];
 
         const int mergeExitStatus = [configMergeDriver
@@ -749,6 +753,12 @@
                            branch:@"main"]],
 
             [[S7SubrepoDescription alloc]
+             initWithPath:@"Dependencies/RDSFTP"
+             url:self.env.githubRDSFTPRepo.absolutePath
+             revision:rdsftpLib_niks_Revistion
+             branch:@"main"],
+
+            [[S7SubrepoDescription alloc]
              initWithPath:@"Dependencies/RDPDFKit"
              url:self.env.githubRDPDFKitRepo.absolutePath
              revision:rdpdfKitLib_niks_Revision
@@ -762,15 +772,29 @@
         XCTAssertEqualObjects(actualConfig, controlConfig);
 
         // Test ReaddleLib has merge conflict and subrepo is set to local revision.
-        NSString *readdleLibSubrepoRevision = nil;
-        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&readdleLibSubrepoRevision]);
-        XCTAssertEqualObjects(readdleLibSubrepoRevision, readdleLib_pasteys_Revision);
+        XCTAssertTrue(readdleLibSubrepoGit.hasMergeConflict);
+
+        NSString *readdleLibRevision = nil;
+        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&readdleLibRevision]);
+        XCTAssertEqualObjects(readdleLibRevision, readdleLib_pasteys_Revision);
+
+        // Test RDSFTP has been updated to the latest 'their' revision.
+        GitRepository *rdsftpSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDSFTP"];
+        XCTAssertNotNil(rdsftpSubrepoGit);
+        XCTAssertFalse(rdsftpSubrepoGit.hasMergeConflict);
+
+        NSString *rdsftpLibRevision = nil;
+        XCTAssertEqual(0, [rdsftpSubrepoGit getCurrentRevision:&rdsftpLibRevision]);
+        XCTAssertEqualObjects(rdsftpLibRevision, rdsftpLib_niks_Revistion);
 
         // Test RDPDFKit has been checked out and points to 'their' revision.
         GitRepository *pdfkitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
-        NSString *pdfkitSubrepoRevision = nil;
-        XCTAssertEqual(0, [pdfkitSubrepoGit getCurrentRevision:&pdfkitSubrepoRevision]);
-        XCTAssertEqualObjects(pdfkitSubrepoRevision, rdpdfKitLib_niks_Revision);
+        XCTAssertNotNil(pdfkitSubrepoGit);
+        XCTAssertFalse(pdfkitSubrepoGit.hasMergeConflict);
+
+        NSString *pdfkitLibRevision = nil;
+        XCTAssertEqual(0, [pdfkitSubrepoGit getCurrentRevision:&pdfkitLibRevision]);
+        XCTAssertEqualObjects(pdfkitLibRevision, rdpdfKitLib_niks_Revision);
     }];
 }
 

@@ -1337,6 +1337,26 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     _testRepoConfigureOnInitBlock = testRepoConfigureOnInitBlock;
 }
 
+- (BOOL)hasMergeConflict {
+    NSString *stdOutOutput = nil;
+    const int unmergedFilesStatus = [self runGitCommand:@"ls-files -u"
+                                           stdOutOutput:&stdOutOutput
+                                           stdErrOutput:NULL];
+    if (0 != unmergedFilesStatus) {
+        return NO;
+    }
+
+    __block BOOL result = NO;
+    [stdOutOutput enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        if (line.length > 0) {
+            result = YES;
+            *stop = YES;
+        }
+    }];
+
+    return result;
+}
+
 @end
 
 
