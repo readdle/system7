@@ -159,19 +159,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                       toConfig:(S7Config *)toConfig
                          clean:(BOOL)clean
 {
-    return [self checkoutSubreposForRepo:repo
-                              fromConfig:fromConfig
-                                toConfig:toConfig
-                                   clean:clean
-                           skipConflicts:NO];
-}
-
-+ (int)checkoutSubreposForRepo:(GitRepository *)repo
-                    fromConfig:(S7Config *)fromConfig
-                      toConfig:(S7Config *)toConfig
-                         clean:(BOOL)clean
-                 skipConflicts:(BOOL)skipConflicts
-{
     NSDictionary<NSString *, S7SubrepoDescription *> *subreposToDelete = nil;
     NSDictionary<NSString *, S7SubrepoDescription *> *dummy = nil;
     diffConfigs(fromConfig,
@@ -212,6 +199,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 
     NSArray<S7SubrepoDescription *> *subreposWithNotCommittedLocalChanges = nil;
+    NSArray<S7SubrepoDescription *> *subreposWithConflict = nil;
 
     {
         // checking for uncommitted changes is an expensive operation
@@ -252,7 +240,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                                                      ensureSubreposHaveNoUncommitedChanges:subreposToCheckout
                                                      subrepoDescToGit:subrepoDescToGit
                                                      clean:clean
-                                                     skipConflicts:skipConflicts
                                                      indicesOfSubreposWithUncommittedChanges:&subreposWithUncommittedChangesIndices
                                                      indicesOfSubreposWithConflict:&indicesOfSubreposWithConflict];
         if (S7ExitCodeSuccess != checkUncommittedChangesExitCode) {
@@ -268,6 +255,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             }
 
             if (indicesOfSubreposWithConflict.count > 0) {
+                subreposWithConflict = [subreposToCheckout objectsAtIndexes:indicesOfSubreposWithConflict];
                 [subrepoIndicesToRemove addIndexes:indicesOfSubreposWithConflict];
             }
 
@@ -289,10 +277,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     dispatch_apply(subreposToCheckout.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
 
         S7SubrepoDescription *subrepoDesc = subreposToCheckout[i];
-        if (subrepoDesc.hasConflict) {
-            return;
-        }
-
         NSString *subrepoAbsolutePath = [repo.absolutePath stringByAppendingPathComponent:subrepoDesc.path];
 
         GitRepository *subrepoGit = subrepoDescToGit[subrepoDesc];
@@ -391,10 +375,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     if (subreposWithNotCommittedLocalChanges.count > 0) {
         logError("\n"
-                 "\033[1m"
                  "  Subrepos with uncommitted local changes were not updated\n"
-                 "  to prevent possible data loss:\n\n"
-                 "\033[0m");
+                 "  to prevent possible data loss:\n\n");
 
         for (S7SubrepoDescription *subrepoDesc in subreposWithNotCommittedLocalChanges) {
             logError("    %s\n", [subrepoDesc.path fileSystemRepresentation]);
@@ -411,6 +393,15 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 "   - Use `s7 reset <repo(s)>`. It will nuke changes for you.\n"
                 "     Please, read `s7 help reset` before using the `reset` command.\n"
                 "\n");
+    }
+
+    if (subreposWithConflict.count > 0) {
+        logError("\n"
+                 "  Subrepos with merge conflict that must be resolved manually:\n");
+
+        for (S7SubrepoDescription *subrepoDesc in subreposWithConflict) {
+            logError("    %s\n", [subrepoDesc.path fileSystemRepresentation]);
+        }
     }
 
     return exitCode;
@@ -546,7 +537,6 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 + (int)ensureSubreposHaveNoUncommitedChanges:(NSArray<S7SubrepoDescription *> *)subrepoDescriptions
                             subrepoDescToGit:(NSDictionary<S7SubrepoDescription *, GitRepository *> *)subrepoDescToGit
                                        clean:(BOOL)clean
-                               skipConflicts:(BOOL)skipConflicts
      indicesOfSubreposWithUncommittedChanges:(NSIndexSet **)ppIndicesOfSubreposWithUncommittedChanges
                indicesOfSubreposWithConflict:(NSIndexSet **)ppIndicesOfSubreposWithConflict
 {
@@ -559,32 +549,33 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
         NSCAssert(subrepoDesc, @"");
 
+        if (NO == clean && subrepoDesc.hasConflict) {
+            logError("merge conflict in subrepo %s\n",
+                    subrepoDesc.path.fileSystemRepresentation);
+
+            @synchronized (self) {
+                [indicesOfSubreposWithConflict addIndex:i];
+            }
+
+            return;
+        }
+
         if (nil == subrepoGit) {
             // this subrepo is not cloned yet, so nothing to check
             return;
         }
 
 
-        if (NO == [subrepoGit hasUncommitedChanges] && NO == subrepoDesc.hasConflict) {
+        if (NO == [subrepoGit hasUncommitedChanges]) {
             return;
         }
 
         if (NO == clean) {
-            if (skipConflicts && subrepoDesc.hasConflict) {
-                logInfo("Merge conflict in subrepo %s\n",
-                        subrepoDesc.path.fileSystemRepresentation);
+            logError("  uncommitted local changes in subrepo '%s'\n",
+                     subrepoDesc.path.fileSystemRepresentation);
 
-                @synchronized (self) {
-                    [indicesOfSubreposWithConflict addIndex:i];
-                }
-            }
-            else {
-                logError("  uncommitted local changes in subrepo '%s'\n",
-                         subrepoDesc.path.fileSystemRepresentation);
-
-                @synchronized (self) {
-                    [indicesOfSubreposWithUncommittedChanges addIndex:i];
-                }
+            @synchronized (self) {
+                [indicesOfSubreposWithUncommittedChanges addIndex:i];
             }
         }
         else {

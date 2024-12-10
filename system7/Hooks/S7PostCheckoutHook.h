@@ -27,12 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
                       toConfig:(S7Config *)toConfig
                          clean:(BOOL)clean;
 
-+ (int)checkoutSubreposForRepo:(GitRepository *)repo
-                    fromConfig:(S7Config *)fromConfig
-                      toConfig:(S7Config *)toConfig
-                         clean:(BOOL)clean
-                 skipConflicts:(BOOL)skipConflicts;
-
 @end
 
 NS_ASSUME_NONNULL_END
