@@ -13,6 +13,7 @@
 #import "S7InitCommand.h"
 #import "S7DeinitCommand.h"
 #import "S7BootstrapCommand.h"
+#import "S7SubrepoDescriptionConflict.h"
 #import "S7Options.h"
 #import "S7Logging.h"
 
@@ -549,7 +550,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
         NSCAssert(subrepoDesc, @"");
 
-        if (NO == clean && subrepoDesc.hasConflict) {
+        if (NO == clean && [subrepoDesc isKindOfClass:[S7SubrepoDescriptionConflict class]]) {
             logError("merge conflict in subrepo %s\n",
                     subrepoDesc.path.fileSystemRepresentation);
 

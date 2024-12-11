@@ -154,10 +154,4 @@
     return self.stringRepresentation;
 }
 
-#pragma mark -
-
-- (BOOL)hasConflict {
-    return NO;
-}
-
 @end

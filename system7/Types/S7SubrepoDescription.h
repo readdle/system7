@@ -22,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, nullable) NSString *comment;
 
-@property (nonatomic, readonly) BOOL hasConflict;
-
 - (instancetype)initWithConfigLine:(NSString *)trimmedLine;
 
 - (instancetype)initWithPath:(NSString *)path

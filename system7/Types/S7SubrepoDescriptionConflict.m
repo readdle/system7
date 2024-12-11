@@ -82,8 +82,5 @@
             self.theirVersion ? [NSString stringWithFormat:@"%@\n", self.theirVersion.stringRepresentation] : @""];
 }
 
-- (BOOL)hasConflict {
-    return YES;
-}
 
 @end
