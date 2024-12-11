@@ -101,8 +101,8 @@ assert test -f Dependencies/ReaddleLib/.git/MERGE_HEAD
 assert grep '"<<<"' Dependencies/ReaddleLib/RDMath.h > /dev/null
 
 # RDGeometry must be updated to the latest revision
-assert test $(git -C Dependencies/RDGeometry rev-parse HEAD) == $RDGEOMETRY_REVISION
+assert test $(git -C Dependencies/RDGeometry rev-parse HEAD) = $RDGEOMETRY_REVISION
 
 # RDPDFKit subrepo must exist and been checked out to the latest revision
 assert test -d Dependencies/RDPDFKit
-assert test $(git -C Dependencies/RDPDFKit rev-parse HEAD) == $RDPDFKIT_REVISION
+assert test $(git -C Dependencies/RDPDFKit rev-parse HEAD) = $RDPDFKIT_REVISION
