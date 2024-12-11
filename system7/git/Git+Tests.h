@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)runGitCommand:(NSString *)command;
 
 @property (nonatomic, class) void (^testRepoConfigureOnInitBlock)(GitRepository *repo);
+@property (nonatomic, readonly) BOOL hasMergeConflict;
 
 @end
 

@@ -641,6 +641,160 @@
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertNotNil(controlConfig);
         XCTAssertEqualObjects(actualConfig, controlConfig);
+
+        NSString *readdleLibSubrepoRevision = nil;
+        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&readdleLibSubrepoRevision]);
+        XCTAssertEqualObjects(readdleLibSubrepoRevision, readdleLib_pasteys_Revision);
+
+        NSString *pdfkitSubrepoRevision = nil;
+        XCTAssertEqual(0, [pdfkitSubrepoGit getCurrentRevision:&pdfkitSubrepoRevision]);
+        XCTAssertEqualObjects(pdfkitSubrepoRevision, pdfkit_pasteys_Revision);
+
+        GitRepository *sftpSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDSFTP"];
+        NSString *sftpSubrepoRevision = nil;
+        XCTAssertEqual(0, [sftpSubrepoGit getCurrentRevision:&sftpSubrepoRevision]);
+        XCTAssertEqualObjects(sftpSubrepoRevision, sftp_niks_Revision);
+    }];
+}
+
+- (void)testTheirAddNewSubrepoBothSideUpdateSubrepoSameFileConflictResolution_Merge {
+    __block S7Config *baseConfig = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7add(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        s7add(@"Dependencies/RDSFTP", self.env.githubRDSFTPRepo.absolutePath);
+
+        [repo add:@[S7ConfigFileName, @".gitignore"]];
+        [repo commitWithMessage:@"add subrepos"];
+
+        baseConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        s7push_currentBranch(repo);
+    }];
+
+    __block S7Config *niksConfig = nil;
+    __block NSString *readdleLib_niks_Revision = nil;
+    __block NSString *rdsftpLib_niks_Revistion = nil;
+    __block NSString *rdpdfKitLib_niks_Revision = nil;
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        [repo pull];
+
+        s7init_deactivateHooks();
+
+        S7PostMergeHook *postMergeHook = [S7PostMergeHook new];
+        const int mergeHookExitStatus = [postMergeHook runWithArguments:@[]];
+        XCTAssertEqual(0, mergeHookExitStatus);
+
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertNotNil(readdleLibSubrepoGit);
+        readdleLib_niks_Revision = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"xyz", @"some useful math func");
+
+        GitRepository *rdsftpLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDSFTP"];
+        XCTAssertNotNil(rdsftpLibSubrepoGit);
+        rdsftpLib_niks_Revistion = commit(rdsftpLibSubrepoGit, @"RDConfiguration.h", @"config", @"some changes");
+
+        s7add(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        GitRepository *rdpdfKitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        XCTAssertEqual(0, [rdpdfKitSubrepoGit getCurrentRevision:&rdpdfKitLib_niks_Revision]);
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib and RDSFTP"];
+
+        niksConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        s7push_currentBranch(repo);
+    }];
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *readdleLibSubrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        NSString *readdleLib_pasteys_Revision =
+            commit(readdleLibSubrepoGit, @"RDGeometry.h", @"zyx", @"another useful math func");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib and RDPDFKit"];
+
+        S7Config *ourConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        const int pushExitStatus = s7push_currentBranch(repo);
+        XCTAssertNotEqual(0, pushExitStatus, @"nik has pushed. I must merge");
+
+        [repo fetch];
+
+        S7ConfigMergeDriver *configMergeDriver = [S7ConfigMergeDriver new];
+
+        [configMergeDriver setResolveConflictBlock:^S7ConflictResolutionOption(S7SubrepoDescription * _Nonnull ourVersion,
+                                                                          S7SubrepoDescription * _Nonnull theirVersion)
+         {
+            XCTAssertEqualObjects(ourVersion.path, @"Dependencies/ReaddleLib");
+
+            return S7ConflictResolutionOptionMerge;
+         }];
+
+        const int mergeExitStatus = [configMergeDriver
+                                     mergeRepo:repo
+                                     baseConfig:baseConfig
+                                     ourConfig:ourConfig
+                                     theirConfig:niksConfig
+                                     saveResultToFilePath:S7ConfigFileName];
+        XCTAssertNotEqual(0, mergeExitStatus);
+
+        S7Config *actualConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+
+        S7Config *expectedConfig = [[S7Config alloc] initWithSubrepoDescriptions:@[
+            [[S7SubrepoDescriptionConflict alloc]
+             initWithOurVersion:[[S7SubrepoDescription alloc]
+                                 initWithPath:@"Dependencies/ReaddleLib"
+                                 url:self.env.githubReaddleLibRepo.absolutePath
+                                 revision:readdleLib_pasteys_Revision
+                                 branch:@"main"]
+             theirVersion:[[S7SubrepoDescription alloc]
+                           initWithPath:@"Dependencies/ReaddleLib"
+                           url:self.env.githubReaddleLibRepo.absolutePath
+                           revision:readdleLib_niks_Revision
+                           branch:@"main"]],
+
+            [[S7SubrepoDescription alloc]
+             initWithPath:@"Dependencies/RDSFTP"
+             url:self.env.githubRDSFTPRepo.absolutePath
+             revision:rdsftpLib_niks_Revistion
+             branch:@"main"],
+
+            [[S7SubrepoDescription alloc]
+             initWithPath:@"Dependencies/RDPDFKit"
+             url:self.env.githubRDPDFKitRepo.absolutePath
+             revision:rdpdfKitLib_niks_Revision
+             branch:@"main"]
+        ]];
+
+        XCTAssertEqualObjects(actualConfig, expectedConfig);
+
+        S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
+        XCTAssertNotNil(controlConfig);
+        XCTAssertEqualObjects(actualConfig, controlConfig);
+
+        // Test ReaddleLib has merge conflict and subrepo is set to local revision.
+        XCTAssertTrue(readdleLibSubrepoGit.hasMergeConflict);
+
+        NSString *readdleLibRevision = nil;
+        XCTAssertEqual(0, [readdleLibSubrepoGit getCurrentRevision:&readdleLibRevision]);
+        XCTAssertEqualObjects(readdleLibRevision, readdleLib_pasteys_Revision);
+
+        // Test RDSFTP has been updated to the latest 'their' revision.
+        GitRepository *rdsftpSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDSFTP"];
+        XCTAssertNotNil(rdsftpSubrepoGit);
+        XCTAssertFalse(rdsftpSubrepoGit.hasMergeConflict);
+
+        NSString *rdsftpLibRevision = nil;
+        XCTAssertEqual(0, [rdsftpSubrepoGit getCurrentRevision:&rdsftpLibRevision]);
+        XCTAssertEqualObjects(rdsftpLibRevision, rdsftpLib_niks_Revistion);
+
+        // Test RDPDFKit has been checked out and points to 'their' revision.
+        GitRepository *pdfkitSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit"];
+        XCTAssertNotNil(pdfkitSubrepoGit);
+        XCTAssertFalse(pdfkitSubrepoGit.hasMergeConflict);
+
+        NSString *pdfkitLibRevision = nil;
+        XCTAssertEqual(0, [pdfkitSubrepoGit getCurrentRevision:&pdfkitLibRevision]);
+        XCTAssertEqualObjects(pdfkitLibRevision, rdpdfKitLib_niks_Revision);
     }];
 }
 
@@ -769,6 +923,8 @@
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertNotNil(controlConfig);
         XCTAssertEqualObjects(actualConfig, controlConfig);
+
+        XCTAssertEqualObjects(readdleLibActualRevision, mergedReaddleLibRevision);
     }];
 }
 
@@ -1441,6 +1597,8 @@
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertNotNil(controlConfig);
         XCTAssertEqualObjects(actualConfig, controlConfig);
+
+        XCTAssertNil([GitRepository repoAtPath:@"Dependencies/ReaddleLib"]);
     }];
 }
 

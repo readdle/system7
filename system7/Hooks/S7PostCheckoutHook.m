@@ -13,6 +13,7 @@
 #import "S7InitCommand.h"
 #import "S7DeinitCommand.h"
 #import "S7BootstrapCommand.h"
+#import "S7SubrepoDescriptionConflict.h"
 #import "S7Options.h"
 #import "S7Logging.h"
 
@@ -199,6 +200,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     }
 
     NSArray<S7SubrepoDescription *> *subreposWithNotCommittedLocalChanges = nil;
+    NSArray<S7SubrepoDescription *> *subreposWithConflict = nil;
 
     {
         // checking for uncommitted changes is an expensive operation
@@ -234,19 +236,31 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         //
 
         NSIndexSet *subreposWithUncommittedChangesIndices = nil;
+        NSIndexSet *indicesOfSubreposWithConflict = nil;
         const int checkUncommittedChangesExitCode = [self
                                                      ensureSubreposHaveNoUncommitedChanges:subreposToCheckout
                                                      subrepoDescToGit:subrepoDescToGit
                                                      clean:clean
-                                                     indicesOfSubreposWithUncommittedChanges:&subreposWithUncommittedChangesIndices];
+                                                     indicesOfSubreposWithUncommittedChanges:&subreposWithUncommittedChangesIndices
+                                                     indicesOfSubreposWithConflict:&indicesOfSubreposWithConflict];
         if (S7ExitCodeSuccess != checkUncommittedChangesExitCode) {
             exitCode = checkUncommittedChangesExitCode;
         }
 
-        if (subreposWithUncommittedChangesIndices.count > 0) {
-            subreposWithNotCommittedLocalChanges = [subreposToCheckout objectsAtIndexes:subreposWithUncommittedChangesIndices];
+        if (subreposWithUncommittedChangesIndices.count > 0 || indicesOfSubreposWithConflict.count > 0) {
+            NSMutableIndexSet *subrepoIndicesToRemove = [NSMutableIndexSet new];
 
-            [subreposToCheckout removeObjectsAtIndexes:subreposWithUncommittedChangesIndices];
+            if (subreposWithUncommittedChangesIndices.count > 0) {
+                subreposWithNotCommittedLocalChanges = [subreposToCheckout objectsAtIndexes:subreposWithUncommittedChangesIndices];
+                [subrepoIndicesToRemove addIndexes:subreposWithUncommittedChangesIndices];
+            }
+
+            if (indicesOfSubreposWithConflict.count > 0) {
+                subreposWithConflict = [subreposToCheckout objectsAtIndexes:indicesOfSubreposWithConflict];
+                [subrepoIndicesToRemove addIndexes:indicesOfSubreposWithConflict];
+            }
+
+            [subreposToCheckout removeObjectsAtIndexes:subrepoIndicesToRemove];
         }
     }
 
@@ -362,10 +376,8 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     if (subreposWithNotCommittedLocalChanges.count > 0) {
         logError("\n"
-                 "\033[1m"
                  "  Subrepos with uncommitted local changes were not updated\n"
-                 "  to prevent possible data loss:\n\n"
-                 "\033[0m");
+                 "  to prevent possible data loss:\n\n");
 
         for (S7SubrepoDescription *subrepoDesc in subreposWithNotCommittedLocalChanges) {
             logError("    %s\n", [subrepoDesc.path fileSystemRepresentation]);
@@ -382,6 +394,15 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 "   - Use `s7 reset <repo(s)>`. It will nuke changes for you.\n"
                 "     Please, read `s7 help reset` before using the `reset` command.\n"
                 "\n");
+    }
+
+    if (subreposWithConflict.count > 0) {
+        logError("\n"
+                 "  Subrepos with merge conflict that must be resolved manually:\n");
+
+        for (S7SubrepoDescription *subrepoDesc in subreposWithConflict) {
+            logError("    %s\n", [subrepoDesc.path fileSystemRepresentation]);
+        }
     }
 
     return exitCode;
@@ -518,14 +539,27 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                             subrepoDescToGit:(NSDictionary<S7SubrepoDescription *, GitRepository *> *)subrepoDescToGit
                                        clean:(BOOL)clean
      indicesOfSubreposWithUncommittedChanges:(NSIndexSet **)ppIndicesOfSubreposWithUncommittedChanges
+               indicesOfSubreposWithConflict:(NSIndexSet **)ppIndicesOfSubreposWithConflict
 {
     NSMutableIndexSet *indicesOfSubreposWithUncommittedChanges = [NSMutableIndexSet new];
+    NSMutableIndexSet *indicesOfSubreposWithConflict = [NSMutableIndexSet new];
 
     dispatch_apply(subrepoDescriptions.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
         S7SubrepoDescription *subrepoDesc = subrepoDescriptions[i];
         GitRepository *subrepoGit = subrepoDescToGit[subrepoDesc];
 
         NSCAssert(subrepoDesc, @"");
+
+        if (NO == clean && [subrepoDesc isKindOfClass:[S7SubrepoDescriptionConflict class]]) {
+            logError("merge conflict in subrepo %s\n",
+                    subrepoDesc.path.fileSystemRepresentation);
+
+            @synchronized (self) {
+                [indicesOfSubreposWithConflict addIndex:i];
+            }
+
+            return;
+        }
 
         if (nil == subrepoGit) {
             // this subrepo is not cloned yet, so nothing to check
@@ -558,11 +592,12 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         }
     });
 
-    if (0 == indicesOfSubreposWithUncommittedChanges.count) {
+    if (0 == indicesOfSubreposWithUncommittedChanges.count && 0 == indicesOfSubreposWithConflict.count) {
         return S7ExitCodeSuccess;
     }
 
     *ppIndicesOfSubreposWithUncommittedChanges = indicesOfSubreposWithUncommittedChanges;
+    *ppIndicesOfSubreposWithConflict = indicesOfSubreposWithConflict;
     return S7ExitCodeSubrepoHasLocalChanges;
 }
 
