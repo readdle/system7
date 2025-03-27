@@ -29,13 +29,13 @@
                                                               options:0
                                                                 range:NSMakeRange(0, trimmedLine.length)];
     if (1 != matches.count) {
-        fprintf(stderr, "error: failed to parse subrepo description (1).\n");
+        logError("failed to parse subrepo description (1).\n");
         return nil;
     }
 
     NSTextCheckingResult *match = matches.firstObject;
     if (4 != match.numberOfRanges) {
-        fprintf(stderr, "error: failed to parse subrepo description (2).\n");
+        logError("failed to parse subrepo description (2).\n");
         return nil;
     }
 
@@ -43,7 +43,7 @@
     NSString *path = [trimmedLine substringWithRange:pathRange];
     path = [path stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     if (0 == path.length) {
-        fprintf(stderr, "error: failed to parse subrepo description. Empty path.\n");
+        logError("failed to parse subrepo description. Empty path.\n");
         return nil;
     }
 
@@ -51,31 +51,31 @@
     NSString *properties = [trimmedLine substringWithRange:propertiesRange];
     properties = [properties stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     if (0 == properties.length) {
-        fprintf(stderr, "error: failed to parse subrepo description. Empty properties.\n");
+        logError("failed to parse subrepo description. Empty properties.\n");
         return nil;
     }
 
     NSArray<NSString *> *propertiesComponents = [properties componentsSeparatedByString:@","];
     if (propertiesComponents.count < 2 || propertiesComponents.count > 3) {
-        fprintf(stderr, "error: failed to parse subrepo description. Invalid preporties value.\n");
+        logError("failed to parse subrepo description. Invalid preporties value.\n");
         return nil;
     }
 
     NSString *url = [[propertiesComponents objectAtIndex:0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     if (0 == url.length) {
-        fprintf(stderr, "error: failed to parse subrepo description. Invalid url.\n");
+        logError("failed to parse subrepo description. Invalid url.\n");
         return nil;
     }
 
     NSString *revision = [[propertiesComponents objectAtIndex:1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     if (NO == S7Config.allowNon40DigitRevisions && 40 != revision.length) {
-        fprintf(stderr, "error: failed to parse subrepo description. Expected full 40-symbol revisions.\n");
+        logError("failed to parse subrepo description. Expected full 40-symbol revisions.\n");
         return nil;
     }
 
     NSString *branch = [[propertiesComponents objectAtIndex:2] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     if (0 == branch.length) {
-        fprintf(stderr, "error: failed to parse subrepo description. Invalid branch.\n");
+        logError("failed to parse subrepo description. Invalid branch.\n");
         return nil;
     }
 
@@ -117,6 +117,10 @@
 #pragma mark -
 
 - (BOOL)isEqual:(id)object {
+    return [self isEqual:object ignoreBranches:NO];
+}
+
+- (BOOL)isEqual:(id)object ignoreBranches:(BOOL)shouldIgnoreBranches {
     if (NO == [object isKindOfClass:[S7SubrepoDescription class]]) {
         return NO;
     }
@@ -126,7 +130,7 @@
     return [self.path isEqualToString:other.path] &&
            [self.url isEqualToString:other.url] &&
            [self.revision isEqualToString:other.revision] &&
-           [self.branch isEqualToString:other.branch];
+           ([self.branch isEqualToString:other.branch] || shouldIgnoreBranches);
 }
 
 - (NSUInteger)hash {

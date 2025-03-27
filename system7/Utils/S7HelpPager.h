@@ -1,5 +1,5 @@
 //
-//  HelpPager.h
+//  S7HelpPager.h
 //  system7
 //
 //  Created by Nik on 24.07.2020.

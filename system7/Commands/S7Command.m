@@ -7,7 +7,7 @@
 //
 
 #import "S7Command.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 void printCommandAliases(Class<S7Command> commandClass) {
     NSArray<NSString *> *aliases = [commandClass aliases];

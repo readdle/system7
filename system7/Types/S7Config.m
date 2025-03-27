@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (isDirectory) {
-        fprintf(stderr, "failed to load config at path '%s'. File is a directory.", configFilePath.fileSystemRepresentation);
+        logError("failed to load config at path '%s'. File is a directory.", configFilePath.fileSystemRepresentation);
         return nil;
     }
 
@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
                                                              encoding:NSUTF8StringEncoding
                                                                 error:&error];
     if (nil == fileContents || error) {
-        fprintf(stderr, "failed to load config at path '%s'. Failed to read string content.", configFilePath.fileSystemRepresentation);
+        logError("failed to load config at path '%s'. Failed to read string content.", configFilePath.fileSystemRepresentation);
         return nil;
     }
 
@@ -61,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 
         if ([trimmedLine hasPrefix:@"<<<<<<<"]) {
             if (inConflict) {
-                fprintf(stderr, "error: unexpected conflict marker. Already parsing conflict.\n");
+                logError("unexpected conflict marker. Already parsing conflict.\n");
                 return nil;
             }
 
@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
         }
         else if ([trimmedLine hasPrefix:@"======="]) {
             if (NO == inConflict) {
-                fprintf(stderr, "error: unexpected conflict separator marker. Not parsing conflict.\n");
+                logError("unexpected conflict separator marker. Not parsing conflict.\n");
                 return nil;
             }
 
@@ -85,12 +85,12 @@ NS_ASSUME_NONNULL_BEGIN
         }
         else if ([trimmedLine hasPrefix:@">>>>>>>"]) {
             if (NO == inConflict) {
-                fprintf(stderr, "error: unexpected conflict end marker. Not parsing conflict.\n");
+                logError("unexpected conflict end marker. Not parsing conflict.\n");
                 return nil;
             }
 
             if (collectingOurSideConflict) {
-                fprintf(stderr, "error: unexpected conflict end marker. Expected conflict separator '=====...' marker\n");
+                logError("unexpected conflict end marker. Expected conflict separator '=====...' marker\n");
                 return nil;
             }
 
@@ -134,7 +134,7 @@ NS_ASSUME_NONNULL_BEGIN
 
         S7SubrepoDescription *subrepoDesc = [[S7SubrepoDescription alloc] initWithConfigLine:trimmedLine];
         if (nil == subrepoDesc) {
-            NSLog(@"ERROR: failed to parse config. Invalid line '%@'", line);
+            logError("failed to parse config. Invalid line '%s'", [line cStringUsingEncoding:NSUTF8StringEncoding]);
             return nil;
         }
 
@@ -152,7 +152,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (inConflict) {
-        fprintf(stderr, "not terminated conflict\n");
+        logError("not terminated conflict\n");
         return nil;
     }
 
@@ -178,7 +178,7 @@ NS_ASSUME_NONNULL_BEGIN
 
     for (S7SubrepoDescription *subrepoDesc in subrepoDescriptions) {
         if ([subrepoPathsSet containsObject:subrepoDesc.path]) {
-            NSLog(@"ERROR: duplicate path '%@' in config.", subrepoDesc.path);
+            logError("duplicate path '%s' in config.", subrepoDesc.path.fileSystemRepresentation);
             return nil;
         }
 
@@ -196,6 +196,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)saveToFileAtPath:(NSString *)filePath {
     NSMutableString *configContents = [[NSMutableString alloc] initWithCapacity:self.subrepoDescriptions.count * 100]; // quick approximation
     for (S7SubrepoDescription *subrepoDescription in self.subrepoDescriptions) {
+        if (subrepoDescription.comment) {
+            [configContents appendString:@"# "];
+            [configContents appendString:subrepoDescription.comment];
+            [configContents appendString:@"\n"];
+        }
         [configContents appendString:[subrepoDescription stringRepresentation]];
         [configContents appendString:@"\n"];
     }
@@ -210,7 +215,7 @@ NS_ASSUME_NONNULL_BEGIN
     if (NO == [configContents writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error]
         || error)
     {
-        fprintf(stderr, "failed to save %s to disk. Error: %s\n",
+        logError("failed to save %s to disk. Error: %s\n",
                 filePath.fileSystemRepresentation,
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeFileOperationFailed;

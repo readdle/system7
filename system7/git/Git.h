@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "GitFilter.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,14 +26,48 @@ NS_ASSUME_NONNULL_BEGIN
                                 exitStatus:(int *)exitStatus;
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                                exitStatus:(int *)exitStatus;
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
                                     branch:(NSString * _Nullable)branch
                                       bare:(BOOL)bare
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus;
 
-+ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(int *)exitStatus;
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                                exitStatus:(int *)exitStatus;
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+                              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+                                exitStatus:(int *)exitStatus;
+
++ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path
+                                                  bare:(BOOL)bare
+                                     defaultBranchName:(nullable NSString *)defaultBranchName
+                                            exitStatus:(int *)exitStatus;
+
 
 @property (nonatomic, readonly, strong) NSString *absolutePath;
+
+// If set to YES, collect every command output executed on this instance to the
+// `lastCommandStdOutOutput` and `lastCommandStdErrOutput`.
+// If set to NO, git output goes directly to the corresponding stdout/stderr
+// bound to the process.
+// Default value: NO
+@property (nonatomic, readwrite) BOOL redirectOutputToMemory;
+@property (nonatomic, readonly, nullable) NSString *lastCommandStdOutOutput;
+@property (nonatomic, readonly, nullable) NSString *lastCommandStdErrOutput;
 
 - (BOOL)isEmptyRepo;
 - (BOOL)isBareRepo;
@@ -42,6 +77,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (int)removeLocalConfigSection:(NSString *)section;
 
 - (int)fetch;
+- (int)fetchWithFilter:(GitFilter)filter;
+
 - (int)pull;
 - (int)merge;
 - (int)mergeWith:(NSString *)commit;
@@ -72,8 +109,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isRevision:(NSString *)revision knownAtLocalBranch:(NSString *)branchName;
 - (BOOL)isRevision:(NSString *)revision knownAtRemoteBranch:(NSString *)branchName;
 - (BOOL)isRevisionAnAncestor:(NSString *)possibleAncestor toRevision:(NSString *)possibleDescendant;
-- (BOOL)isMergeRevision:(NSString *)revision;
 - (int)checkoutRevision:(NSString *)revision;
+- (BOOL)isCurrentRevisionMerge;
+- (BOOL)isCurrentRevisionCherryPickOrRevert;
 
 - (NSArray<NSString *> *)logNotPushedRevisionsOfFile:(NSString *)filePath
                                              fromRef:(NSString *)fromRef
@@ -96,17 +134,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (int)getRemote:(NSString * _Nullable __autoreleasing * _Nonnull)ppRemote;
 - (int)getUrl:(NSString * _Nullable __autoreleasing * _Nonnull)ppUrl;
-
-@end
-
-@interface GitRepository (Tests)
-
-- (int)createFile:(NSString *)relativeFilePath withContents:(nullable NSString *)contents;
-- (void)run:(void (NS_NOESCAPE ^)(GitRepository *repo))block;
-
-- (int)runGitCommand:(NSString *)command;
-
-@property (nonatomic, class) void (^testRepoConfigureOnInitBlock)(GitRepository *repo);
 
 @end
 

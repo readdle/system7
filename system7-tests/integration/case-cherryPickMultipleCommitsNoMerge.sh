@@ -41,7 +41,7 @@ assert s7 rebind --stage
 assert git commit -m '"up ReaddleLib"'
 
 
-git switch master
+git switch main
 
 echo
 echo

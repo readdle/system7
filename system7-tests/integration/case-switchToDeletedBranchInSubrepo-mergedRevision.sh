@@ -25,17 +25,17 @@ assert git commit -m '"up ReaddleLib to test branch"'
 INTERESTING_COMMIT=`git rev-parse HEAD`
 
 pushd Dependencies/ReaddleLib > /dev/null
-  git switch master
+  git switch main
 
   git merge test
 
-  echo "master" > RDMath.h
+  echo "main" > RDMath.h
   git add RDMath.h
-  git commit -m"add RDMath.h (master)"
+  git commit -m"add RDMath.h (main)"
 popd > /dev/null
 
 assert s7 rebind --stage
-assert git commit -m '"switch ReaddleLib back to master branch"'
+assert git commit -m '"switch ReaddleLib back to main branch"'
 
 pushd Dependencies/ReaddleLib > /dev/null
   git branch -D test
@@ -47,7 +47,7 @@ pushd Dependencies/ReaddleLib > /dev/null
   assert test "test" = `git rev-parse --abbrev-ref HEAD`
 popd > /dev/null
 
-git switch master
+git switch main
 
 git push
 
@@ -65,7 +65,7 @@ popd > /dev/null
 
 
 pushd Dependencies/ReaddleLib > /dev/null
-  echo "master 2" >> RDMath.h
+  echo "main 2" >> RDMath.h
   git add RDMath.h
   git commit -m"up RDMath.h"
 popd > /dev/null
@@ -93,7 +93,7 @@ popd > /dev/null
 # this resurrects 'test' branch locally
 git checkout $INTERESTING_COMMIT
 
-git switch master
+git switch main
 
 assert git push
 
@@ -102,7 +102,7 @@ pushd "$S7_ROOT/github/ReaddleLib" > /dev/null
   echo "branches at remote (3):"
 # we deleted 'test' branch before: both locally and remotely
 # then it was resurrected locally by checkout of an old revision where it existed
-# user made some real changes at 'master' branch and ment to push just it.
+# user made some real changes at 'main' branch and ment to push just it.
   git branch --list | grep "test"
   assert test 0 -ne $?
   echo

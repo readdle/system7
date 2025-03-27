@@ -41,14 +41,14 @@ assert s7 rebind --stage
 assert git commit -m '"up ReaddleLib"'
 
 
-git switch master
+git switch main
 
 echo
 echo
 echo cherry-pick
 
 # cherry-pick only last commit from 'release/documents-7.2.4'
-echo M | git cherry-pick release/documents-7.2.4
+S7_MERGE_DRIVER_RESPONSE="M" git cherry-pick release/documents-7.2.4
 assert test 0 -eq $?
 
 assert test plus = `cat Dependencies/ReaddleLib/RDMath.h`

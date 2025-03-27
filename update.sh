@@ -7,10 +7,9 @@ then
     exit 1
 fi
 
-# remove from the deprecated install path at ${HOME}/bin/
-rm -f "${HOME}/bin/s7" > /dev/null
-rm -f "${HOME}/bin/install-s7.sh" > /dev/null
-rm -f "${HOME}/bin/update-s7.sh" > /dev/null
+rm -f "/usr/local/bin/install-s7.sh" > /dev/null
+rm -f "/usr/local/bin/uninstall-s7.sh" > /dev/null
+rm -f "/usr/local/bin/update-s7.sh" > /dev/null
 
 FORCE="no"
 if [ \( "$1" = "-f" \) -o \( "$1" = "--force" \) ]
@@ -21,7 +20,7 @@ fi
 SYSTEM7_DIR="${HOME}/.system7"
 
 function re_install() {
-    INSTALL_SCRIPT="/usr/local/bin/install-s7.sh"
+    INSTALL_SCRIPT="${HOME}/bin/install-s7.sh"
     if [ -f "$INSTALL_SCRIPT" ]
     then
         sh "$INSTALL_SCRIPT"
@@ -41,7 +40,7 @@ function update() {
     pushd "${SYSTEM7_DIR}" > /dev/null
         PREVIOUS_REVISION=$(git rev-parse HEAD)
 
-        git checkout master && git pull
+        git checkout main && git pull
 
         if [ 0 -ne $? ]
         then
@@ -66,7 +65,7 @@ TODAY=$(date "+%Y-%m-%d")
 LAST_CHECK_DATE_FILE_PATH="${SYSTEM7_DIR}/.last-s7-update-check-date"
 
 SHOULD_UPDATE="no"
-if [ ! -f "/usr/local/bin/s7" ]
+if [ ! -f "${HOME}/bin/s7" ]
 then
     echo "failed to locate s7 at your machine. Will install it"
 

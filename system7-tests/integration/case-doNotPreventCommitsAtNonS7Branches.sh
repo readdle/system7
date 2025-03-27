@@ -11,7 +11,7 @@ git add .
 git commit -m"start new feature development"
 
 
-git switch master
+git switch main
 
 assert s7 init
 assert git add .

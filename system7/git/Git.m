@@ -6,8 +6,9 @@
 //  Copyright © 2020 Readdle. All rights reserved.
 //
 
-#import "Git.h"
-#import "Utils.h"
+#import "Git+Tests.h"
+#import "GitFilter.h"
+#import "S7Utils.h"
 #import "S7IniConfig.h"
 
 #include <stdlib.h>
@@ -41,7 +42,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     });
     
     if (nil == gitExecutablePath) {
-        fprintf(stderr, "failed to locate 'git' executable in your system. Looked through PATH – nothing there.\n");
+        logError("failed to locate 'git' executable in your system. Looked through PATH – nothing there.\n");
         exit(1);
     }
     
@@ -76,7 +77,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[repoPath stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory]
             || NO == isDirectory)
         {
-            fprintf(stderr, "'%s' is not a git repository.\n", [repoPath fileSystemRepresentation]);
+            logError("'%s' is not a git repository.\n", [repoPath fileSystemRepresentation]);
             return nil;
         }
     }
@@ -103,7 +104,24 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
-    return [self cloneRepoAtURL:url branch:nil bare:NO destinationPath:destinationPath exitStatus:exitStatus];
+    return [self cloneRepoAtURL:url
+                         branch:nil
+                           bare:NO
+                destinationPath:destinationPath
+                     exitStatus:exitStatus];
+}
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                                exitStatus:(int *)exitStatus
+{
+    return [self cloneRepoAtURL:url
+                         branch:nil
+                           bare:NO
+                destinationPath:destinationPath
+                         filter:filter
+                     exitStatus:exitStatus];
 }
 
 + (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
@@ -112,20 +130,65 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                            destinationPath:(NSString *)destinationPath
                                 exitStatus:(int *)exitStatus
 {
-    NSString *branchOption = branch.length > 0 ? [NSString stringWithFormat:@"-b %@", branch] : @"";
-    NSString *bareOption = bare ? @"--bare" : @"";
-    // pastey:
-    // use --filter=blob:none to reduce the size of the cloned repos
-    // blob-less repos almost don't affect the day-to-day use of an average user
-    // Git will fetch needed blobs on demand
-    //
-    NSString *command = [NSString stringWithFormat:@"git clone --filter=blob:none %@ %@ \"%@\" \"%@\"",
-                         branchOption,
-                         bareOption,
-                         url,
-                         destinationPath];
+    return [self cloneRepoAtURL:url
+                         branch:branch
+                           bare:bare
+                destinationPath:destinationPath
+                         filter:GitFilterNone
+                     exitStatus:exitStatus];
+}
 
-    *exitStatus = [self executeCommand:command];
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                                exitStatus:(int *)exitStatus
+{
+    return [self cloneRepoAtURL:url
+                         branch:branch
+                           bare:bare
+                destinationPath:destinationPath
+                         filter:filter
+                   stdOutOutput:NULL
+                   stdErrOutput:NULL
+                     exitStatus:exitStatus];
+}
+
++ (nullable GitRepository *)cloneRepoAtURL:(NSString *)url
+                                    branch:(NSString * _Nullable)branch
+                                      bare:(BOOL)bare
+                           destinationPath:(NSString *)destinationPath
+                                    filter:(GitFilter)filter
+                              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+                              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+                                exitStatus:(int *)exitStatus
+{
+    NSMutableArray<NSString *> *arguments = [NSMutableArray new];
+
+    [arguments addObject:@"clone"];
+
+    if (filter == GitFilterBlobNone) {
+        [arguments addObject:[NSString stringWithFormat: @"--filter=%@", kGitFilterBlobNone]];
+    }
+    
+    if (branch.length > 0) {
+        [arguments addObject:@"-b"];
+        [arguments addObject:branch];
+    }
+
+    if (bare) {
+        [arguments addObject:@"--bare"];
+    }
+
+    [arguments addObject:url];
+    [arguments addObject:destinationPath];
+
+    *exitStatus = [self
+                   runGitWithArguments:arguments
+                   stdOutOutput:ppStdOutOutput
+                   stdErrOutput:ppStdErrOutput
+                   currentDirectoryPath:nil];
 
     if (0 != *exitStatus) {
         return nil;
@@ -134,13 +197,18 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return [[GitRepository alloc] initWithRepoPath:destinationPath bare:bare];
 }
 
-+ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path bare:(BOOL)bare exitStatus:(nonnull int *)exitStatus {
++ (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path
+                                                  bare:(BOOL)bare
+                                     defaultBranchName:(nullable NSString *)defaultBranchName
+                                            exitStatus:(nonnull int *)exitStatus
+{
     NSString *command = @"git init";
     if (bare) {
         command = [command stringByAppendingString:@" --bare"];
     }
 
-    command = [command stringByAppendingFormat:@" %@", path];
+    NSString *branch = defaultBranchName ?: @"main";
+    command = [command stringByAppendingFormat:@" -b %@ %@", branch, path];
 
     const int gitInitResult = [self executeCommand:command];
 
@@ -209,24 +277,60 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     //  2. s7 starts cloning subrepos (GIT_DIR set for the hook in main repo is still there)
     //  3. s7 calls `git cat-file -e <hash>` and Git is confused, working dir is in subrepo,
     //     GIT_DIR is in the main repo. In our case `cat-file` resulted workin in the main repo.
-    //     Sure, it could find the commit from the subrepo in the main repo.
+    //     Sure, it could not find the commit from the subrepo in the main repo.
     //
     // Maybe I could unset GIT_DIR in every hook we write. This would be less centralized
     // and more error prone, as if we add any new hook, we would have to remember about
     // GIT_DIR issue.
     //
     NSString *dotGitDirPath = self.isBareRepo
-                                ? self.absolutePath
-                                : [self.absolutePath stringByAppendingPathComponent:@".git"];
+    ? self.absolutePath
+    : [self.absolutePath stringByAppendingPathComponent:@".git"];
     NSString *gitDirOption = [@"--git-dir=" stringByAppendingString:dotGitDirPath];
     NSArray<NSString *> *defaultArguments = @[ gitDirOption ];
 
     arguments = [defaultArguments arrayByAddingObjectsFromArray:arguments];
 
+    NSString *stdOutOutput = nil;
+    NSString *stdErrOutput = nil;
+
+    _lastCommandStdOutOutput = nil;
+    _lastCommandStdErrOutput = nil;
+
+    const int exitCode = 
+        [self.class
+         runGitWithArguments:arguments
+         stdOutOutput:(NULL != ppStdOutOutput || self.redirectOutputToMemory) ? &stdOutOutput : NULL
+         stdErrOutput:(NULL != ppStdErrOutput || self.redirectOutputToMemory) ? &stdErrOutput : NULL
+         currentDirectoryPath:self.absolutePath];
+
+    if (ppStdOutOutput) {
+        *ppStdOutOutput = stdOutOutput;
+    }
+
+    if (ppStdErrOutput) {
+        *ppStdErrOutput = stdErrOutput;
+    }
+
+    if (self.redirectOutputToMemory) {
+        _lastCommandStdOutOutput = stdOutOutput;
+        _lastCommandStdErrOutput = stdErrOutput;
+    }
+
+    return exitCode;
+}
+
++ (int)runGitWithArguments:(NSArray<NSString *> *)arguments
+              stdOutOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdOutOutput
+              stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
+      currentDirectoryPath:(NSString * _Nullable)currentDirectoryPath
+{
     NSTask *task = [NSTask new];
-    [task setLaunchPath:[self.class envGitExecutablePath]];
+    [task setLaunchPath:[self envGitExecutablePath]];
     [task setArguments:arguments];
-    task.currentDirectoryURL = [NSURL fileURLWithPath:self.absolutePath];
+    if (currentDirectoryPath) {
+        task.currentDirectoryURL = [NSURL fileURLWithPath:currentDirectoryPath];
+    }
 
     // https://stackoverflow.com/questions/49184623/nstask-race-condition-with-readabilityhandler-block
     // we must use semaphore to make sure we finish reading from pipes properly once task finished it's execution.
@@ -250,7 +354,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
             }
         };
     };
-    
+
     __autoreleasing NSString * __stdOutOutputGuarantee;
     if ([self.class envGitTraceEnabled] && nil == ppStdOutOutput) {
         ppStdOutOutput = &__stdOutOutputGuarantee;
@@ -261,11 +365,13 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         ppStdErrOutput = &__stdErrOutputGuarantee;
     }
 
+    NSUInteger numberOfPipesToWait = 0;
     __block NSMutableData *outputData = nil;
     if (ppStdOutOutput) {
         outputData = [NSMutableData new];
         NSPipe *outputPipe = [NSPipe new];
         task.standardOutput = outputPipe;
+        ++numberOfPipesToWait;
         setUpPipeReadabilityHandler(outputPipe, outputData);
     }
 
@@ -274,12 +380,13 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         errorData = [NSMutableData new];
         NSPipe *errorPipe = [NSPipe new];
         task.standardError = errorPipe;
+        ++numberOfPipesToWait;
         setUpPipeReadabilityHandler(errorPipe, errorData);
     }
 
     NSError *error = nil;
     if (NO == [task launchAndReturnError:&error]) {
-        fprintf(stderr, "failed to run git command. Error = %s", [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to run git command. Error = %s", [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return 1;
     }
     
@@ -287,16 +394,18 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
     [task waitUntilExit];
 
-    if (ppStdOutOutput) {
+    // we don't know the order in which the pipes will close. Wait for both and only then we can be sure that
+    // both datas can be read safely.
+    for (NSUInteger i=0; i<numberOfPipesToWait; ++i) {
         dispatch_semaphore_wait(pipeCloseSemaphore, DISPATCH_TIME_FOREVER);
+    }
 
+    if (ppStdOutOutput) {
         NSString *stdOutOutput = [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding];
         *ppStdOutOutput = stdOutOutput;
     }
 
     if (ppStdErrOutput) {
-        dispatch_semaphore_wait(pipeCloseSemaphore, DISPATCH_TIME_FOREVER);
-
         NSString *stdErrorOutput = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];
         *ppStdErrOutput = stdErrorOutput;
     }
@@ -427,7 +536,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
         
     if ([self doesBranchExist:[NSString stringWithFormat:@"origin/%@", branchName]] == NO) {
-        fprintf(stderr, "failed to checkout remote tracking branch: remote branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to checkout remote tracking branch: remote branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeGitOperationFailed;
     }
     
@@ -452,7 +561,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
 
     if (NO == [self doesBranchExist:branchName]) {
-        fprintf(stderr, "failed to setup remote branch tracking: local branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("failed to setup remote branch tracking: local branch '%s' doesn't exist.\n", [branchName cStringUsingEncoding:NSUTF8StringEncoding]);
         return S7ExitCodeInvalidArgument;
     }
 
@@ -496,7 +605,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     //     they have an easier ways than injections
     //  2. anyway 'command' is then split into arguments and passed to git as an array, so git would most likely
     //     not accept these arguments; unless the user is super smart to build some fancy git command that allows
-    //     exectuting different git commands (see point #1)
+    //     executing different git commands (see point #1)
     //
     return [self runGitCommand:[NSString stringWithFormat:@"checkout -B %@ %@", branchName, revisions]
                   stdOutOutput:NULL
@@ -581,7 +690,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 //        if (128 == revParseExitStatus) {
 //            // most likely – an empty repo. Let's make sure
 //            if ([self isEmptyRepo]) {
-//                *ppBranch = @"master";
+//                *ppBranch = @"main";
 //                return 0;
 //            }
 //        }
@@ -706,35 +815,39 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     NSParameterAssert(40 == possibleAncestor.length);
     NSParameterAssert(40 == possibleDescendant.length);
 
-    NSString *stdOutOutput = nil;
-    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"merge-base %@ %@", possibleAncestor, possibleDescendant]
-                                  stdOutOutput:&stdOutOutput
+    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"merge-base --is-ancestor %@ %@",
+                                                possibleAncestor,
+                                                possibleDescendant]
+                                  stdOutOutput:NULL
                                   stdErrOutput:NULL];
-    if (0 != exitStatus) {
-        NSAssert(NO, @"");
-        return NO;
-    }
-
-    NSString *mergeBaseRevision = [stdOutOutput stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSAssert(40 == mergeBaseRevision.length, @"");
-
-    return [possibleAncestor isEqualToString:mergeBaseRevision];
+    return 0 == exitStatus;
 }
 
-- (BOOL)isMergeRevision:(NSString *)revision {
-    NSParameterAssert(40 == revision.length);
-
-    // does it have two parents?
-    // git show -s --format="%H" REV^2
-    NSString *devNull = nil;
-    const int exitStatus = [self runGitCommand:[NSString stringWithFormat:@"show -s --format='%%H' %@^2", revision]
+- (BOOL)isCurrentRevisionMerge {
+    NSString *devNull;
+    const int exitStatus = [self runGitCommand:@"show HEAD^2 -- -s"
                                   stdOutOutput:&devNull
+                                  stdErrOutput:&devNull];
+    return exitStatus == 0;
+}
+ 
+- (BOOL)isCurrentRevisionCherryPickOrRevert {
+    NSString *stdOut;
+    NSString *devNull;
+    const int exitStatus = [self runGitCommand:@"reflog show -1"
+                                  stdOutOutput:&stdOut
                                   stdErrOutput:&devNull];
     if (0 != exitStatus) {
         return NO;
     }
-
-    return YES;
+    
+    if ([stdOut containsString:@"HEAD@{0}: cherry-pick"] ||
+        [stdOut containsString:@"HEAD@{0}: revert"])
+    {
+        return YES;
+    }
+    
+    return NO;
 }
 
 - (int)getCurrentRevision:(NSString * _Nullable __autoreleasing * _Nonnull)ppRevision {
@@ -946,12 +1059,18 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 #pragma mark - exchange -
 
 - (int)fetch {
-    // pastey:
-    // use --filter=blob:none to reduce the size of the subrepos
-    // blob-less repos almost don't affect the day-to-day use of an average user
-    // Git will fetch needed blobs on demand
-    //
-    const int exitStatus = [self runGitCommand:@"fetch --filter=blob:none -p"
+    return [self fetchWithFilter:GitFilterNone];
+}
+
+- (int)fetchWithFilter:(GitFilter)filter {
+    NSString *filterOption = @"";
+    if (filter == GitFilterBlobNone) {
+        filterOption = [NSString stringWithFormat: @"--filter=%@", kGitFilterBlobNone];
+    }
+    
+    NSString *gitCommand = [NSString stringWithFormat:@"fetch %@ -p", filterOption];
+    
+    const int exitStatus = [self runGitCommand:gitCommand
                                   stdOutOutput:NULL
                                   stdErrOutput:NULL];
     return exitStatus;
@@ -1034,8 +1153,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
 
     if (nil == currentBranchName) {
-        fprintf(stderr,
-                "failed to push. No current branch in the repository.\n");
+        logError("failed to push. No current branch in the repository.\n");
         return S7ExitCodeGitOperationFailed;
     }
 
@@ -1223,6 +1341,26 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 + (void)setTestRepoConfigureOnInitBlock:(void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
     _testRepoConfigureOnInitBlock = testRepoConfigureOnInitBlock;
+}
+
+- (BOOL)hasMergeConflict {
+    NSString *stdOutOutput = nil;
+    const int unmergedFilesStatus = [self runGitCommand:@"ls-files -u"
+                                           stdOutOutput:&stdOutOutput
+                                           stdErrOutput:NULL];
+    if (0 != unmergedFilesStatus) {
+        return NO;
+    }
+
+    __block BOOL result = NO;
+    [stdOutOutput enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        if (line.length > 0) {
+            result = YES;
+            *stop = YES;
+        }
+    }];
+
+    return result;
 }
 
 @end

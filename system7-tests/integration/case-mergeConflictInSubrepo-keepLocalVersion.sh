@@ -33,11 +33,11 @@ assert git commit -m '"up ReaddleLib"'
 
 
 echo
-git checkout master
+git checkout main
 
 pushd Dependencies/ReaddleLib > /dev/null
-  echo master > RDMath.h
-  git commit -am"changes at master in ReaddleLib"
+  echo main > RDMath.h
+  git commit -am"changes at main in ReaddleLib"
 popd > /dev/null
 
 assert s7 rebind --stage
@@ -45,7 +45,7 @@ assert git commit -m '"up ReaddleLib"'
 
 echo
 echo
-echo L | git merge experiment
+S7_MERGE_DRIVER_RESPONSE="L" git merge --no-edit experiment
 assert test 0 -eq $?
 
 echo
@@ -53,6 +53,6 @@ echo "resulting .s7substate:"
 cat .s7substate
 echo
 
-assert test master = `cat Dependencies/ReaddleLib/RDMath.h`
+assert test main = `cat Dependencies/ReaddleLib/RDMath.h`
 grep "<<<" .s7substate > /dev/null
 assert test 0 -ne $? # must be no conflict marker in .s7substate

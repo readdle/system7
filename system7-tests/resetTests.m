@@ -44,6 +44,8 @@
 
         S7ResetCommand *command = [S7ResetCommand new];
         XCTAssertEqual(S7ExitCodeMissingRequiredArgument, [command runWithArguments:@[]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -53,6 +55,8 @@
 
         S7ResetCommand *command = [S7ResetCommand new];
         XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -65,6 +69,8 @@
 
         int exitStatus = [command runWithArguments:@[ @"-X", @"Dependencies/NoSuch", @"--all" ]];
         XCTAssertEqual(S7ExitCodeInvalidParameterValue, exitStatus);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -328,11 +334,11 @@
             [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
                                                    url:self.env.githubReaddleLibRepo.absolutePath
                                               revision:initialReaddleLibRevision
-                                                branch:@"master"],
+                                                branch:@"main"],
             [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/RDPDFKit"
                                                    url:self.env.githubRDPDFKitRepo.absolutePath
                                               revision:expectedPdfKitCommit // PDFKit was not reset, so it should stay rebound
-                                                branch:@"master"]
+                                                branch:@"main"]
         ]];
 
         S7Config *mainConfig = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
@@ -398,7 +404,11 @@
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init_deactivateHooks();
 
+        // add RDPDFKit twice to be sure that we also test dispatch_apply parallel work inside reset.
+        // If we have just one subrepo, then dispatch_apply is too smart and simply runs the only operation
+        // straight on the calling thread.
         s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        s7add_stage(@"Dependencies/RDPDFKit2", self.env.githubRDPDFKitRepo.absolutePath);
 
         GitRepository *formCalcSubrepoGit = [GitRepository repoAtPath:@"Dependencies/RDPDFKit/Dependencies/FormCalc"];
         XCTAssertNotNil(formCalcSubrepoGit);

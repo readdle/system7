@@ -143,16 +143,18 @@
         }
 
         int exitStatus = 0;
-        __unused GitRepository *repo = [GitRepository initializeRepositoryAtPath:templateRepoPath bare:YES exitStatus:&exitStatus];
+        __unused GitRepository *repo = [GitRepository initializeRepositoryAtPath:templateRepoPath
+                                                                            bare:YES
+                                                               defaultBranchName:NULL
+                                                                      exitStatus:&exitStatus];
         XCTAssert(repo, @"");
         XCTAssert(0 == exitStatus, @"");
         
-        // nsavko: working around my local setup
-        if ([getGlobalGitConfigValue(@"commit.gpgsign") isEqualToString:@"true"]) {
-            GitRepository.testRepoConfigureOnInitBlock = ^(GitRepository * _Nonnull repo) {
-                [repo runGitCommand:@"config --local commit.gpgsign false"];
-            };
-        }
+        // nsavko: working around local machine setup
+        GitRepository.testRepoConfigureOnInitBlock = ^(GitRepository * _Nonnull repo) {
+            [repo runGitCommand:@"config --local commit.gpgsign false"];
+            [repo runGitCommand:@"config --local pull.rebase false"];
+        };
 
         // make repo non-empty by default
         performChangesInBareRepoAtPath(templateRepoPath, ^(GitRepository *tmpRepo) {
@@ -204,17 +206,25 @@
     
     XCTAssert(remoteRepo, @"Failed to create remote repo.");
     
+    return [self cloneRepoAtURL:remoteRepo.absolutePath destinationPath:relativePath];
+}
+
+- (GitRepository *)cloneRepoAtURL:(NSString *)repoURL destinationPath:(NSString *)destinationPath {
     __block GitRepository *localRepo;
     
     executeInDirectory(self.root, ^int{
         int gitCloneExitStatus = 0;
         
-        localRepo = [GitRepository cloneRepoAtURL:remoteRepo.absolutePath
-                                  destinationPath:relativePath
+        localRepo = [GitRepository cloneRepoAtURL:repoURL
+                                  destinationPath:destinationPath
                                        exitStatus:&gitCloneExitStatus];
         
         XCTAssert(nil != localRepo, @"Failed to create local repo.");
         XCTAssert(0 == gitCloneExitStatus, @"Git clone failed.");
+        
+        // Allow implicit merge during pull, overrides global config "pull.ff only" when it present.
+        [localRepo runGitCommand:@"config pull.ff true"];
+        
         return gitCloneExitStatus;
     });
     
@@ -266,7 +276,10 @@
     if (nil == _githubTestBareRepo) {
         NSString *absoluteFilePath = [self.root stringByAppendingPathComponent:@"github/bare"];
         int exitStatus = 0;
-        _githubTestBareRepo = [GitRepository initializeRepositoryAtPath:absoluteFilePath bare:YES exitStatus:&exitStatus];
+        _githubTestBareRepo = [GitRepository initializeRepositoryAtPath:absoluteFilePath
+                                                                   bare:YES
+                                                      defaultBranchName:NULL
+                                                             exitStatus:&exitStatus];
         XCTAssert(0 == exitStatus, @"");
         XCTAssert(_githubTestBareRepo, @"");
     }
@@ -277,13 +290,9 @@
 - (GitRepository *)pasteyRd2Repo {
     if (nil == _pasteyRd2Repo) {
         executeInDirectory(self.root, ^int{
-            int gitCloneExitStatus = 0;
-            _pasteyRd2Repo = [GitRepository cloneRepoAtURL:self.githubRd2Repo.absolutePath
-                                           destinationPath:@"pastey/projects/rd2"
-                                                exitStatus:&gitCloneExitStatus];
-            NSParameterAssert(_pasteyRd2Repo);
-            NSParameterAssert(0 == gitCloneExitStatus);
-            return gitCloneExitStatus;
+            _pasteyRd2Repo = [self cloneRepoAtURL:self.githubRd2Repo.absolutePath
+                                  destinationPath:@"pastey/projects/rd2"];
+            return S7ExitCodeSuccess;
         });
     }
 
@@ -293,13 +302,9 @@
 - (GitRepository *)nikRd2Repo {
     if (nil == _nikRd2Repo) {
         executeInDirectory(self.root, ^int{
-            int gitCloneExitStatus = 0;
-            _nikRd2Repo = [GitRepository cloneRepoAtURL:self.githubRd2Repo.absolutePath
-                                        destinationPath:@"nik/rd2"
-                                             exitStatus:&gitCloneExitStatus];
-            NSParameterAssert(_nikRd2Repo);
-            NSParameterAssert(0 == gitCloneExitStatus);
-            return gitCloneExitStatus;
+            _nikRd2Repo = [self cloneRepoAtURL:self.githubRd2Repo.absolutePath
+                               destinationPath:@"nik/rd2"];
+            return S7ExitCodeSuccess;
         });
     }
 

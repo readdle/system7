@@ -8,12 +8,14 @@
 
 #import <Foundation/Foundation.h>
 #import "S7TransportProtocolName.h"
+#import "GitFilter.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol S7OptionsProtocol<NSObject>
 
 @property (nonatomic, readonly, nullable) NSSet<S7TransportProtocolName> *allowedTransportProtocols;
+@property (nonatomic, readonly) GitFilter filter;
 
 @end
 

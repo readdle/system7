@@ -1,5 +1,5 @@
 //
-//  Utils.h
+//  S7Utils.h
 //  system7
 //
 //  Created by Pavlo Shkrabliuk on 28.04.2020.
@@ -16,14 +16,13 @@ int executeInDirectory(NSString *directory, int (NS_NOESCAPE ^block)(void));
 
 int getConfig(GitRepository *repo, NSString *revision, S7Config * _Nullable __autoreleasing * _Nonnull ppConfig);
 
-int addLineToGitIgnore(NSString *lineToAppend);
+int addLineToGitIgnore(GitRepository *repo, NSString *lineToAppend);
 int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove);
 
+int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend);
 int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove);
 
-int installHook(NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
-
-BOOL isExactlyOneBitSetInNumber(uint32_t bits);
+int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
 
 BOOL isCurrentDirectoryS7RepoRoot(void);
 BOOL isS7Repo(GitRepository *repo);
@@ -31,6 +30,8 @@ int s7RepoPreconditionCheck(void);
 int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
 
 NSString *_Nullable getGlobalGitConfigValue(NSString *key);
+
+BOOL S7ArgumentMatchesFlag(NSString *argument, NSString *longFlag, NSString *shortFlag);
 
 #define S7_REPO_PRECONDITION_CHECK()                    \
     do {                                                \

@@ -10,8 +10,8 @@
 
 #import "S7StatusCommand.h"
 
-#import "Utils.h"
-#import "HelpPager.h"
+#import "S7Utils.h"
+#import "S7HelpPager.h"
 
 @implementation S7DiffCommand
 

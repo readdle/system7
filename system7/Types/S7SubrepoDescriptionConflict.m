@@ -68,15 +68,18 @@
 }
 
 - (NSString *)stringRepresentation {
+    // write nothing (not even \n) in case of nil side. This prevents possible add of empty lines to
+    // the config in case of Git GUI apps features like "Use Ours/Theirs".
+    //
     return [NSString
             stringWithFormat:
             @"<<<<<<< yours\n"
-             "%@\n"
+             "%@"
              "=======\n"
-             "%@\n"
+             "%@"
              ">>>>>>> theirs",
-            self.ourVersion,
-            self.theirVersion ];
+            self.ourVersion ? [NSString stringWithFormat:@"%@\n", self.ourVersion.stringRepresentation] : @"",
+            self.theirVersion ? [NSString stringWithFormat:@"%@\n", self.theirVersion.stringRepresentation] : @""];
 }
 
 

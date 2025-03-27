@@ -42,19 +42,34 @@ assert git commit -m '"up ReaddleLib"'
 
 
 echo
-git checkout master
+git checkout main
 
 pushd Dependencies/ReaddleLib > /dev/null
-  echo master > RDMath.h
-  git commit -am"changes at master in ReaddleLib"
+  echo main > RDMath.h
+  git commit -am"changes at main in ReaddleLib"
 popd > /dev/null
 
 assert s7 rebind --stage
 assert git commit -m '"up ReaddleLib"'
 
+# first try non-interactive merge "via GUI app"
+echo "emulating GUI Git client that doesn't support interactive stdin" |
+    git merge --no-edit experiment
+assert test 0 -ne $?
+
+echo
+echo "resulting .s7substate:"
+cat .s7substate
+echo
+
+assert grep '"<<<"' .s7substate > /dev/null
+
+assert git merge --abort
+
+
 echo
 echo
-echo m | git merge experiment
+S7_MERGE_DRIVER_RESPONSE="m" git merge --no-edit experiment
 assert test 0 -ne $?
 
 echo
@@ -67,7 +82,7 @@ assert grep '"<<<"' .s7substate > /dev/null
 
 
 pushd Dependencies/ReaddleLib > /dev/null
-  echo "experiment+master" > RDMath.h
+  echo "experiment+main" > RDMath.h
   git commit -am"merge"
 popd > /dev/null
 
@@ -78,7 +93,7 @@ echo "resulting .s7substate:"
 cat .s7substate
 echo
 
-assert test "experiment+master" = `cat Dependencies/ReaddleLib/RDMath.h`
+assert test "experiment+main" = `cat Dependencies/ReaddleLib/RDMath.h`
 
 grep "Dependencies/ReaddleLib" .s7substate > /dev/null
 assert test 0 -eq $? # config must contain 'Dependencies/ReaddleLib'

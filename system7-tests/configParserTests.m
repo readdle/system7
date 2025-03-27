@@ -20,13 +20,13 @@
 - (void)testValidConfig {
     NSString *config =
     @"# readdle\n"
-    "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, master }\n"
+    "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, main }\n"
     "\n" // empty line
     "Dependencies/rdcifs={git@github.com:readdle/rdcifs,50835dbf4a6f4bdf4664d94c26fc1fab594df4bf,task/DOC-1567}\n" // some space haters
-    "   Dependencies/rdkeychain   =   \t {git@github.com:readdle/rdkeychain,\t1952a059e7a9e7d96715ce2fc34b564dfe5b0d0e, \tmaster}   \n" // some space LOVERS (and even TAB here)
+    "   Dependencies/rdkeychain   =   \t {git@github.com:readdle/rdkeychain,\t1952a059e7a9e7d96715ce2fc34b564dfe5b0d0e, \tmain}   \n" // some space LOVERS (and even TAB here)
     "   \n" // empty line with space left overs
     "# thridparty\n"
-    "Dependencies/Thirdparty/log4Cocoa = { git@github.com:readdle/log4Cocoa, e11e50dfb5d2e8ef7e96f9683128e5820755b026, master }\n"
+    "Dependencies/Thirdparty/log4Cocoa = { git@github.com:readdle/log4Cocoa, e11e50dfb5d2e8ef7e96f9683128e5820755b026, main }\n"
     ;
 
     NSString *configFilePath = @"./config";
@@ -37,10 +37,10 @@
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
-        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"c1913e99e9b8fffc5405ccfe2d0f53f8c623da11" branch:@"master"],
+        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"c1913e99e9b8fffc5405ccfe2d0f53f8c623da11" branch:@"main"],
         [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/rdcifs" url:@"git@github.com:readdle/rdcifs" revision:@"50835dbf4a6f4bdf4664d94c26fc1fab594df4bf" branch:@"task/DOC-1567"],
-        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/rdkeychain" url:@"git@github.com:readdle/rdkeychain" revision:@"1952a059e7a9e7d96715ce2fc34b564dfe5b0d0e" branch:@"master"],
-        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/Thirdparty/log4Cocoa" url:@"git@github.com:readdle/log4Cocoa" revision:@"e11e50dfb5d2e8ef7e96f9683128e5820755b026" branch:@"master"]
+        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/rdkeychain" url:@"git@github.com:readdle/rdkeychain" revision:@"1952a059e7a9e7d96715ce2fc34b564dfe5b0d0e" branch:@"main"],
+        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/Thirdparty/log4Cocoa" url:@"git@github.com:readdle/log4Cocoa" revision:@"e11e50dfb5d2e8ef7e96f9683128e5820755b026" branch:@"main"]
     ];
 
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
@@ -49,7 +49,7 @@
 
 - (void)testTrailingCommentConfig {
     NSString *config =
-    @"Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } # please, do not update untill we fix ... \n"
+    @"Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } # please, do not update untill we fix ... \n"
     ;
 
     NSString *configFilePath = @"./config";
@@ -60,7 +60,7 @@
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
-        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"1d55eede9471fc9245de5bd85b55102684c8c300" branch:@"master"],
+        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"1d55eede9471fc9245de5bd85b55102684c8c300" branch:@"main"],
     ];
 
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
@@ -69,7 +69,7 @@
 
 - (void)testClosingCurlyBraceInTrailingCommentConfig {
     NSString *config =
-    @"Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } # ar-ar! I'm a tiny little } (closing curly brace trying to break regex mathch) \n"
+    @"Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } # ar-ar! I'm a tiny little } (closing curly brace trying to break regex mathch) \n"
     ;
 
     NSString *configFilePath = @"./config";
@@ -80,7 +80,7 @@
     }
 
     NSArray<S7SubrepoDescription *> *expectedParsedConfig = @[
-        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"1d55eede9471fc9245de5bd85b55102684c8c300" branch:@"master"],
+        [[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib" url:@"git@github.com:readdle/readdlelib" revision:@"1d55eede9471fc9245de5bd85b55102684c8c300" branch:@"main"],
     ];
 
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
@@ -144,7 +144,7 @@
 - (void)testConfigWithConflict {
     NSString *config =
     @"<<<<<<< yours\n"
-     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } \n"
      "=======\n"
      "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"
      ">>>>>>> theirs\n"
@@ -162,7 +162,7 @@
          initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
                                                                    url:@"git@github.com:readdle/readdlelib"
                                                               revision:@"1d55eede9471fc9245de5bd85b55102684c8c300"
-                                                                branch:@"master"]
+                                                                branch:@"main"]
          theirVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
                                                              url:@"git@github.com:readdle/readdlelib"
                                                         revision:@"c1913e99e9b8fffc5405ccfe2d0f53f8c623da11"
@@ -177,7 +177,7 @@
 - (void)testConfigWithConflictOneSideRemove {
     NSString *config =
     @"<<<<<<< yours\n"
-     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } \n"
      "=======\n"
      ">>>>>>> theirs\n"
     ;
@@ -194,7 +194,7 @@
          initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
                                                                    url:@"git@github.com:readdle/readdlelib"
                                                               revision:@"1d55eede9471fc9245de5bd85b55102684c8c300"
-                                                                branch:@"master"]
+                                                                branch:@"main"]
          theirVersion:nil],
     ];
 
@@ -203,11 +203,35 @@
     XCTAssertEqualObjects(parsedConfig.subrepoDescriptions, expectedParsedConfig);
 }
 
+- (void)testConfigWithConflictOneSideRemoveWritesAndReadsBackFromDisk {
+    S7Config *originalConfig =
+    [[S7Config alloc]
+     initWithSubrepoDescriptions:@[
+            [[S7SubrepoDescriptionConflict alloc]
+             initWithOurVersion:[[S7SubrepoDescription alloc] initWithPath:@"Dependencies/ReaddleLib"
+                                                                       url:@"git@github.com:readdle/readdlelib"
+                                                                  revision:@"1d55eede9471fc9245de5bd85b55102684c8c300"
+                                                                    branch:@"main"]
+             theirVersion:nil]
+        ]
+    ];
+
+    NSString *configFilePath = @"./config";
+
+    if (0 != [originalConfig saveToFileAtPath:configFilePath]) {
+        XCTAssert(NO, @"");
+    }
+
+    S7Config *parsedConfig = [[S7Config alloc] initWithContentsOfFile:configFilePath];
+    XCTAssertNotNil(parsedConfig);
+    XCTAssertEqualObjects(parsedConfig, originalConfig);
+}
+
 - (void)testInvalidConflicts {
     // unterminated conflict
     S7Config *parsedConfig = [[S7Config alloc] initWithContentsString:
     @"<<<<<<< yours\n"
-     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } \n"
      "=======\n"
      "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"];
     XCTAssertNil(parsedConfig);
@@ -215,7 +239,7 @@
     // missing our/their separator
     parsedConfig = [[S7Config alloc] initWithContentsString:
     @"<<<<<<< yours\n"
-     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } \n"
      "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"
      ">>>>>>> theirs\n"];
     XCTAssertNil(parsedConfig);
@@ -223,7 +247,7 @@
     // missing start conflict marker
     parsedConfig = [[S7Config alloc] initWithContentsString:
     @"<<<<<<< yours\n"
-     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } \n"
      "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"
      ">>>>>>> theirs\n"];
     XCTAssertNil(parsedConfig);
@@ -231,7 +255,7 @@
     // nested crap
     parsedConfig = [[S7Config alloc] initWithContentsString:
     @"<<<<<<< yours\n"
-     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, master } \n"
+     "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, 1d55eede9471fc9245de5bd85b55102684c8c300, main } \n"
      "<<<<<<< yours again\n"
      "=======\n"
      "Dependencies/ReaddleLib = { git@github.com:readdle/readdlelib, c1913e99e9b8fffc5405ccfe2d0f53f8c623da11, experiment } \n"];

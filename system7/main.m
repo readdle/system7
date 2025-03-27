@@ -30,7 +30,7 @@
 
 #import "S7ConfigMergeDriver.h"
 
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 void printHelp(void) {
     help_puts("");
@@ -82,8 +82,21 @@ void printHelp(void) {
     help_puts("    output (if any), and git return code.");
     help_puts("");
     help_puts(" S7_MERGE_DRIVER_RESPONSE");
-    help_puts("    Specifis response that automates s7 merge driver. Options are the same as");
+    help_puts("    Specific response that automates s7 merge driver. Options are the same as");
     help_puts("    driver's prompt input: (m)erge, keep (l)ocal or keep (r)emote.");
+    help_puts(" S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
+    help_puts("    If this option is set and user chooses (m)erge resolution. Then the merge is");
+    help_puts("    performed not directly to the <local>, but an intermediate branch named");
+    help_puts("    with the value from S7_MERGE_DRIVER_INTERMEDIATE_BRANCH is created from <local> state,");
+    help_puts("    and the actual merge is done to an intermediate branch.");
+    help_puts("    This is necessary if direct push to the <local> branch is restricted by the protection rules");
+    help_puts("    at Git hosting system. User will then create a PR from S7_MERGE_DRIVER_INTERMEDIATE_BRANCH");
+    help_puts("    to the branch from <local>.");
+    help_puts("");
+    help_puts(" S7_MERGE_DRIVER_KEEP_TARGET_BRANCH");
+    help_puts("    When provided, forces the merge driver to use a strategy that resolves conflicts in subrepo");
+    help_puts("    references by favoring the branch specified in the variable, as well as retargeting \"their\"");
+    help_puts("    added subrepos to the branch in question.");
 }
 
 Class commandClassByName(NSString *commandName) {
@@ -136,7 +149,7 @@ Class commandClassByName(NSString *commandName) {
     }
 
     if (0 == possibleCommandClasses.count) {
-        fprintf(stderr, "unknown command '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("unknown command '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
         return nil;
     }
     else if (1 == possibleCommandClasses.count) {
@@ -145,8 +158,8 @@ Class commandClassByName(NSString *commandName) {
     else {
         NSString *possibleCommands = [[possibleCommandNames allObjects] componentsJoinedByString:@", "];
 
-        fprintf(stderr, "s7: command '%s' is ambiguous:\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
-        fprintf(stderr, "    %s\n", possibleCommands.fileSystemRepresentation);
+        logError("s7: command '%s' is ambiguous:\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+        logError("    %s\n", possibleCommands.fileSystemRepresentation);
         return nil;
     }
 }
@@ -180,18 +193,18 @@ int helpCommand(NSArray<NSString *> *arguments) {
     return withHelpPaginationDo(^int {
         if (arguments.count < 1) {
             printHelp();
-            return 0;
+            return S7ExitCodeSuccess;
         }
         
         NSString *commandName = arguments.firstObject;
         Class<S7Command> commandClass = commandClassByName(commandName);
         if (commandClass) {
             [commandClass printCommandHelp];
-            return 0;
+            return S7ExitCodeSuccess;
         }
         else {
             printHelp();
-            return 1;
+            return S7ExitCodeUnknownCommand;
         }
     });
 }
@@ -230,14 +243,18 @@ int main(int argc, const char * argv[]) {
         [arguments addObject:argument];
     }
 
-    if ([commandName isEqualToString:@"help"]) {
+    if (S7ArgumentMatchesFlag(commandName, @"help", @"h")) {
         return helpCommand(arguments);
+    }
+
+    if (S7ArgumentMatchesFlag(commandName, @"version", @"v")) {
+        return [[S7VersionCommand new] runWithArguments:@[]];
     }
 
     NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
-        fprintf(stderr, "s7 must be run in the root of a git repo.\n");
+        logError("s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
     }
 
@@ -245,7 +262,7 @@ int main(int argc, const char * argv[]) {
         commandName = [commandName stringByReplacingOccurrencesOfString:@"-hook" withString:@""];
         Class<S7Hook> hookClass = hookClassByName(commandName);
         if (nil == hookClass) {
-            fprintf(stderr, "unknown hook '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("unknown hook '%s'\n", [commandName cStringUsingEncoding:NSUTF8StringEncoding]);
             NSCAssert(NO, @"unknown hook");
             return S7ExitCodeUnknownCommand;
         }

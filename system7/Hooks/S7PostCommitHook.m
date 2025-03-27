@@ -17,9 +17,9 @@
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
-    fprintf(stdout, "s7: post-commit hook start\n");
+    logInfo("s7: post-commit hook start\n");
     const int result = [self doRunWithArguments:arguments];
-    fprintf(stdout, "s7: post-commit hook complete\n");
+    logInfo("s7: post-commit hook complete\n");
     return result;
 }
 
@@ -28,15 +28,12 @@
 
     GitRepository *repo = [GitRepository repoAtPath:@"."];
     if (nil == repo) {
-        fprintf(stderr, "s7: post-commit hook – ran in not git repo root!\n");
+        logError("s7: post-commit hook – ran in not git repo root!\n");
         return S7ExitCodeNotGitRepository;
     }
-
-    NSString *committedRevision = nil;
-    [repo getCurrentRevision:&committedRevision];
-
-    if (NO == [repo isMergeRevision:committedRevision]) {
-        return 0;
+    
+    if ([S7PostCommitHook shouldSkipExecutionInRepo:repo]) {
+        return S7ExitCodeSuccess;
     }
 
     if (self.hookWillUpdateSubrepos) {
@@ -52,6 +49,13 @@
     }
 
     return [postMergeConfig saveToFileAtPath:S7ControlFileName];
+}
+
++ (BOOL)shouldSkipExecutionInRepo:(GitRepository *)repo {
+    // If revision is reverted or cherry-picked, post-commit is our only chanse to update substate.
+    // During merge post-merge hook is not called when merge is interrupted, although commit is
+    // recorded as a merge commit. During successful merge only post-merge is called.
+    return ([repo isCurrentRevisionMerge] || [repo isCurrentRevisionCherryPickOrRevert]) == NO;
 }
 
 @end

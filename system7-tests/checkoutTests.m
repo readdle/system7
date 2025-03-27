@@ -209,7 +209,7 @@
         XCTAssertNotNil(readdleLibRevision);
         commit(readdleLib, @"NSColor+RD.h", @"sRGB\n", @"newline!");
         
-        [repo checkoutExistingLocalBranch:@"master"];
+        [repo checkoutExistingLocalBranch:@"main"];
         XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
         
         [repo checkoutExistingLocalBranch:@"experiment/srgb"];
@@ -220,6 +220,49 @@
         [readdleLib getCurrentRevision:&checkedReaddleLibRevision];
         XCTAssertNotNil(checkedReaddleLibRevision);
         XCTAssertEqualObjects(readdleLibRevision, checkedReaddleLibRevision);
+    }];
+}
+
+- (void)testSubrepoMoveWithoutCheckout {
+    [self.env.nikRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+        [repo runGitCommand:@"add ."];
+        [repo commitWithMessage:@"init s7"];
+        // Get revision X.
+        NSString *rootRevision;
+        [repo getCurrentRevision:&rootRevision];
+        
+        // Checkout and commit ReaddleLib.
+        NSString *const mainReaddeLibPath = @"Dependencies/ReaddleLib";
+        s7add_stage(mainReaddeLibPath,
+                    self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add Dependencies/ReaddleLib subrepo"];
+        
+        // Checkout X, create new branch.
+        [repo checkoutRevision:rootRevision];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        [repo checkoutNewLocalBranch:@"feature"];
+        
+        // Checkout ReaddleLib with different path, and commit.
+        NSString *const featureReaddleLibPath = @"Libraries/ReaddleLib";
+        s7add_stage(featureReaddleLibPath,
+                    self.env.githubReaddleLibRepo.absolutePath);
+        [repo commitWithMessage:@"add Libraries/ReaddleLib subrepo"];
+        
+        // Save ReaddleLib file number.
+        NSUInteger(^getFSNumber)(NSString *) = ^(NSString *path){
+            return [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil] fileSystemFileNumber];
+        };
+        const NSUInteger originalFolderFSNumber = getFSNumber(featureReaddleLibPath);
+        
+        // Check that ReaddleLib folder is moved, not cloned during switch between by comparing file numbers.
+        [repo checkoutExistingLocalBranch:@"main"];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        XCTAssertEqual(originalFolderFSNumber, getFSNumber(mainReaddeLibPath));
+        
+        [repo checkoutExistingLocalBranch:@"feature"];
+        XCTAssertEqual(0, [[S7CheckoutCommand new] runWithArguments:@[]]);
+        XCTAssertEqual(originalFolderFSNumber, getFSNumber(featureReaddleLibPath));
     }];
 }
 

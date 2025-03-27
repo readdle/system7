@@ -32,7 +32,7 @@ pushd pastey/rd2 > /dev/null
     assert git add .
     assert git commit -m "\"init s7\""
 
-    assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"' master
+    assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"' main
 
     assert test -d Dependencies/RDPDFKit/Dependencies/FormCalc
 
@@ -59,7 +59,7 @@ pushd pastey/rd2 > /dev/null
     git commit -m"up PDFKit"
 
 
-    git switch master
+    git switch main
 
     pushd Dependencies/RDPDFKit > /dev/null
         pushd Dependencies/FormCalc > /dev/null

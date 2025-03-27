@@ -49,7 +49,7 @@
         NSString *branch1;
         [repo getCurrentBranch:&branch1 isDetachedHEAD:&noop isEmptyRepo:&noop];
         XCTAssertNotNil(branch1);
-        XCTAssertEqualObjects(branch1, @"master");
+        XCTAssertEqualObjects(branch1, @"main");
         
         [self packRefsInRepo:repo];
         
@@ -71,7 +71,10 @@
     NSString *const remoteRepoPath = [self.env.root stringByAppendingPathComponent:@"empty-repo.remote"];
     NSString *const repoPath = [self.env.root stringByAppendingPathComponent:@"empty-repo.local"];
     int exitStatus = 0;
-    XCTAssertNotNil([GitRepository initializeRepositoryAtPath:remoteRepoPath bare:YES exitStatus:&exitStatus]);
+    XCTAssertNotNil([GitRepository initializeRepositoryAtPath:remoteRepoPath
+                                                         bare:YES
+                                            defaultBranchName:NULL
+                                                   exitStatus:&exitStatus]);
     XCTAssertEqual(exitStatus, 0);
     
     GitRepository *const repo = [GitRepository cloneRepoAtURL:remoteRepoPath destinationPath:repoPath exitStatus:&exitStatus];

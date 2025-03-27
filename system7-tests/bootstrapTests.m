@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 
 #import "S7BootstrapCommand.h"
+#import "S7InitCommand.h"
 
 #import "TestReposEnvironment.h"
 
@@ -23,6 +24,8 @@
 
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
         XCTAssertTrue([NSFileManager.defaultManager createFileAtPath:@".gitattributes" contents:nil attributes:nil]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -32,7 +35,7 @@
     S7BootstrapCommand *command = [S7BootstrapCommand new];
     command.runFakeFilter = YES;
     const int exitCode = [command runWithArguments:@[]];
-    XCTAssertEqual(0, exitCode);
+    XCTAssertEqual(S7ExitCodeSuccess, exitCode);
 }
 
 - (BOOL)doesPostCheckoutHookContainInitCall {
@@ -45,6 +48,8 @@
         [self runBootstrap];
 
         XCTAssertTrue([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -56,6 +61,8 @@
         [self runBootstrap];
 
         XCTAssertFalse([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -78,6 +85,8 @@
         [self runBootstrap];
 
         XCTAssertTrue([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -95,8 +104,29 @@
         [self runBootstrap];
 
         XCTAssertFalse([self doesPostCheckoutHookContainInitCall]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
+- (void)testOnInitializedS7Repo {
+    executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
+        S7InitCommand *command = [S7InitCommand new];
+        XCTAssertEqual(S7ExitCodeSuccess, [command runWithArguments:@[]]);
+
+        // drop the .s7control. Emulating the behaviour that we used to have:
+        // switch to a commit before s7 used to drop .s7control, but left post-checkout hook installed.
+        // So, this is to fix an existing bug first of all.
+        // And then, in theory, this is also valid if a user drops .s7control by hand.
+        //
+        XCTAssertTrue([NSFileManager.defaultManager removeItemAtPath:S7ControlFileName error:nil]);
+
+        [self runBootstrap];
+
+        XCTAssertFalse([self doesPostCheckoutHookContainInitCall]);
+
+        return S7ExitCodeSuccess;
+    });
+}
 
 @end

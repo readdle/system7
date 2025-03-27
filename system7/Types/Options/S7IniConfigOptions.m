@@ -13,12 +13,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 static NSString * const S7IniConfigOptionsAddCommandSectionName = @"add";
 static NSString * const S7IniConfigOptionsAddCommandAllowedTransportProtocols = @"transport-protocols";
-
+static NSString * const S7IniConfigOptionsGitCommandSectionName = @"git";
+static NSString * const S7IniConfigOptionsGitCommandFilter = @"filter";
 
 @interface S7IniConfigOptions()
 
 @property (nonatomic, readonly) S7IniConfig *iniConfig;
 @property (nonatomic, assign) BOOL areAllowedTransportProtocolsParsed;
+@property (nonatomic, assign) BOOL isFilterParsed;
 
 @end
 
@@ -27,6 +29,7 @@ static NSString * const S7IniConfigOptionsAddCommandAllowedTransportProtocols = 
 #pragma mark - Synthesizers -
 
 @synthesize allowedTransportProtocols = _allowedTransportProtocols;
+@synthesize filter = _filter;
 
 #pragma mark - Initialization -
 
@@ -96,18 +99,44 @@ static NSString * const S7IniConfigOptionsAddCommandAllowedTransportProtocols = 
             [errorMessage appendFormat:@" '%@'", protocol];
         }
         
-        fprintf(stderr,
-                "\033[31m"
-                "%s\n"
-                "\033[0m",
-                [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
-        
+        logError("%s\n", [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
+
         handleParsingCompletion(nil);
         return nil;
     }
     
     handleParsingCompletion([NSSet setWithArray:protocols]);
     return _allowedTransportProtocols;
+}
+
+- (GitFilter)filter {
+    if (self.isFilterParsed) {
+        return _filter;
+    }
+    
+    NSDictionary<NSString*, NSDictionary<NSString*, NSString *> *> *iniDictionary = self.iniConfig.dictionaryRepresentation;
+    NSString *filterValue = iniDictionary[S7IniConfigOptionsGitCommandSectionName][S7IniConfigOptionsGitCommandFilter].lowercaseString;
+    
+    if (filterValue == nil) {
+        _filter = GitFilterUnspecified;
+    }
+    else {
+        if ([filterValue isEqualToString:kGitFilterBlobNone]) {
+            _filter = GitFilterBlobNone;
+        }
+        else {
+            NSString *errorMessage =
+            [NSString stringWithFormat:@"error: unsupported filter detected during '%@' option parsing.",
+             S7IniConfigOptionsGitCommandFilter];
+            
+            logError("%s\n", [errorMessage cStringUsingEncoding:NSUTF8StringEncoding]);
+
+            _filter = GitFilterUnspecified;
+        }
+    }
+    
+    self.isFilterParsed = YES;
+    return _filter;
 }
 
 @end

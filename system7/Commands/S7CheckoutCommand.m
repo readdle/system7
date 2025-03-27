@@ -9,7 +9,7 @@
 #import "S7CheckoutCommand.h"
 
 #import "S7PostCheckoutHook.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 @implementation S7CheckoutCommand
 
@@ -56,9 +56,8 @@
     }
 
     if (0 != [workingConfig saveToFileAtPath:S7ControlFileName]) {
-        fprintf(stderr,
-                "failed to save %s to disk.\n",
-                S7ControlFileName.fileSystemRepresentation);
+        logError("failed to save %s to disk.\n",
+                 S7ControlFileName.fileSystemRepresentation);
 
         return S7ExitCodeFileOperationFailed;
     }

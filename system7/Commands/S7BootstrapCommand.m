@@ -8,8 +8,8 @@
 
 #import "S7BootstrapCommand.h"
 
-#import "Utils.h"
-#import "HelpPager.h"
+#import "S7Utils.h"
+#import "S7HelpPager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -38,7 +38,16 @@ NS_ASSUME_NONNULL_BEGIN
         // we may still fail to install bootstrap, for example, if post-checkout hook exists
         // and it's not a shell script (where we can merge in)
         //
-        installHook(@"post-checkout", [[self class] bootstrapCommandLine], NO, NO);
+        GitRepository *repo = [GitRepository repoAtPath:@"."];
+        if (nil == repo) {
+            return S7ExitCodeNotGitRepository;
+        }
+
+        installHook(repo,
+                    @"post-checkout",
+                    [[self class] bootstrapCommandLine],
+                    NO,
+                    NO);
     }
 
     // according to https://git-scm.com/docs/gitattributes
@@ -55,10 +64,14 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
 - (BOOL)shouldInstallBootstrap {
+    if ([self isS7PostCheckoutAlreadyInstalled]) {
+        return NO;
+    }
+
     if ([self willBootstrapConflictWithGitLFS]) {
         return NO;
     }
@@ -76,6 +89,28 @@ NS_ASSUME_NONNULL_BEGIN
     return YES;
 }
 
+- (BOOL)isS7PostCheckoutAlreadyInstalled {
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks/post-checkout"]) {
+        return NO;
+    }
+
+    NSError *error = nil;
+    NSString *postCheckoutContent = [[NSString alloc] initWithContentsOfFile:@".git/hooks/post-checkout"
+                                                                    encoding:NSUTF8StringEncoding
+                                                                       error:&error];
+    if (nil != error) {
+        logError("s7 bootstrap: failed to read contents of the post-checkout hook file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return NO;
+    }
+
+    if ([postCheckoutContent containsString:@"s7 post-checkout"]) {
+        return YES;
+    }
+
+    return NO;
+}
+
 - (BOOL)willBootstrapConflictWithGitLFS {
     NSError *error = nil;
     NSString *gitattributesContent = [[NSString alloc] initWithContentsOfFile:@".gitattributes" encoding:NSUTF8StringEncoding error:&error];
@@ -85,7 +120,7 @@ NS_ASSUME_NONNULL_BEGIN
         // Maybe something wrong with the permissions?
         // Anyway, if we cannot read .gitattributes, then we better avoid bootstrap.
         //
-        fprintf(stderr, "s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
+        logError("s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
         return YES;
     }

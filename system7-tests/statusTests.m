@@ -11,7 +11,7 @@
 #import "S7StatusCommand.h"
 
 #import "TestReposEnvironment.h"
-#import "Utils.h"
+#import "S7Utils.h"
 #import "Git.h"
 
 @interface statusTests : XCTestCase
@@ -46,6 +46,8 @@
 
         S7StatusCommand *statusCommand = [S7StatusCommand new];
         XCTAssertEqual(0, [statusCommand runWithArguments:@[]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 

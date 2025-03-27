@@ -21,7 +21,7 @@ pushd Dependencies/ReaddleLib > /dev/null
   git commit -m"add RDSystemInfo.h"
 popd > /dev/null
 
-git checkout master
+git checkout main
 
 pushd Dependencies/ReaddleLib > /dev/null
   echo sqrt > RDMath.h
@@ -68,7 +68,7 @@ pushd Dependencies/ReaddleLib > /dev/null
   git commit -m"up RDSystemInfo.h"
 popd > /dev/null
 
-git checkout master
+git checkout main
 
 # in case checkout leaves subrepo, checkout still succeeds
 assert test 0 -eq $?

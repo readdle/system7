@@ -8,9 +8,9 @@
 
 #import "S7StatusCommand.h"
 
-#import "Utils.h"
+#import "S7Utils.h"
 #import "S7Diff.h"
-#import "HelpPager.h"
+#import "S7HelpPager.h"
 
 @implementation S7StatusCommand
 
@@ -46,16 +46,14 @@
                 showMainRepoStatus = NO;
             }
             else {
-                fprintf(stderr,
-                        "option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+                logError("option %s not recognized\n", [argument cStringUsingEncoding:NSUTF8StringEncoding]);
                 [[self class] printCommandHelp];
                 return S7ExitCodeUnrecognizedOption;
             }
         }
         else {
-            fprintf(stderr,
-                    "redundant argument %s\n",
-                    [argument cStringUsingEncoding:NSUTF8StringEncoding]);
+            logError("redundant argument %s\n",
+                     [argument cStringUsingEncoding:NSUTF8StringEncoding]);
             [[self class] printCommandHelp];
             return S7ExitCodeInvalidArgument;
         }
@@ -87,15 +85,12 @@
     const int exitStatus = [S7StatusCommand repo:repo calculateStatus:&subrepoPathToStatus];
     if (0 != exitStatus) {
         if (S7ExitCodeSubreposNotInSync == exitStatus) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "Subrepos not in sync.\n"
-                    "This might be the result of:\n"
-                    " - conflicting merge\n"
-                    " - git reset\n"
-                    "\n"
-                    "`s7 checkout` might help you to make subrepos up-to-date.\n"
-                    "\033[0m");
+            logError("Subrepos not in sync.\n"
+                     "This might be the result of:\n"
+                     " - conflicting merge\n"
+                     " - git reset\n"
+                     "\n"
+                     "`s7 checkout` might help you to make subrepos up-to-date.\n");
         }
         *foundAnyChanges = YES;
         return exitStatus;
@@ -114,13 +109,13 @@
             }
 
             if (status & S7StatusAdded) {
-                fprintf(stdout, " \033[32madded       %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+                logInfo(" \033[32madded       %s\033[0m\n", subrepoPath.fileSystemRepresentation);
             }
             else if (status & S7StatusRemoved) {
-                fprintf(stdout, " \033[31mremoved     %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+                logInfo(" \033[31mremoved     %s\033[0m\n", subrepoPath.fileSystemRepresentation);
             }
             else if (status & S7StatusUpdatedAndRebound) {
-                fprintf(stdout, " \033[34mupdated     %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+                logInfo(" \033[34mupdated     %s\033[0m\n", subrepoPath.fileSystemRepresentation);
             }
         }
     }
@@ -147,16 +142,16 @@
         }
 
         if (S7StatusDetachedHead & status) {
-            fprintf(stdout, " \033[31;1mdetached HEAD %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+            logInfo(" \033[31;1mdetached HEAD %s\033[0m\n", subrepoPath.fileSystemRepresentation);
         }
         else if ((S7StatusHasUncommittedChanges & status) && (S7StatusHasNotReboundCommittedChanges & status)) {
-            fprintf(stdout, " \033[36mnot rebound commit(s) + uncommitted changes %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+            logInfo(" \033[36mnot rebound commit(s) + uncommitted changes %s\033[0m\n", subrepoPath.fileSystemRepresentation);
         }
         else if (S7StatusHasUncommittedChanges & status) {
-            fprintf(stdout, " \033[35muncommitted changes       %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+            logInfo(" \033[35muncommitted changes       %s\033[0m\n", subrepoPath.fileSystemRepresentation);
         }
         else if (S7StatusHasNotReboundCommittedChanges & status) {
-            fprintf(stdout, " \033[33;1mnot rebound commit(s)   %s\033[0m\n", subrepoPath.fileSystemRepresentation);
+            logInfo(" \033[33;1mnot rebound commit(s)   %s\033[0m\n", subrepoPath.fileSystemRepresentation);
         }
     }
 
@@ -231,7 +226,7 @@
         GitRepository *subrepoGit = [GitRepository repoAtPath:absoluteSubrepoPath];
         if (nil == subrepoGit) {
             @synchronized (self) {
-                fprintf(stderr, "error: '%s' is not a git repository\n", relativeSubrepoPath.fileSystemRepresentation);
+                logError("'%s' is not a git repository\n", relativeSubrepoPath.fileSystemRepresentation);
                 error = S7ExitCodeSubrepoIsNotGitRepository;
             }
             return;
@@ -263,8 +258,7 @@
             }
             else {
                 @synchronized (self) {
-                    fprintf(stderr,
-                            "unexpected subrepo '%s' state. Failed to detect current branch.\n",
+                    logError("unexpected subrepo '%s' state. Failed to detect current branch.\n",
                             relativeSubrepoPath.fileSystemRepresentation);
                     error = S7ExitCodeGitOperationFailed;
                 }
@@ -301,7 +295,7 @@
         if ([NSFileManager.defaultManager fileExistsAtPath:[absoluteSubrepoPath stringByAppendingPathComponent:S7ConfigFileName]]) {
             NSDictionary<NSString *, NSNumber *> *subrepoStatus = nil;
             const int subrepoStatusExitCode = [self repo:subrepoGit calculateStatus:&subrepoStatus];
-            if (0 != subrepoStatusExitCode) {
+            if (S7ExitCodeSuccess != subrepoStatusExitCode) {
                 @synchronized (self) {
                     error = subrepoStatusExitCode;
                 }

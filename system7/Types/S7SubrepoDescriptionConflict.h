@@ -15,7 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
-- (instancetype)initWithOurVersion:(nullable S7SubrepoDescription *)ourVersion theirVersion:(nullable S7SubrepoDescription *)theirVersion;
+- (instancetype)initWithOurVersion:(nullable S7SubrepoDescription *)ourVersion 
+                      theirVersion:(nullable S7SubrepoDescription *)theirVersion;
 
 @property (nonatomic, readonly, nullable) S7SubrepoDescription *ourVersion;
 @property (nonatomic, readonly, nullable) S7SubrepoDescription *theirVersion;

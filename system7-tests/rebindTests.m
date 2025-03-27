@@ -46,6 +46,8 @@
 
         S7RebindCommand *command = [S7RebindCommand new];
         XCTAssertEqual(0, [command runWithArguments:@[]]);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -68,8 +70,10 @@
                                                      initWithPath:subrepoPath
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:readdleLibRevision
-                                                     branch:@"master"];
+                                                     branch:@"main"];
         XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -98,19 +102,21 @@
                                                         initWithPath:readdleLibSubrepoPath
                                                         url:self.env.githubReaddleLibRepo.absolutePath
                                                         revision:readdleLibRevision
-                                                        branch:@"master"];
+                                                        branch:@"main"];
         XCTAssertEqualObjects(expectedReaddleLibDesc, newConfig.pathToDescriptionMap[readdleLibSubrepoPath]);
 
         S7SubrepoDescription *expectedPDFKitDesc = [[S7SubrepoDescription alloc]
                                                     initWithPath:pdfKitSubrepoPath
                                                     url:self.env.githubRDPDFKitRepo.absolutePath
                                                     revision:pdfKitRevision
-                                                    branch:@"master"];
+                                                    branch:@"main"];
         XCTAssertEqualObjects(expectedPDFKitDesc, newConfig.pathToDescriptionMap[pdfKitSubrepoPath]);
 
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertNotNil(controlConfig);
         XCTAssertEqualObjects(newConfig, controlConfig);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -145,12 +151,14 @@
                                                     initWithPath:pdfKitSubrepoPath
                                                     url:self.env.githubRDPDFKitRepo.absolutePath
                                                     revision:pdfKitRevision
-                                                    branch:@"master"];
+                                                    branch:@"main"];
         XCTAssertEqualObjects(expectedPDFKitDesc, newConfig.pathToDescriptionMap[pdfKitSubrepoPath]);
 
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];
         XCTAssertNotNil(controlConfig);
         XCTAssertEqualObjects(newConfig, controlConfig);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -176,6 +184,8 @@
                                                      revision:readdleLibRevision
                                                      branch:@"feature/geometry"];
         XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
+        
+        return S7ExitCodeSuccess;
     });
 }
 
@@ -215,7 +225,7 @@
                                                      initWithPath:subrepoPath
                                                      url:self.env.githubReaddleLibRepo.absolutePath
                                                      revision:readdleLibRevision
-                                                     branch:@"master"];
+                                                     branch:@"main"];
         XCTAssertEqualObjects(expectedSubrepoDesc, newConfig.subrepoDescriptions.firstObject);
 
         S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];

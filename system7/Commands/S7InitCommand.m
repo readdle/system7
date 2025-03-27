@@ -8,8 +8,8 @@
 
 #import "S7InitCommand.h"
 
-#import "Utils.h"
-#import "HelpPager.h"
+#import "S7Utils.h"
+#import "S7HelpPager.h"
 
 #import "S7PrePushHook.h"
 #import "S7PostCheckoutHook.h"
@@ -100,6 +100,10 @@
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     GitRepository *repo = [GitRepository repoAtPath:@"."];
+    return [self runWithArguments:arguments inRepo:repo];
+}
+
+- (int)runWithArguments:(NSArray<NSString *> *)arguments inRepo:(GitRepository *)repo {
     if (nil == repo) {
         return S7ExitCodeNotGitRepository;
     }
@@ -118,11 +122,14 @@
         }
     }
 
+    NSString *const absoluteRepoPath = repo.absolutePath;
+
+    NSString *const configFilePath = [absoluteRepoPath stringByAppendingPathComponent:S7ConfigFileName];
     BOOL isDirectory = NO;
-    const BOOL configFileExisted = [[NSFileManager defaultManager] fileExistsAtPath:S7ConfigFileName isDirectory:&isDirectory];
+    const BOOL configFileExisted = [[NSFileManager defaultManager] fileExistsAtPath:configFilePath isDirectory:&isDirectory];
     if (NO == configFileExisted) {
-        if (NO == [[NSFileManager defaultManager] createFileAtPath:S7ConfigFileName contents:nil attributes:nil]) {
-            fprintf(stderr, "error: failed to create %s file\n", S7ConfigFileName.fileSystemRepresentation);
+        if (NO == [[NSFileManager defaultManager] createFileAtPath:configFilePath contents:nil attributes:nil]) {
+            logError("failed to create %s file\n", configFilePath.fileSystemRepresentation);
             return S7ExitCodeFileOperationFailed;
         }
     }
@@ -137,48 +144,45 @@
 
     int hookInstallationExitCode = 0;
     for (Class<S7Hook> hookClass in hookClasses) {
-        hookInstallationExitCode = [self installHook:hookClass];
+        hookInstallationExitCode = [self installHook:hookClass inRepo:repo];
         if (0 != hookInstallationExitCode) {
-            fprintf(stderr,
-                    "\033[31m"
-                    "error: failed to install `%s` git hook\n"
-                    "\033[0m",
-                        [hookClass gitHookName].fileSystemRepresentation);
+            logError("error: failed to install `%s` git hook\n",
+                     [hookClass gitHookName].fileSystemRepresentation);
             return hookInstallationExitCode;
         }
     }
 
-    const int gitIgnoreUpdateExitCode = addLineToGitIgnore(S7ControlFileName);
+    const int gitIgnoreUpdateExitCode = addLineToGitIgnore(repo, S7ControlFileName);
     if (0 != gitIgnoreUpdateExitCode) {
         return gitIgnoreUpdateExitCode;
     }
 
-    if (0 != addLineToGitIgnore(S7BakFileName)) {
+    if (0 != addLineToGitIgnore(repo, S7BakFileName)) {
         return S7ExitCodeFileOperationFailed;
     }
 
-    const int configUpdateExitStatus = [self installS7ConfigMergeDriver];
+    const int configUpdateExitStatus = [self installS7ConfigMergeDriverInRepo:repo];
     if (0 != configUpdateExitStatus) {
         return configUpdateExitStatus;
     }
 
     if (createBootstrapFile) {
-        const int bootstrapFileCreationExitCode = [self createBootstrapFile];
+        const int bootstrapFileCreationExitCode = [self createBootstrapFileInRepo:repo];
         if (0 != bootstrapFileCreationExitCode) {
             return bootstrapFileCreationExitCode;
         }
     }
 
-    const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
+    NSString *const controlFilePath = [absoluteRepoPath stringByAppendingPathComponent:S7ControlFileName];
+    const BOOL controlFileExisted = [NSFileManager.defaultManager fileExistsAtPath:controlFilePath];
     if (NO == controlFileExisted) {
         // create control file at the very end.
-        // existance of .s7control is used as an indicator that s7 repo
+        // existence of .s7control is used as an indicator that s7 repo
         // is well formed. No other command will run if there's no .s7control
         //
-        if (0 != [[S7Config emptyConfig] saveToFileAtPath:S7ControlFileName]) {
-            fprintf(stderr,
-                    "failed to save %s to disk.\n",
-                    S7ControlFileName.fileSystemRepresentation);
+        if (0 != [[S7Config emptyConfig] saveToFileAtPath:controlFilePath]) {
+            logError("failed to save %s to disk.\n",
+                     controlFilePath.fileSystemRepresentation);
 
             return S7ExitCodeFileOperationFailed;
         }
@@ -208,32 +212,32 @@
     }
 
     if (configFileExisted) {
-        fprintf(stdout, "reinitialized s7 repo in '%s'\n", repo.absolutePath.fileSystemRepresentation);
+        logInfo("reinitialized s7 repo in '%s'\n", repo.absolutePath.fileSystemRepresentation);
     }
     else {
-        fprintf(stdout, "initialized s7 repo in '%s'\n", repo.absolutePath.fileSystemRepresentation);
+        logInfo("initialized s7 repo in '%s'\n", repo.absolutePath.fileSystemRepresentation);
     }
 
     return S7ExitCodeSuccess;
 }
 
-- (int)installHook:(Class<S7Hook>)hookClass {
-    // there's no guarantie that s7 will be the only one citizen of a hook,
+- (int)installHook:(Class<S7Hook>)hookClass inRepo:(GitRepository *)repo {
+    // there's no guarantee that s7 will be the only one citizen of a hook,
     // thus we add " || exit $?" – to exit hook properly if s7 hook fails
     NSString *commandLine = [NSString
                              stringWithFormat:
                              @"/usr/local/bin/s7 %@-hook \"$@\" <&0 || exit $?",
                              [hookClass gitHookName]];
 
-    return installHook([hookClass gitHookName],commandLine, self.forceOverwriteHooks, self.installFakeHooks);
+    return installHook(repo, [hookClass gitHookName], commandLine, self.forceOverwriteHooks, self.installFakeHooks);
 }
 
-- (int)installS7ConfigMergeDriver {
+- (int)installS7ConfigMergeDriverInRepo:(GitRepository *)repo {
     if (self.installFakeHooks) {
-        return 0;
+        return S7ExitCodeSuccess;
     }
 
-    NSString *configFilePath = @".git/config";
+    NSString *configFilePath = [repo.absolutePath stringByAppendingPathComponent:@".git/config"];
 
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:configFilePath isDirectory:&isDirectory]) {
@@ -242,22 +246,22 @@
                    contents:nil
                    attributes:nil])
         {
-            fprintf(stderr, "failed to create .git/config file\n");
-            return 1;
+            logError("failed to create .git/config file\n");
+            return S7ExitCodeFileOperationFailed;
         }
     }
 
     if (isDirectory) {
-        fprintf(stderr, ".git/config is a directory!?\n");
-        return 2;
+        logError(".git/config is a directory!?\n");
+        return S7ExitCodeGitOperationFailed;
     }
 
     NSError *error = nil;
     NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:configFilePath encoding:NSUTF8StringEncoding error:&error];
     if (nil != error) {
-        fprintf(stderr, "failed to read contents of .git/config file. Error: %s\n",
+        logError("failed to read contents of .git/config file. Error: %s\n",
                 [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 3;
+        return S7ExitCodeFileOperationFailed;
     }
 
     NSString *mergeDriverDeclarationHeader = @"[merge \"s7\"]";
@@ -274,26 +278,28 @@
         [newContent appendString:mergeDriverDeclaration];
 
         if (NO == [newContent writeToFile:configFilePath atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
-            fprintf(stderr, "failed to write contents of .git/config file. Error: %s\n",
+            logError("failed to write contents of .git/config file. Error: %s\n",
                     [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-            return 4;
+            return S7ExitCodeFileOperationFailed;
         }
     }
 
-    const int gitattributesUpdateExitCode = addLineToGitAttributes([NSString stringWithFormat:@"%@ merge=s7", S7ConfigFileName]);
+    const int gitattributesUpdateExitCode = 
+        addLineToGitAttributes(repo, [NSString stringWithFormat:@"%@ merge=s7", S7ConfigFileName]);
     if (0 != gitattributesUpdateExitCode) {
         return gitattributesUpdateExitCode;
     }
 
-    return 0;
+    return S7ExitCodeSuccess;
 }
 
-- (int)createBootstrapFile {
+- (int)createBootstrapFileInRepo:(GitRepository *)repo {
     if (self.installFakeHooks) {
         return S7ExitCodeSuccess;
     }
 
-    const BOOL fileExisted = [[NSFileManager defaultManager] fileExistsAtPath:S7BootstrapFileName];
+    NSString *const bootstrapFilePath = [repo.absolutePath stringByAppendingPathComponent:S7BootstrapFileName];
+    const BOOL fileExisted = [[NSFileManager defaultManager] fileExistsAtPath:bootstrapFilePath];
     if (NO == fileExisted) {
         NSString *bootstrapFileContents =
         @"This file is used to automatically run `s7 init` when an existing s7 repo is cloned.\n"
@@ -338,72 +344,21 @@
          "    not the situation we want a user to deal with.\n"
          ;
 
-        if (NO == [[NSFileManager defaultManager] createFileAtPath:S7BootstrapFileName
+        if (NO == [[NSFileManager defaultManager] createFileAtPath:bootstrapFilePath
                                                           contents:[bootstrapFileContents dataUsingEncoding:NSUTF8StringEncoding]
                                                         attributes:nil]) {
-            fprintf(stderr, "error: failed to create %s file\n", S7BootstrapFileName.fileSystemRepresentation);
+            logError("failed to create %s file\n", bootstrapFilePath.fileSystemRepresentation);
             return S7ExitCodeFileOperationFailed;
         }
     }
 
-    const int gitattributesUpdateExitCode = addLineToGitAttributes([NSString stringWithFormat:@"%@ filter=s7", S7BootstrapFileName]);
+    const int gitattributesUpdateExitCode = 
+        addLineToGitAttributes(repo, [NSString stringWithFormat:@"%@ filter=s7", S7BootstrapFileName]);
     if (0 != gitattributesUpdateExitCode) {
         return gitattributesUpdateExitCode;
     }
 
     return S7ExitCodeSuccess;
-}
-
-int addLineToGitAttributes(NSString *lineToAppend) {
-    static NSString *gitattributesFileName = @".gitattributes";
-
-    BOOL isDirectory = NO;
-    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:gitattributesFileName isDirectory:&isDirectory]) {
-        if (NO == [[NSFileManager defaultManager]
-                   createFileAtPath:gitattributesFileName
-                   contents:nil
-                   attributes:nil])
-        {
-            fprintf(stderr, "failed to create .gitattributes file\n");
-            return 1;
-        }
-    }
-
-    if (isDirectory) {
-        fprintf(stderr, ".gitattributes is a directory!?\n");
-        return 2;
-    }
-
-    NSError *error = nil;
-    NSMutableString *newContent = [[NSMutableString alloc] initWithContentsOfFile:gitattributesFileName encoding:NSUTF8StringEncoding error:&error];
-    if (nil != error) {
-        fprintf(stderr, "failed to read contents of .gitattributes file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 3;
-    }
-
-    NSArray<NSString *> *existingGitattributeLines = [newContent componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-    if ([existingGitattributeLines containsObject:lineToAppend]) {
-        // do not add twice
-        return 0;
-    }
-
-    if (newContent.length > 0 && NO == [newContent hasSuffix:@"\n"]) {
-        [newContent appendString:@"\n"];
-    }
-
-    if (NO == [lineToAppend hasSuffix:@"\n"]) {
-        lineToAppend = [lineToAppend stringByAppendingString:@"\n"];
-    }
-    [newContent appendString:lineToAppend];
-
-    if (NO == [newContent writeToFile:gitattributesFileName atomically:YES encoding:NSUTF8StringEncoding error:&error] || nil != error) {
-        fprintf(stderr, "failed to write contents of .gitattributes file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return 4;
-    }
-
-    return 0;
 }
 
 @end

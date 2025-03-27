@@ -18,7 +18,7 @@ popd > /dev/null
 
 assert s7 rebind --stage
 
-echo master > main.m
+echo main > main.m
 git add main.m
 
 assert git commit -am '"add ReaddleLib subrepo"'
@@ -39,7 +39,7 @@ assert git commit -am '"up ReaddleLib"'
 
 
 echo
-git checkout master
+git checkout main
 
 echo other > main.m
 
