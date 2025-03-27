@@ -1297,6 +1297,41 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                         stdErrOutput:NULL];
 }
 
+#pragma mark - LFS -
+
+- (BOOL)isGitLFSRepo {
+    NSError *error = nil;
+    NSString *gitattributesContent = [[NSString alloc]
+                                      initWithContentsOfFile:[self.absolutePath stringByAppendingPathComponent:@".gitattributes"]
+                                      encoding:NSUTF8StringEncoding
+                                      error:&error];
+    if (nil != error) {
+        // Such situation would be really unexpected – how would Git find out
+        // that it should filter .s7bootstrap or merge .s7substate if there's no .gitattributes?
+        // Maybe something wrong with the permissions?
+        // Anyway, if we cannot read .gitattributes, then there's no Git LFS either.
+        //
+        logError("failed to read contents of .gitattributes file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return NO;
+    }
+
+    if ([gitattributesContent containsString:@"filter=lfs"]) {
+        return YES;
+    }
+
+    return NO;
+}
+
+- (int)forceInstallGitLFS {
+    NSString *devNull = nil;
+    int res = [self
+            runGitCommand:@"lfs install --force"
+            stdOutOutput:&devNull
+            stdErrOutput:&devNull];
+    return res;
+}
+
 @end
 
 #pragma mark - utils for tests -

@@ -43,6 +43,16 @@ NS_ASSUME_NONNULL_BEGIN
             return S7ExitCodeNotGitRepository;
         }
 
+        if ([self willBootstrapConflictWithGitLFS:repo]) {
+            const int lfsInstallExitCode = [repo forceInstallGitLFS];
+            if (0 != lfsInstallExitCode) {
+                logError("the repo '%s' uses Git LFS. Failed to install Git LFS hooks.\n",
+                         [[repo.absolutePath lastPathComponent] fileSystemRepresentation]);
+
+                return S7ExitCodeGitOperationFailed;
+            }
+        }
+
         installHook(repo,
                     @"post-checkout",
                     [[self class] bootstrapCommandLine],
@@ -69,10 +79,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)shouldInstallBootstrap {
     if ([self isS7PostCheckoutAlreadyInstalled]) {
-        return NO;
-    }
-
-    if ([self willBootstrapConflictWithGitLFS]) {
         return NO;
     }
 
@@ -111,25 +117,8 @@ NS_ASSUME_NONNULL_BEGIN
     return NO;
 }
 
-- (BOOL)willBootstrapConflictWithGitLFS {
-    NSError *error = nil;
-    NSString *gitattributesContent = [[NSString alloc] initWithContentsOfFile:@".gitattributes" encoding:NSUTF8StringEncoding error:&error];
-    if (nil != error) {
-        // Such situation would be really unexpected – how would Git find out
-        // that it should filter .s7bootstrap if there's no .gitattributes?
-        // Maybe something wrong with the permissions?
-        // Anyway, if we cannot read .gitattributes, then we better avoid bootstrap.
-        //
-        logError("s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return YES;
-    }
-
-    if ([gitattributesContent containsString:@"filter=lfs"]) {
-        // this repo contains some LFS files.
-        // If LFS hook is NOT installed, then we do not install bootstrap hook
-        // not to cause LFS hook install failure. In such case user will have to
-        // run `s7 init` manually 🤷‍♂️
+- (BOOL)willBootstrapConflictWithGitLFS:(GitRepository *)repo {
+    if ([repo isGitLFSRepo]) {
         // If LFS hook IS installed, we can still merge-in bootstrap command into it.
         //
         if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks/post-checkout"]) {

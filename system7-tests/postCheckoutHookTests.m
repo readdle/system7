@@ -1328,7 +1328,7 @@
     }];
 }
 
-- (void)testCheckoutSameBrachAfterDeinit {
+- (void)testCheckoutSameBranchAfterDeinit {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         // s7 init
         s7init_deactivateHooks();

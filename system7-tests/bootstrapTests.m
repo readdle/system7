@@ -43,6 +43,11 @@
     return [postCheckoutHookContents containsString:@"s7 init"];
 }
 
+- (BOOL)doesPrePushHookContainGitLFSCall {
+    NSString *postCheckoutHookContents = [[NSString alloc] initWithContentsOfFile:@".git/hooks/pre-push" encoding:NSUTF8StringEncoding error:nil];
+    return [postCheckoutHookContents containsString:@"git-lfs"];
+}
+
 - (void)testOnVirginRepo {
     executeInDirectory(self.env.pasteyRd2Repo.absolutePath, ^int{
         [self runBootstrap];
@@ -60,8 +65,9 @@
 
         [self runBootstrap];
 
-        XCTAssertFalse([self doesPostCheckoutHookContainInitCall]);
-        
+        XCTAssertTrue([self doesPostCheckoutHookContainInitCall]);
+        XCTAssertTrue([self doesPrePushHookContainGitLFSCall]);
+
         return S7ExitCodeSuccess;
     });
 }
