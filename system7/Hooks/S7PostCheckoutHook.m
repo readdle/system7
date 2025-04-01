@@ -99,6 +99,11 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeSuccess;
     }
 
+    const int lfsInstallExitCode = [S7InitCommand initializeGitLFSIfNecessaryInRepo:repo];
+    if (S7ExitCodeSuccess != lfsInstallExitCode) {
+        return lfsInstallExitCode;
+    }
+
     return [self.class checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];
 }
 

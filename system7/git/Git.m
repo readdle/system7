@@ -1297,6 +1297,126 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
                         stdErrOutput:NULL];
 }
 
+#pragma mark - LFS -
+
+- (BOOL)isGitLFSRepo {
+    NSString *gitAttributesPath = [self.absolutePath stringByAppendingPathComponent:@".gitattributes"];
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:gitAttributesPath]) {
+        return NO;
+    }
+
+    NSError *error = nil;
+    NSString *gitattributesContent = [[NSString alloc]
+                                      initWithContentsOfFile:gitAttributesPath
+                                      encoding:NSUTF8StringEncoding
+                                      error:&error];
+    if (nil != error) {
+        // Such situation would be really unexpected – how would Git find out
+        // that it should filter .s7bootstrap or merge .s7substate if there's no .gitattributes?
+        // Maybe something wrong with the permissions?
+        // Anyway, if we cannot read .gitattributes, then there's no Git LFS either.
+        //
+        logError("failed to read contents of .gitattributes file. Error: %s\n",
+                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
+        return NO;
+    }
+
+    if ([gitattributesContent containsString:@"filter=lfs"]) {
+        return YES;
+    }
+
+    return NO;
+}
+
+- (BOOL)isGitLFSProperlyInstalled {
+    for (NSString *hookName in @[@"pre-push",
+                                 @"post-checkout",
+                                 @"post-commit",
+                                 @"post-merge"])
+    {
+        NSString *absoluteHookPath = [[self.absolutePath stringByAppendingPathComponent:@".git/hooks"] stringByAppendingPathComponent:hookName];
+
+        if (NO == [NSFileManager.defaultManager fileExistsAtPath:absoluteHookPath]) {
+            logInfo("%s doesn't exist.\n", hookName.UTF8String);
+            return NO;
+        }
+
+        NSError *error = nil;
+        NSString *hookContent = [[NSString alloc] initWithContentsOfFile:absoluteHookPath encoding:NSUTF8StringEncoding error:&error];
+        if (nil != error) {
+            logError("failed to read '%s' content. Error: %s\n", hookName.UTF8String, error.description.UTF8String);
+            return NO;
+        }
+
+        NSString *minimalNecessaryHookContents = [NSString stringWithFormat:@"git lfs %@", hookName];
+        if (NO == [hookContent containsString:minimalNecessaryHookContents]) {
+            logInfo("%s doesn't contain `git lfs` calls.\n", hookName.UTF8String);
+            return NO;
+        }
+    }
+
+    return YES;
+}
+
+- (int)forceInstallGitLFS {
+    // This repo contains some LFS files.
+    // To work properly, Git LFS needs its hooks.
+    // Git LFS cannot mix its hooks contents into any existing hooks.
+    // But S7 can.
+    // So we will do LFS a favour, and install its hooks first.
+    //
+    // At first we tried to install LFS hooks by calling `git lfs install --force`, while we are in our Bootstrap filter.
+    // This didn't work well, cause as `git lfs install` produces some stdout output. Bootstrap is a Git Filter
+    // implementation, so everything that goes to stdout, actually is the filter result, i.e. it goes to the
+    // .s7bootstrap file. We don't want that.
+    //
+    // Ok, we called `git lfs install --force` in S7InitCommand, which is called by our bootstrap post-checkout hook.
+    // This had an unexpected result too. `git lfs install` opens a hook file(s) for append and writes to them directly.
+    // This means, that while the bootstrap post-checkout hook is being executed, `git lfs` appends its code to the
+    // hook file. Shell continues the hook execution from the position where it finished, and stumbles on the middle
+    // of the Git LFS hook code. To properly install hooks, LFS should do this atomically. But they don't.
+    //
+    // One more gotcha is that LFS installs its hooks in a loop, and if any hook installation fails, it stops.
+    // We used to check if the pre-push hook contains any traces of LFS and consider that to denote that LFS
+    // has successfully installed its hooks. But it means just that the pre-push has been installed, and three
+    // others might be not. So, we have to check all LFS hooks, to be sure that they are installed properly.
+    //
+    // All this leads to the need for us to *manually* install Git LFS hooks ourselves.
+    // We can either hardcode them in our code, or run `git lfs install --manual` and parse its output.
+    // `--manual` seems to be better, but still we have to pray that the format of the `--manual` output
+    // will stay the same. So, both ways are more or less equally bad. At least, hardcoding won't require
+    // any parsing.
+    //
+    // We will hardcode the hooks for now and regret that in the future in the worst case scenario.
+    //
+
+    for (NSString *hookName in @[@"pre-push",
+                                 @"post-checkout",
+                                 @"post-commit",
+                                 @"post-merge"])
+    {
+        NSString *commandLine =
+        [NSString
+         stringWithFormat:@"command -v git-lfs >/dev/null 2>&1 || { echo >&2 \"\\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the '%@' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks').\\n\"; exit 2; }\ngit lfs %@ \"$@\"\n",
+         hookName, hookName];
+        const int hookInstallResult = installHook(self, hookName, commandLine, YES /* force overwrite */, NO /* install fake hooks */);
+        if (0 != hookInstallResult) {
+            logError("error: failed to install `%s` git hook\n",
+                     hookName.fileSystemRepresentation);
+            return hookInstallResult;
+        }
+    }
+
+    return S7ExitCodeSuccess;
+}
+
+- (int)lfsPull {
+    return [self
+            runGitWithArguments:@[@"lfs", @"pull"]
+            stdOutOutput:NULL
+            stdErrOutput:NULL];
+}
+
 @end
 
 #pragma mark - utils for tests -

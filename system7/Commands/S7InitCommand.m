@@ -134,21 +134,18 @@
         }
     }
 
-    NSSet<Class<S7Hook>> *hookClasses = [NSSet setWithArray:@[
-        [S7PrePushHook class],
-        [S7PostCheckoutHook class],
-        [S7PostCommitHook class],
-        [S7PostMergeHook class],
-        [S7PrepareCommitMsgHook class],
-    ]];
+    if (NO == self.installFakeHooks) {
+        if (NO == self.forceOverwriteHooks) {
+            if (0 != [self.class initializeGitLFSIfNecessaryInRepo:repo]) {
+                logError("failed to install Git LFS hooks!\n");
+                return S7ExitCodeGitOperationFailed;
+            }
+        }
 
-    int hookInstallationExitCode = 0;
-    for (Class<S7Hook> hookClass in hookClasses) {
-        hookInstallationExitCode = [self installHook:hookClass inRepo:repo];
-        if (0 != hookInstallationExitCode) {
-            logError("error: failed to install `%s` git hook\n",
-                     [hookClass gitHookName].fileSystemRepresentation);
-            return hookInstallationExitCode;
+        const int hooksInstallExitCode = [self.class installHooksInRepo:repo
+                                                         forceOverwrite:self.forceOverwriteHooks];
+        if (S7ExitCodeSuccess != hooksInstallExitCode) {
+            return hooksInstallExitCode;
         }
     }
 
@@ -221,7 +218,35 @@
     return S7ExitCodeSuccess;
 }
 
-- (int)installHook:(Class<S7Hook>)hookClass inRepo:(GitRepository *)repo {
++ (int)installHooksInRepo:(GitRepository *)repo
+           forceOverwrite:(BOOL)forceOverwrite
+{
+    NSSet<Class<S7Hook>> *hookClasses = [NSSet setWithArray:@[
+        [S7PrePushHook class],
+        [S7PostCheckoutHook class],
+        [S7PostCommitHook class],
+        [S7PostMergeHook class],
+        [S7PrepareCommitMsgHook class],
+    ]];
+
+    for (Class<S7Hook> hookClass in hookClasses) {
+        int hookInstallationExitCode = [self installHook:hookClass
+                                                  inRepo:repo
+                                          forceOverwrite:forceOverwrite];
+        if (0 != hookInstallationExitCode) {
+            logError("error: failed to install `%s` git hook\n",
+                     [hookClass gitHookName].fileSystemRepresentation);
+            return hookInstallationExitCode;
+        }
+    }
+
+    return S7ExitCodeSuccess;
+}
+
++ (int)installHook:(Class<S7Hook>)hookClass
+            inRepo:(GitRepository *)repo
+    forceOverwrite:(BOOL)forceOverwrite
+{
     // there's no guarantee that s7 will be the only one citizen of a hook,
     // thus we add " || exit $?" – to exit hook properly if s7 hook fails
     NSString *commandLine = [NSString
@@ -229,7 +254,7 @@
                              @"/usr/local/bin/s7 %@-hook \"$@\" <&0 || exit $?",
                              [hookClass gitHookName]];
 
-    return installHook(repo, [hookClass gitHookName], commandLine, self.forceOverwriteHooks, self.installFakeHooks);
+    return installHook(repo, [hookClass gitHookName], commandLine, forceOverwrite, NO /* installFakeHooks */);
 }
 
 - (int)installS7ConfigMergeDriverInRepo:(GitRepository *)repo {
@@ -335,13 +360,9 @@
          "\n"
          "\n"
          "NOTE:\n"
-         " s7 won't install its bootstrap hook if:\n"
-         "  - post-checkout hook exists and it's not a shell script (where we can merge in).\n"
-         "    This is theoretically possible if a user ran clone with custom templates\n"
-         "  - there's *no post-checkout hook yet*, but s7 can see that the repo uses Git LFS,\n"
-         "    thus it can predict that LFS *will* be installing its hooks. If s7 installs\n"
-         "    its bootstrap post-checkout, then Git LFS will fail to install its post-checkout –\n"
-         "    not the situation we want a user to deal with.\n"
+         " s7 won't install its bootstrap hook if post-checkout hook exists and it's not a shell script"
+         " (where we can merge in).\n"
+         " This is theoretically possible if a user ran clone with custom templates.\n"
          ;
 
         if (NO == [[NSFileManager defaultManager] createFileAtPath:bootstrapFilePath
@@ -359,6 +380,33 @@
     }
 
     return S7ExitCodeSuccess;
+}
+
++ (int)initializeGitLFSIfNecessaryInRepo:(GitRepository *)repo {
+    if (NO == [repo isGitLFSRepo]) {
+        return S7ExitCodeSuccess;
+    }
+
+    if ([repo isGitLFSProperlyInstalled]) {
+        return S7ExitCodeSuccess;
+    }
+
+    logInfo("detected s7 should co-exist with Git LFS. Installing LFS hooks first...\n");
+    const int hooksInstallExitCode = [repo forceInstallGitLFS];
+    if (S7ExitCodeSuccess != hooksInstallExitCode) {
+        return hooksInstallExitCode;
+    }
+
+    const int s7HooksInstallExitCode = [self installHooksInRepo:repo forceOverwrite:NO];
+    if (S7ExitCodeSuccess != s7HooksInstallExitCode) {
+        return s7HooksInstallExitCode;
+    }
+
+    // We don't have to run `lfs pull` during clone,
+    // but we really need it in the post-merge / post-checkout
+    // To keep code more generic, let `init` (clone/bootstrap) be a bit more redundand
+    //
+    return [repo lfsPull];
 }
 
 @end
