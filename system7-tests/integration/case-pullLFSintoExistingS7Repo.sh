@@ -46,7 +46,7 @@ assert test 0 -eq $?
 grep -i "lfs" .git/hooks/post-checkout
 assert test 0 -eq $?
 
-git push
+GIT_TRACE=1 GIT_TRANSFER_TRACE=1 GIT_CURL_VERBOSE=1 git push
 
 
 cd "$S7_ROOT/nik/rd2"
