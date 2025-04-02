@@ -13,4 +13,5 @@ usr
 *.xcworkspacedata
 system7-tests/integration/case7/*.actual
 system7-tests/integration/sandbox
+system7-tests/integration/templates
 .last-s7-update-check-date
