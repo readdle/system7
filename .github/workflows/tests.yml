@@ -20,7 +20,8 @@ jobs:
       - name: Test
         run: |
           cd system7-tests/integration
-          sh test.sh --no-parallel
+          git lfs install
+          sh test.sh --no-parallel case-pullLFSintoExistingS7Repo.sh case-switchToLFSBranchInExistingS7Repo.sh
           exit $?
   
   xctests:
