@@ -1409,7 +1409,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
     // but we still have to call `git lfs install` for it to install filters, repositoryformatversion, etc.
     return [self
-            runGitWithArguments:@[@"lfs", @"install", @"--local"]
+            runGitWithArguments:@[@"lfs", @"install", @"--skip-repo"]
             stdOutOutput:NULL
             stdErrOutput:NULL];
 }
