@@ -1358,7 +1358,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return YES;
 }
 
-- (int)forceInstallGitLFS {
+- (int)installGitLFS {
     // This repo contains some LFS files.
     // To work properly, Git LFS needs its hooks.
     // Git LFS cannot mix its hooks contents into any existing hooks.
@@ -1407,7 +1407,11 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         }
     }
 
-    return S7ExitCodeSuccess;
+    // but we still have to call `git lfs install` for it to install filters, repositoryformatversion, etc.
+    return [self
+            runGitWithArguments:@[@"lfs", @"install", @"--local"]
+            stdOutOutput:NULL
+            stdErrOutput:NULL];
 }
 
 - (int)lfsPull {

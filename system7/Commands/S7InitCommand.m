@@ -392,7 +392,7 @@
     }
 
     logInfo("detected s7 should co-exist with Git LFS. Installing LFS hooks first...\n");
-    const int hooksInstallExitCode = [repo forceInstallGitLFS];
+    const int hooksInstallExitCode = [repo installGitLFS];
     if (S7ExitCodeSuccess != hooksInstallExitCode) {
         return hooksInstallExitCode;
     }
