@@ -4,14 +4,15 @@ git clone github/rd2 pastey/rd2
 
 cd pastey/rd2
 
-assert git lfs install
-
 LARGE_FILE_CONTENT="MEGA-LONG-FILE-CONTENT"
 echo "$LARGE_FILE_CONTENT" > large-file
 assert git lfs track large-file
-assert git add large-file
 
-git add .
+# re-initialize hooks for both: s7 and LFS
+assert s7 init
+
+assert git add large-file .gitattributes
+
 git commit -m"\"track large file with Git LFS\""
 
 assert s7 init
@@ -28,18 +29,7 @@ cd "$S7_ROOT/nik"
 git clone "$S7_ROOT/github/rd2"
 assert test $? -eq 0
 
-# LFS is first. It installs all of its hooks. Everyone will be happy
-
-# 0. clone in progress
-# 1. s7 is first. It installs "bootstrap" *post-checkout* hook.
-# 2. then comes LFS
-
 cd rd2
-
-#ls -a .git/hooks
-#
-#cat .git/hooks/post-checkout
-#cat .git/hooks/pre-push
 
 grep "s7" .git/hooks/post-checkout
 assert test 0 -eq $?
