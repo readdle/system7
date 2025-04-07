@@ -30,14 +30,14 @@ assert test -f Dependencies/RDPDFKit/.gitignore
 
 cd "$S7_ROOT/pastey/rd2"
 
-assert git lfs install --force
-assert s7 init
-
 LARGE_FILE_CONTENT="MEGA-LONG-FILE-CONTENT"
 echo "$LARGE_FILE_CONTENT" > large-file
 assert git lfs track large-file
-assert git add large-file
 
+# re-initialize hooks for both: s7 and LFS
+assert s7 init
+
+assert git add large-file
 git add .
 git commit -m"\"track large file with Git LFS\""
 
@@ -46,7 +46,12 @@ assert test 0 -eq $?
 grep -i "lfs" .git/hooks/post-checkout
 assert test 0 -eq $?
 
-GIT_TRACE=1 GIT_TRANSFER_TRACE=1 GIT_CURL_VERBOSE=1 git push
+grep "s7" .git/hooks/pre-push
+assert test 0 -eq $?
+grep -i "lfs" .git/hooks/pre-push
+assert test 0 -eq $?
+
+git push
 
 
 cd "$S7_ROOT/nik/rd2"
