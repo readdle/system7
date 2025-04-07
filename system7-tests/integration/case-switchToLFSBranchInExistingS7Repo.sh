@@ -32,15 +32,14 @@ cd "$S7_ROOT/pastey/rd2"
 
 assert git checkout -b git-lfs
 
-assert git lfs install --force
-assert s7 init
-
 LARGE_FILE_CONTENT="MEGA-LONG-FILE-CONTENT"
 echo "$LARGE_FILE_CONTENT" > large-file
 assert git lfs track large-file
-assert git add large-file
+assert git add large-file .gitattributes
 
-git add .
+# re-initialize hooks for both: s7 and LFS
+assert s7 init
+
 git commit -m"\"track large file with Git LFS\""
 
 grep "s7" .git/hooks/post-checkout
