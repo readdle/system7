@@ -287,6 +287,16 @@ int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig) {
     return S7ExitCodeSuccess;
 }
 
+static BOOL isHookCommandAlreadyInstalled(NSString *existingHookContents, NSString *hookCommandLine) {
+    if ([existingHookContents containsString:hookCommandLine]) {
+        return YES;
+    }
+
+    hookCommandLine = [hookCommandLine stringByReplacingOccurrencesOfString:@"<&0" withString:@"<\"$REFS\""];
+
+    return [existingHookContents containsString:hookCommandLine];
+}
+
 int installHook(GitRepository *repo,
                 NSString *hookName,
                 NSString *commandLine,
@@ -312,7 +322,7 @@ int installHook(GitRepository *repo,
             return S7ExitCodeFileOperationFailed;
         }
 
-        if ([existingContents containsString:commandLine]) {
+        if (isHookCommandAlreadyInstalled(existingContents, commandLine)) {
             return S7ExitCodeSuccess;
         }
 
