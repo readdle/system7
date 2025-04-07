@@ -20,7 +20,6 @@ jobs:
       - name: Test
         run: |
           cd system7-tests/integration
-          git lfs install
           sh test.sh --no-parallel
           exit $?
   
