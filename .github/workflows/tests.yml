@@ -21,7 +21,7 @@ jobs:
         run: |
           cd system7-tests/integration
           git lfs install
-          sh test.sh --no-parallel case-pullLFSintoExistingS7Repo.sh case-switchToLFSBranchInExistingS7Repo.sh case-pureLFS.sh
+          sh test.sh --no-parallel
           exit $?
   
   xctests:
