@@ -287,27 +287,6 @@ int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig) {
     return S7ExitCodeSuccess;
 }
 
-NSString *getGlobalGitConfigValue(NSString *key) {
-    NSCParameterAssert(key != nil);
-    NSString *const launch = [NSString stringWithFormat:@"git config --global --get %@", key];
-    FILE *const proc = popen([launch cStringUsingEncoding:NSUTF8StringEncoding], "r");
-    if (proc == NULL) {
-        return nil;
-    }
-    
-    NSMutableString *const value = [NSMutableString new];
-    char buffer[16];
-    while (fgets(buffer, sizeof(buffer) / sizeof(char), proc)) {
-        [value appendFormat:@"%s", buffer];
-    }
-    
-    if (pclose(proc) != 0) {
-        return nil;
-    }
-    
-    return [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-}
-
 int installHook(GitRepository *repo,
                 NSString *hookName,
                 NSString *commandLine,

@@ -34,8 +34,6 @@ BOOL isS7Repo(GitRepository *repo);
 int s7RepoPreconditionCheck(void);
 int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
 
-NSString *_Nullable getGlobalGitConfigValue(NSString *key);
-
 BOOL S7ArgumentMatchesFlag(NSString *argument, NSString *longFlag, NSString *shortFlag);
 
 #define S7_REPO_PRECONDITION_CHECK()                    \
