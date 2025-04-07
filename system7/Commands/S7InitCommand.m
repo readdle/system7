@@ -254,7 +254,12 @@
                              @"/usr/local/bin/s7 %@-hook \"$@\" <&0 || exit $?",
                              [hookClass gitHookName]];
 
-    return installHook(repo, [hookClass gitHookName], commandLine, forceOverwrite, NO /* installFakeHooks */);
+    return installHook(repo,
+                       [hookClass gitHookName],
+                       commandLine,
+                       forceOverwrite,
+                       NO, /* installFakeHooks */
+                       [hookClass dependsOnStdin]);
 }
 
 - (int)installS7ConfigMergeDriverInRepo:(GitRepository *)repo {

@@ -46,8 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
         installHook(repo,
                     @"post-checkout",
                     [[self class] bootstrapCommandLine],
-                    NO,
-                    NO);
+                    NO, /* forceOverwrite */
+                    NO, /* installFakeHooks */
+                    NO  /* duplicateStdin */);
     }
 
     // according to https://git-scm.com/docs/gitattributes

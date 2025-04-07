@@ -16,6 +16,10 @@
     return @"post-commit";
 }
 
++ (BOOL)dependsOnStdin {
+    return NO;
+}
+
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     logInfo("s7: post-commit hook start\n");
     const int result = [self doRunWithArguments:arguments];

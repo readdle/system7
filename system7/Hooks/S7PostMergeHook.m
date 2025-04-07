@@ -17,6 +17,10 @@
     return @"post-merge";
 }
 
++ (BOOL)dependsOnStdin {
+    return NO;
+}
+
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     logInfo("\ns7: post-merge hook start\n");
     const int result = [self doRunWithArguments:arguments];

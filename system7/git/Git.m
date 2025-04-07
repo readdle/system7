@@ -1397,9 +1397,14 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     {
         NSString *commandLine =
         [NSString
-         stringWithFormat:@"command -v git-lfs >/dev/null 2>&1 || { echo >&2 \"\\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the '%@' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks').\\n\"; exit 2; }\ngit lfs %@ \"$@\"\n",
+         stringWithFormat:@"command -v git-lfs >/dev/null 2>&1 || { echo >&2 \"\\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the '%@' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks').\\n\"; exit 2; }\ngit lfs %@ \"$@\" <&0\n",
          hookName, hookName];
-        const int hookInstallResult = installHook(self, hookName, commandLine, YES /* force overwrite */, NO /* install fake hooks */);
+        const int hookInstallResult = installHook(self,
+                                                  hookName,
+                                                  commandLine,
+                                                  YES, /* force overwrite */
+                                                  NO,  /* install fake hooks */
+                                                  NO   /* duplicate stdin */);
         if (0 != hookInstallResult) {
             logError("error: failed to install `%s` git hook\n",
                      hookName.fileSystemRepresentation);

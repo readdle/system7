@@ -25,6 +25,10 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     return @"post-checkout";
 }
 
++ (BOOL)dependsOnStdin {
+    return NO;
+}
+
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     logInfo("\ns7: post-checkout hook start\n");
     const int result = [self doRunWithArguments:arguments];
