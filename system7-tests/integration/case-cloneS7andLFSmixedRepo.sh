@@ -51,7 +51,7 @@ for ETALON_HOOK in etalon-lfs-repo/.git/hooks/*; do
     if grep -i "lfs" $ETALON_HOOK; then
         HOOK_NAME="$(basename $ETALON_HOOK)"
         NIKS_HOOK=".git/hooks/$HOOK_NAME"
-        if [ "$(sed '/s7/d;/^\s*$/d' $NIKS_HOOK)" != "$(cat $ETALON_HOOK)" ]; then
+        if [ "$(sed -n 's/ <&0//; s/ <"$REFS"//; /lfs/p;1p' $NIKS_HOOK)" != "$(cat $ETALON_HOOK)" ]; then
             echo "LFS hooks hardcoded in S7 code are outdated!"
             echo "Expected format:"
             echo
@@ -59,7 +59,7 @@ for ETALON_HOOK in etalon-lfs-repo/.git/hooks/*; do
             echo
             echo "Actual format:"
             echo
-            sed '/s7/d;/^\s*$/d' $NIKS_HOOK)
+            sed -n '/lfs/p' $NIKS_HOOK
             echo
 
             assert false
