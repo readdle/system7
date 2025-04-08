@@ -35,5 +35,11 @@ jobs:
         uses: actions/checkout@v3
       - name: Test
         run: |
-          xcodebuild -scheme system7-tests -configuration Release test
+          xcodebuild -scheme system7-tests -configuration Release -resultBundlePath UnitTests.xcresult test
           exit $?
+      - name: Upload xcresult file
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: UnitTests-${{ github.run_number }}.xcresult
+          path: UnitTests.xcresult
