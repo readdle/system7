@@ -80,6 +80,10 @@ red=$(tput setaf 1)
 green=$(tput setaf 2)
 normal=$(tput sgr0)
 
+TOTAL_NUMBER_OF_CASES=${#CASES_ARRAY[@]}
+
+CURRENT_CASE_NUMBER=0
+
 setupAndRunCase() {
     local CASE=$1
 
@@ -96,6 +100,8 @@ setupAndRunCase() {
 
     cd "$TEST_ROOT"
 
+    sh -n "$SCRIPT_SOURCE_DIR/$CASE" # preflight check of the script for syntax errors
+
     if [ 1 -eq $PARALLELIZE ]; then
         S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" >"$TEST_ROOT/log.txt" 2>&1
 
@@ -106,8 +112,9 @@ setupAndRunCase() {
         fi
     else
         echo
-        echo "$CASE"
-        echo "============="
+        echo "[$CURRENT_CASE_NUMBER / $TOTAL_NUMBER_OF_CASES] $CASE"
+        echo "======================================="
+        echo
         S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" 2>&1
         echo
         if [ -f "$TEST_ROOT/FAIL" ]; then
@@ -130,6 +137,7 @@ do
     if [ 1 -eq $PARALLELIZE ]; then
         setupAndRunCase $CASE &
     else
+        CURRENT_CASE_NUMBER=$(( CURRENT_CASE_NUMBER + 1 ))
         setupAndRunCase $CASE
     fi
 done
