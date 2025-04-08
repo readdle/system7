@@ -47,20 +47,20 @@ void assertRepoAtPWDIsFreeFromS7(void) {
         XCTAssertFalse([configContents containsString:@"s7"]);
     }
 
-//    NSArray<NSString *> *hookFileNames = @[
-//        @"post-checkout",
-//        @"post-commit",                                                         
-//        @"post-merge",                                                          
-//        @"prepare-commit-msg",
-//        @"pre-push"
-//    ];
-//    for (NSString *hookName in hookFileNames) {
-//        NSString *hookFilePath = [NSString stringWithFormat:@".git/hooks/%@", hookName];
-//        if ([fileManager fileExistsAtPath:hookFilePath]) {
-//            NSString *hookFileContents = [NSString stringWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
-//            XCTAssertFalse([hookFileContents containsString:@"s7"]);
-//        }
-//    }
+    NSArray<NSString *> *hookFileNames = @[
+        @"post-checkout",
+        @"post-commit",                                                         
+        @"post-merge",                                                          
+        @"prepare-commit-msg",
+        @"pre-push"
+    ];
+    for (NSString *hookName in hookFileNames) {
+        NSString *hookFilePath = [NSString stringWithFormat:@".git/hooks/%@", hookName];
+        if ([fileManager fileExistsAtPath:hookFilePath]) {
+            NSString *hookFileContents = [NSString stringWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
+            XCTAssertFalse([hookFileContents containsString:@"s7"]);
+        }
+    }
 }
 
 NSString *stringByRemovingEmptyLines(NSString *string) {
