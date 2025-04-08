@@ -44,7 +44,7 @@ void assertRepoAtPWDIsFreeFromS7(void) {
 
     if ([fileManager fileExistsAtPath:@".git/config"]) {
         NSString *configContents = [NSString stringWithContentsOfFile:@".git/config" encoding:NSUTF8StringEncoding error:nil];
-        XCTAssertFalse([configContents containsString:@"s7"]);
+        XCTAssertFalse([configContents containsString:@"s7"], @"Git Config should not contain 's7' mentions. Actual config: %@", configContents);
     }
 
     NSArray<NSString *> *hookFileNames = @[
