@@ -8,9 +8,6 @@ LARGE_FILE_CONTENT="MEGA-LONG-FILE-CONTENT"
 echo "$LARGE_FILE_CONTENT" > large-file
 assert git lfs track large-file
 
-# re-initialize hooks for both: s7 and LFS
-assert s7 init
-
 assert git add large-file .gitattributes
 
 git commit -m"\"track large file with Git LFS\""
@@ -21,6 +18,14 @@ assert git commit -m "\"init s7\""
 
 assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"'
 git commit -m"add pdfkit subrepo"
+
+grep "s7" .git/hooks/pre-push
+assert test 0 -eq $?
+
+grep "lfs" .git/hooks/pre-push
+assert test 0 -eq $?
+
+assert test "2" = "$(grep -c '<"$REFS"' .git/hooks/pre-push)"
 
 git push
 

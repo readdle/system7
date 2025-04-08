@@ -1348,7 +1348,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
             return NO;
         }
 
-        NSString *minimalNecessaryHookContents = [NSString stringWithFormat:@"git lfs %@", hookName];
+        NSString *minimalNecessaryHookContents = [NSString stringWithFormat:@"git lfs %@ \"$@\" <&0", hookName];
         if (NO == [hookContent containsString:minimalNecessaryHookContents]) {
             logInfo("%s doesn't contain `git lfs` calls.\n", hookName.UTF8String);
             return NO;
