@@ -411,7 +411,7 @@
     // but we really need it in the post-merge / post-checkout
     // To keep code more generic, let `init` (clone/bootstrap) be a bit more redundand
     //
-    return [repo lfsPull];
+    return S7ExitCodeSuccess; // [repo lfsPull];
 }
 
 @end
