@@ -139,7 +139,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isGitLFSRepo;
 - (BOOL)isGitLFSProperlyInstalled;
 - (int)installGitLFS;
-- (int)lfsPull;
 
 @end
 

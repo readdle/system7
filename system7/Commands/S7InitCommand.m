@@ -402,16 +402,7 @@
         return hooksInstallExitCode;
     }
 
-    const int s7HooksInstallExitCode = [self installHooksInRepo:repo forceOverwrite:NO];
-    if (S7ExitCodeSuccess != s7HooksInstallExitCode) {
-        return s7HooksInstallExitCode;
-    }
-
-    // We don't have to run `lfs pull` during clone,
-    // but we really need it in the post-merge / post-checkout
-    // To keep code more generic, let `init` (clone/bootstrap) be a bit more redundand
-    //
-    return S7ExitCodeSuccess; // [repo lfsPull];
+    return [self installHooksInRepo:repo forceOverwrite:NO];
 }
 
 @end

@@ -1419,13 +1419,6 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
             stdErrOutput:NULL];
 }
 
-- (int)lfsPull {
-    return [self
-            runGitWithArguments:@[@"lfs", @"pull"]
-            stdOutOutput:NULL
-            stdErrOutput:NULL];
-}
-
 @end
 
 #pragma mark - utils for tests -
