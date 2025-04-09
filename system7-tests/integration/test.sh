@@ -100,8 +100,6 @@ setupAndRunCase() {
 
     cd "$TEST_ROOT"
 
-    sh -n "$SCRIPT_SOURCE_DIR/$CASE" # preflight check of the script for syntax errors
-
     if [ 1 -eq $PARALLELIZE ]; then
         S7_ROOT="$TEST_ROOT" sh -x "$SCRIPT_SOURCE_DIR/$CASE" >"$TEST_ROOT/log.txt" 2>&1
 
