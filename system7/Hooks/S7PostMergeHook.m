@@ -9,11 +9,16 @@
 #import "S7PostMergeHook.h"
 
 #import "S7PostCheckoutHook.h"
+#import "S7InitCommand.h"
 
 @implementation S7PostMergeHook
 
 + (NSString *)gitHookName {
     return @"post-merge";
+}
+
++ (BOOL)dependsOnStdin {
+    return NO;
 }
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
@@ -28,6 +33,11 @@
     if (nil == repo) {
         logError("s7: post-merge hook – ran in not git repo root!\n");
         return S7ExitCodeNotGitRepository;
+    }
+
+    const int lfsInstallExitCode = [S7InitCommand initializeGitLFSIfNecessaryInRepo:repo];
+    if (S7ExitCodeSuccess != lfsInstallExitCode) {
+        return lfsInstallExitCode;
     }
 
     S7Config *controlConfig = [[S7Config alloc] initWithContentsOfFile:S7ControlFileName];

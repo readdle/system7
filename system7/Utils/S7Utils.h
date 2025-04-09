@@ -22,14 +22,17 @@ int removeLinesFromGitIgnore(NSSet<NSString *> *linesToRemove);
 int addLineToGitAttributes(GitRepository *repo, NSString *lineToAppend);
 int removeFilesFromGitattributes(NSSet<NSString *> *filesToRemove);
 
-int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks);
+int installHook(GitRepository *repo,
+                NSString *hookName,
+                NSString *commandLine,
+                BOOL forceOverwrite,
+                BOOL installFakeHooks,
+                BOOL duplicateStdin);
 
 BOOL isCurrentDirectoryS7RepoRoot(void);
 BOOL isS7Repo(GitRepository *repo);
 int s7RepoPreconditionCheck(void);
 int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig);
-
-NSString *_Nullable getGlobalGitConfigValue(NSString *key);
 
 BOOL S7ArgumentMatchesFlag(NSString *argument, NSString *longFlag, NSString *shortFlag);
 

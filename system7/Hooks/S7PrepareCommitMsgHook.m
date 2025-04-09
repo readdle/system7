@@ -30,6 +30,10 @@
     return @"prepare-commit-msg";
 }
 
++ (BOOL)dependsOnStdin {
+    return NO;
+}
+
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     logInfo("s7: prepare-commit-msg hook start\n");
     const int result = [self doRunWithArguments:arguments];

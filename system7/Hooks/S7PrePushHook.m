@@ -50,7 +50,7 @@
 // I used `git log --branches --not --remotes --no-walk --decorate --pretty=format:%S` for some time,
 // but turned out that it reports some behind branches from time to time (I haven't found an easy way
 // to reproduce this). I could fix it by removing --no-walk, but I've found another scenario where
-// even without --no-walk not all branches are listed – it you merge brances with fast-forward (they
+// even without --no-walk not all branches are listed – it you merge branches with fast-forward (they
 // both point to the same commit), only one of branches is reported by `git log --branches --not --remotes`.
 // I thought,– "alright – I can list .git/refs/heads and .git/refs/remotes, and build the list
 // of branches to push by hand". Here comes a new problem – how do you distinct between the new local
@@ -63,6 +63,10 @@
 
 + (NSString *)gitHookName {
     return @"pre-push";
+}
+
++ (BOOL)dependsOnStdin {
+    return YES;
 }
 
 - (NSString *)stdinContents {

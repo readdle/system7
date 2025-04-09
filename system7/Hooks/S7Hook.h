@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol S7Hook <NSObject>
 
 + (NSString *)gitHookName;
++ (BOOL)dependsOnStdin;
 
 - (int)runWithArguments:(NSArray<NSString *> *)arguments;
 

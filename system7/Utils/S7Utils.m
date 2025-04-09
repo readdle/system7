@@ -287,28 +287,23 @@ int saveUpdatedConfigToMainAndControlFile(S7Config *updatedConfig) {
     return S7ExitCodeSuccess;
 }
 
-NSString *getGlobalGitConfigValue(NSString *key) {
-    NSCParameterAssert(key != nil);
-    NSString *const launch = [NSString stringWithFormat:@"git config --global --get %@", key];
-    FILE *const proc = popen([launch cStringUsingEncoding:NSUTF8StringEncoding], "r");
-    if (proc == NULL) {
-        return nil;
+static BOOL isHookCommandAlreadyInstalled(NSString *existingHookContents, NSString *hookCommandLine) {
+    if ([existingHookContents containsString:hookCommandLine]) {
+        return YES;
     }
-    
-    NSMutableString *const value = [NSMutableString new];
-    char buffer[16];
-    while (fgets(buffer, sizeof(buffer) / sizeof(char), proc)) {
-        [value appendFormat:@"%s", buffer];
-    }
-    
-    if (pclose(proc) != 0) {
-        return nil;
-    }
-    
-    return [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+    hookCommandLine = [hookCommandLine stringByReplacingOccurrencesOfString:@"<&0" withString:@"<\"$REFS\""];
+
+    return [existingHookContents containsString:hookCommandLine];
 }
 
-int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, BOOL forceOverwrite, BOOL installFakeHooks) {
+int installHook(GitRepository *repo,
+                NSString *hookName,
+                NSString *commandLine,
+                BOOL forceOverwrite,
+                BOOL installFakeHooks,
+                BOOL duplicateStdin)
+{
     if (installFakeHooks) {
         return S7ExitCodeSuccess;
     }
@@ -327,7 +322,7 @@ int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, 
             return S7ExitCodeFileOperationFailed;
         }
 
-        if ([existingContents containsString:commandLine]) {
+        if (isHookCommandAlreadyInstalled(existingContents, commandLine)) {
             return S7ExitCodeSuccess;
         }
 
@@ -352,6 +347,45 @@ int installHook(GitRepository *repo, NSString *hookName, NSString *commandLine, 
                                             "%@",
                                             commandLine,
                                             existingHookBody];
+
+            if (duplicateStdin) {
+                NSString *stdinMarker = @"<&0";
+                const NSRange firstOccurrenceRange = [mergedHookContents rangeOfString:stdinMarker];
+                if (firstOccurrenceRange.location != NSNotFound) {
+                    const NSRange anyOtherOccurrenceRange = [mergedHookContents rangeOfString:stdinMarker options:NSBackwardsSearch];
+                    if (anyOtherOccurrenceRange.location != firstOccurrenceRange.location) {
+                        // two or more commands need stdin
+
+                        NSString *copyStdinToFile =
+                        @"REFS=$(mktemp)\n"
+                        "cleanup() {\n"
+                        "    rm -f \"$REFS\" 2>/dev/null\n"
+                        "}\n"
+                        "\n"
+                        "cleanup\n"
+                        "\n"
+                        "trap cleanup EXIT\n"
+                        "\n"
+                        "while read LINE; do\n"
+                        "   echo \"$LINE\" >> \"$REFS\"\n"
+                        "done\n";
+
+                        mergedHookContents = [NSString stringWithFormat:
+                                                        @"#!/bin/sh\n"
+                                                        "\n"
+                                                        "%@"
+                                                        "\n"
+                                                        "%@\n"
+                                                        "\n"
+                                                        "%@",
+                                                        copyStdinToFile,
+                                                        commandLine,
+                                                        existingHookBody];
+
+                        mergedHookContents = [mergedHookContents stringByReplacingOccurrencesOfString:stdinMarker withString:@"<\"$REFS\""];
+                    }
+                }
+            }
 
             contentsToWrite = mergedHookContents;
         }

@@ -25,6 +25,10 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     return @"post-checkout";
 }
 
++ (BOOL)dependsOnStdin {
+    return NO;
+}
+
 - (int)runWithArguments:(NSArray<NSString *> *)arguments {
     logInfo("\ns7: post-checkout hook start\n");
     const int result = [self doRunWithArguments:arguments];
@@ -97,6 +101,11 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         // or argument that could help either.
         //
         return S7ExitCodeSuccess;
+    }
+
+    const int lfsInstallExitCode = [S7InitCommand initializeGitLFSIfNecessaryInRepo:repo];
+    if (S7ExitCodeSuccess != lfsInstallExitCode) {
+        return lfsInstallExitCode;
     }
 
     return [self.class checkoutSubreposForRepo:repo fromRevision:fromRevision toRevision:toRevision];

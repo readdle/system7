@@ -46,8 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
         installHook(repo,
                     @"post-checkout",
                     [[self class] bootstrapCommandLine],
-                    NO,
-                    NO);
+                    NO, /* forceOverwrite */
+                    NO, /* installFakeHooks */
+                    NO  /* duplicateStdin */);
     }
 
     // according to https://git-scm.com/docs/gitattributes
@@ -69,10 +70,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)shouldInstallBootstrap {
     if ([self isS7PostCheckoutAlreadyInstalled]) {
-        return NO;
-    }
-
-    if ([self willBootstrapConflictWithGitLFS]) {
         return NO;
     }
 
@@ -106,35 +103,6 @@ NS_ASSUME_NONNULL_BEGIN
 
     if ([postCheckoutContent containsString:@"s7 post-checkout"]) {
         return YES;
-    }
-
-    return NO;
-}
-
-- (BOOL)willBootstrapConflictWithGitLFS {
-    NSError *error = nil;
-    NSString *gitattributesContent = [[NSString alloc] initWithContentsOfFile:@".gitattributes" encoding:NSUTF8StringEncoding error:&error];
-    if (nil != error) {
-        // Such situation would be really unexpected – how would Git find out
-        // that it should filter .s7bootstrap if there's no .gitattributes?
-        // Maybe something wrong with the permissions?
-        // Anyway, if we cannot read .gitattributes, then we better avoid bootstrap.
-        //
-        logError("s7 bootstrap: failed to read contents of .gitattributes file. Error: %s\n",
-                [[error description] cStringUsingEncoding:NSUTF8StringEncoding]);
-        return YES;
-    }
-
-    if ([gitattributesContent containsString:@"filter=lfs"]) {
-        // this repo contains some LFS files.
-        // If LFS hook is NOT installed, then we do not install bootstrap hook
-        // not to cause LFS hook install failure. In such case user will have to
-        // run `s7 init` manually 🤷‍♂️
-        // If LFS hook IS installed, we can still merge-in bootstrap command into it.
-        //
-        if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks/post-checkout"]) {
-            return YES;
-        }
     }
 
     return NO;

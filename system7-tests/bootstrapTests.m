@@ -60,7 +60,7 @@
 
         [self runBootstrap];
 
-        XCTAssertFalse([self doesPostCheckoutHookContainInitCall]);
+        XCTAssertTrue([self doesPostCheckoutHookContainInitCall]);
         
         return S7ExitCodeSuccess;
     });
