@@ -4,8 +4,6 @@ git clone github/rd2 pastey/rd2
 
 cd pastey/rd2
 
-#COMMIT_WITHOUT_S7="$(git rev-parse HEAD)"
-
 assert s7 init
 assert git add .
 assert git commit -m "\"init s7\""
@@ -14,8 +12,6 @@ assert s7 add --stage Dependencies/RDPDFKit '"$S7_ROOT/github/RDPDFKit"'
 git commit -m"add pdfkit subrepo"
 
 git push
-
-#COMMIT_WITH_S7="$(git rev-parse HEAD)"
 
 cd "$S7_ROOT/nik"
 
