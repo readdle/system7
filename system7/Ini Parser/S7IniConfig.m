@@ -40,7 +40,15 @@
                                                              encoding:NSUTF8StringEncoding
                                                                 error:&error];
     if (nil == fileContents || error) {
-        logError("failed to load config at path '%s'. Failed to read string content.", filePath.fileSystemRepresentation);
+        NSString const* errorString = @"Failed to read string content";
+
+        if (error) {
+            errorString = [NSString stringWithFormat:@"Failed with error: %@", error];
+        }
+
+        logError("failed to load config at path '%s'. '%s'.",
+                 filePath.fileSystemRepresentation,
+                 [errorString UTF8String]);
         return nil;
     }
 
