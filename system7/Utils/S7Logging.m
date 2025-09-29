@@ -50,7 +50,7 @@ void logInfo(const char * __restrict format, ...) {
 void logError(const char * __restrict format, ...) {
     va_list va_args;
     va_start(va_args, format);
-    NSString *const nsFormat = [[NSString alloc] initWithCString:format encoding:NSUTF8StringEncoding];
+    NSString *const nsFormat = [NSString stringWithFormat:@"%@", [NSString stringWithUTF8String:format]];
     NSString *const message = [[NSString alloc] initWithFormat:nsFormat arguments:va_args];
     va_end(va_args);
 
