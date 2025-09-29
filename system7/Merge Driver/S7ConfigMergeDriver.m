@@ -403,7 +403,7 @@ saveResultToFilePath:(NSString *)resultFilePath
 + (S7ConflictResolutionOption)readConflictResolutionFromStdinWithAllowedOptions:(S7ConflictResolutionOption)allowedResolutions
                                                                          prompt:(NSString *)prompt
 {
-    const int BUF_LEN = 20;
+    #define BUF_LEN 20
     char buf[BUF_LEN];
 
     NSUInteger numberOfTries = 0;
