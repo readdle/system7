@@ -35,39 +35,50 @@ BOOL canUseColorForOutputToFile(int fileno) {
     return isatty(fileno) && term != NULL && strcasecmp(term, "dumb") != 0;
 }
 
+char *formatMessage(const char * __restrict format, va_list *args) {
+    va_list args_copy;
+    va_copy(args_copy, *args);
+    const int writtenSize = vsnprintf(nil, 0, format, args_copy);
+    va_end(args_copy);
+
+    const size_t bufferSize = writtenSize + 1;
+    char *const buffer = malloc(bufferSize);
+    vsnprintf(buffer, bufferSize, format, *args);
+
+    return buffer;
+}
+
 void logInfo(const char * __restrict format, ...) {
-    va_list va_args;
-    char message[256];
+    va_list args;
+    va_start(args, format);
+    char *const message = formatMessage(format, &args);
+    va_end(args);
 
-    va_start(va_args, format);
-    vsprintf(message, format, va_args);
-    va_end(va_args);
-
-    char *messagePointer = message;
     withTTYLockDo(^{
-        fprintf(stdout, "%s", messagePointer);
+        fprintf(stdout, "%s", message);
     });
+
+    free(message);
 }
 
 void logError(const char * __restrict format, ...) {
-    va_list va_args;
-    char message[256];
+    va_list args;
+    va_start(args, format);
+    char *const message = formatMessage(format, &args);
+    va_end(args);
 
-    va_start(va_args, format);
-    vsprintf(message, format, va_args);
-    va_end(va_args);
-
-    char *messagePointer = message;
     withTTYLockDo(^{
         if (canUseColorForOutputToFile(fileno(stderr))) {
             fprintf(stderr,
                     "\033[31m"
                     "%s"
                     "\033[0m",
-                    messagePointer);
+                    message);
         }
         else {
-            fprintf(stderr, "ERROR: %s", messagePointer);
+            fprintf(stderr, "ERROR: %s", message);
         }
     });
+
+    free(message);
 }
