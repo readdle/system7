@@ -983,6 +983,11 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     
     BOOL found = NO;
     FILE *const referencesFile = fopen(referencesFilePath.fileSystemRepresentation, "r");
+    if (NULL == referencesFile) {
+        logError("Failed to read %s\n", referencesFilePath.fileSystemRepresentation);
+        return NO;
+    }
+
     const size_t bufferLength = 512;
     char *const buffer = calloc(bufferLength, sizeof(char));
     
