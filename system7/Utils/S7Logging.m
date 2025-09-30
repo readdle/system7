@@ -37,35 +37,37 @@ BOOL canUseColorForOutputToFile(int fileno) {
 
 void logInfo(const char * __restrict format, ...) {
     va_list va_args;
+    char message[256];
+
     va_start(va_args, format);
-    NSString *const nsFormat = [NSString stringWithFormat:@"%@", [NSString stringWithUTF8String:format]];
-    NSString *const message = [[NSString alloc] initWithFormat:nsFormat arguments:va_args];
+    vsprintf(message, format, va_args);
     va_end(va_args);
 
+    char *messagePointer = message;
     withTTYLockDo(^{
-        fprintf(stdout, "%s", [message cStringUsingEncoding:NSUTF8StringEncoding]);
+        fprintf(stdout, "%s", messagePointer);
     });
 }
 
 void logError(const char * __restrict format, ...) {
     va_list va_args;
+    char message[256];
+
     va_start(va_args, format);
-    NSString *const nsFormat = [NSString stringWithFormat:@"%@", [NSString stringWithUTF8String:format]];
-    NSString *const message = [[NSString alloc] initWithFormat:nsFormat arguments:va_args];
+    vsprintf(message, format, va_args);
     va_end(va_args);
 
+    char *messagePointer = message;
     withTTYLockDo(^{
         if (canUseColorForOutputToFile(fileno(stderr))) {
             fprintf(stderr,
                     "\033[31m"
                     "%s"
                     "\033[0m",
-                    [message cStringUsingEncoding:NSUTF8StringEncoding]);
+                    messagePointer);
         }
         else {
-            fprintf(stderr,
-                    "ERROR: %s",
-                    [message cStringUsingEncoding:NSUTF8StringEncoding]);
+            fprintf(stderr, "ERROR: %s", messagePointer);
         }
     });
 }
