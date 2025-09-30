@@ -35,24 +35,37 @@ BOOL canUseColorForOutputToFile(int fileno) {
     return isatty(fileno) && term != NULL && strcasecmp(term, "dumb") != 0;
 }
 
+char *formatMessage(const char * __restrict format, va_list *args) {
+    va_list args_copy;
+    va_copy(args_copy, *args);
+    const int writtenSize = vsnprintf(nil, 0, format, args_copy);
+    va_end(args_copy);
+
+    const size_t bufferSize = writtenSize + 1;
+    char *const buffer = malloc(bufferSize);
+    vsnprintf(buffer, bufferSize, format, *args);
+
+    return buffer;
+}
+
 void logInfo(const char * __restrict format, ...) {
-    va_list va_args;
-    va_start(va_args, format);
-    NSString *const nsFormat = [[NSString alloc] initWithCString:format encoding:NSUTF8StringEncoding];
-    NSString *const message = [[NSString alloc] initWithFormat:nsFormat arguments:va_args];
-    va_end(va_args);
+    va_list args;
+    va_start(args, format);
+    char *const message = formatMessage(format, &args);
+    va_end(args);
 
     withTTYLockDo(^{
-        fprintf(stdout, "%s", [message cStringUsingEncoding:NSUTF8StringEncoding]);
+        fprintf(stdout, "%s", message);
     });
+
+    free(message);
 }
 
 void logError(const char * __restrict format, ...) {
-    va_list va_args;
-    va_start(va_args, format);
-    NSString *const nsFormat = [[NSString alloc] initWithCString:format encoding:NSUTF8StringEncoding];
-    NSString *const message = [[NSString alloc] initWithFormat:nsFormat arguments:va_args];
-    va_end(va_args);
+    va_list args;
+    va_start(args, format);
+    char *const message = formatMessage(format, &args);
+    va_end(args);
 
     withTTYLockDo(^{
         if (canUseColorForOutputToFile(fileno(stderr))) {
@@ -60,12 +73,12 @@ void logError(const char * __restrict format, ...) {
                     "\033[31m"
                     "%s"
                     "\033[0m",
-                    [message cStringUsingEncoding:NSUTF8StringEncoding]);
+                    message);
         }
         else {
-            fprintf(stderr,
-                    "ERROR: %s",
-                    [message cStringUsingEncoding:NSUTF8StringEncoding]);
+            fprintf(stderr, "ERROR: %s", message);
         }
     });
+
+    free(message);
 }
