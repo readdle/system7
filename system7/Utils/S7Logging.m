@@ -48,6 +48,7 @@ void logInfo(const char * __restrict format, ...) {
 }
 
 void logError(const char * __restrict format, ...) {
+    // rox: some comment to trigger the diff
     va_list va_args;
     va_start(va_args, format);
     NSString *const nsFormat = [[NSString alloc] initWithCString:format encoding:NSUTF8StringEncoding];
