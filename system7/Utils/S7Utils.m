@@ -308,22 +308,23 @@ int installHook(GitRepository *repo,
         return S7ExitCodeSuccess;
     }
     
-    NSString *const hooksDirAbsolutePath = [repo.absolutePath stringByAppendingPathComponent:@".git/hooks"];
+    NSString *const hooksDirAbsolutePath = [repo.commonGitDirPath stringByAppendingPathComponent:@"hooks"];
     NSString *hookFilePath = [hooksDirAbsolutePath stringByAppendingPathComponent:hookName];
 
     NSString *contentsToWrite = [NSString stringWithFormat:@"#!/bin/sh\n\n%@\n", commandLine];
 
     if (NO == forceOverwrite && [NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
         NSString *existingContents = [[NSString alloc] initWithContentsOfFile:hookFilePath encoding:NSUTF8StringEncoding error:nil];
+
+        if (existingContents && isHookCommandAlreadyInstalled(existingContents, commandLine)) {
+            return S7ExitCodeSuccess;
+        }
+
         if (NO == [existingContents hasPrefix:@"#!/bin/sh\n"]) {
             logError("hook %s already exists and it's not a shell script, so we cannot merge s7 call into it\n",
                      hookFilePath.fileSystemRepresentation);
 
             return S7ExitCodeFileOperationFailed;
-        }
-
-        if (isHookCommandAlreadyInstalled(existingContents, commandLine)) {
-            return S7ExitCodeSuccess;
         }
 
         NSString *oldStyleS7HookContents = [NSString

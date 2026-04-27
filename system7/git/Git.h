@@ -59,6 +59,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 @property (nonatomic, readonly, strong) NSString *absolutePath;
+@property (nonatomic, readonly, strong) NSString *gitDirPath;
+@property (nonatomic, readonly, strong) NSString *commonGitDirPath;
 
 // If set to YES, collect every command output executed on this instance to the
 // `lastCommandStdOutOutput` and `lastCommandStdErrOutput`.

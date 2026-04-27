@@ -87,12 +87,14 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (BOOL)isS7PostCheckoutAlreadyInstalled {
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:@".git/hooks/post-checkout"]) {
+    GitRepository *repo = [GitRepository repoAtPath:@"."];
+    NSString *hookPath = [[repo.commonGitDirPath stringByAppendingPathComponent:@"hooks"] stringByAppendingPathComponent:@"post-checkout"];
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:hookPath]) {
         return NO;
     }
 
     NSError *error = nil;
-    NSString *postCheckoutContent = [[NSString alloc] initWithContentsOfFile:@".git/hooks/post-checkout"
+    NSString *postCheckoutContent = [[NSString alloc] initWithContentsOfFile:hookPath
                                                                     encoding:NSUTF8StringEncoding
                                                                        error:&error];
     if (nil != error) {

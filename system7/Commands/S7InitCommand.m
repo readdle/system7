@@ -267,7 +267,7 @@
         return S7ExitCodeSuccess;
     }
 
-    NSString *configFilePath = [repo.absolutePath stringByAppendingPathComponent:@".git/config"];
+    NSString *configFilePath = [repo.commonGitDirPath stringByAppendingPathComponent:@"config"];
 
     BOOL isDirectory = NO;
     if (NO == [[NSFileManager defaultManager] fileExistsAtPath:configFilePath isDirectory:&isDirectory]) {

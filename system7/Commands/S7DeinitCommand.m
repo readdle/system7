@@ -128,7 +128,8 @@
 }
 
 - (int)removeS7FromHook:(NSString *)hookFileName {
-    NSString *hookFilePath = [@".git/hooks" stringByAppendingPathComponent:hookFileName];
+    GitRepository *repo = [GitRepository repoAtPath:@"."];
+    NSString *hookFilePath = [[repo.commonGitDirPath stringByAppendingPathComponent:@"hooks"] stringByAppendingPathComponent:hookFileName];
     if (NO == [NSFileManager.defaultManager fileExistsAtPath:hookFilePath]) {
         return S7ExitCodeSuccess;
     }

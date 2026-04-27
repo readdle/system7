@@ -19,6 +19,7 @@
 #import "S7ResetCommand.h"
 #import "S7CheckoutCommand.h"
 #import "S7BootstrapCommand.h"
+#import "S7WorktreeCommand.h"
 #import "S7VersionCommand.h"
 
 #import "S7PrePushHook.h"
@@ -55,6 +56,8 @@ void printHelp(void) {
     help_puts("  reset     reset subrepo(s) to the last committed state from .s7substate");
     help_puts("");
     help_puts("  status    show changed subrepos");
+    help_puts("");
+    help_puts("  worktree  create a git worktree with s7 subrepos initialized");
     help_puts("");
     help_puts("\033[1mFAQ\033[0m");
     help_puts("");
@@ -114,6 +117,7 @@ Class commandClassByName(NSString *commandName) {
             [S7ResetCommand class],
             [S7CheckoutCommand class],
             [S7BootstrapCommand class],
+            [S7WorktreeCommand class],
             [S7VersionCommand class],
         ]];
 
@@ -250,10 +254,19 @@ int main(int argc, const char * argv[]) {
     }
 
     NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
+    NSString *dotGitPath = [cwd stringByAppendingPathComponent:@".git"];
     BOOL isDirectory = NO;
-    if (NO == [[NSFileManager defaultManager] fileExistsAtPath:[cwd stringByAppendingPathComponent:@".git"] isDirectory:&isDirectory] || NO == isDirectory) {
+    BOOL dotGitExists = [[NSFileManager defaultManager] fileExistsAtPath:dotGitPath isDirectory:&isDirectory];
+    if (NO == dotGitExists) {
         logError("s7 must be run in the root of a git repo.\n");
         return S7ExitCodeNotGitRepository;
+    }
+    if (NO == isDirectory) {
+        NSString *dotGitContent = [[NSString alloc] initWithContentsOfFile:dotGitPath encoding:NSUTF8StringEncoding error:nil];
+        if (nil == dotGitContent || NO == [dotGitContent hasPrefix:@"gitdir: "]) {
+            logError("s7 must be run in the root of a git repo.\n");
+            return S7ExitCodeNotGitRepository;
+        }
     }
 
     if ([commandName hasSuffix:@"-hook"]) {

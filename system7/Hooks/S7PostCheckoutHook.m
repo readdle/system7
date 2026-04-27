@@ -47,6 +47,14 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
         return S7ExitCodeNotGitRepository;
     }
 
+    BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
+    BOOL configFileExists = [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName];
+    if (NO == controlFileExists && configFileExists) {
+        logInfo("\ns7: detected new worktree — running auto-init\n");
+        S7InitCommand *initCommand = [S7InitCommand new];
+        return [initCommand runWithArguments:@[ @"--no-bootstrap" ] inRepo:repo];
+    }
+
     NSString *fromRevision = arguments[0];
     NSString *toRevision = arguments[1];
     BOOL branchSwitchFlag = [arguments[2] isEqualToString:@"1"];

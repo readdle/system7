@@ -39,6 +39,8 @@
 		BE394D392486AD7D00ED6E05 /* checkoutTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE394D382486AD7D00ED6E05 /* checkoutTests.m */; };
 		BE394D3C2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */; };
 		BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */; };
+		92B296779A86EC9077B33EB6 /* S7WorktreeCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = FA4B87D366C459D34FF47D03 /* S7WorktreeCommand.m */; };
+		37CBB0F172037D4FFE4A0012 /* S7WorktreeCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = FA4B87D366C459D34FF47D03 /* S7WorktreeCommand.m */; };
 		BE3A29E524604C10004A2B31 /* statusTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29E424604C10004A2B31 /* statusTests.m */; };
 		BE3A29E824604D1B004A2B31 /* S7StatusCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */; };
 		BE3A29E924604D1B004A2B31 /* S7StatusCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */; };
@@ -149,6 +151,8 @@
 		BE394D382486AD7D00ED6E05 /* checkoutTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = checkoutTests.m; sourceTree = "<group>"; };
 		BE394D3A2486ADB500ED6E05 /* S7CheckoutCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7CheckoutCommand.h; sourceTree = "<group>"; };
 		BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7CheckoutCommand.m; sourceTree = "<group>"; };
+		08F87A2387DF1D30CF80A55F /* S7WorktreeCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7WorktreeCommand.h; sourceTree = "<group>"; };
+		FA4B87D366C459D34FF47D03 /* S7WorktreeCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7WorktreeCommand.m; sourceTree = "<group>"; };
 		BE3A29E424604C10004A2B31 /* statusTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = statusTests.m; sourceTree = "<group>"; };
 		BE3A29E624604D1B004A2B31 /* S7StatusCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = S7StatusCommand.h; sourceTree = "<group>"; };
 		BE3A29E724604D1B004A2B31 /* S7StatusCommand.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = S7StatusCommand.m; sourceTree = "<group>"; };
@@ -401,6 +405,8 @@
 				BE0173E324864EBF00BA4B2F /* S7ResetCommand.m */,
 				BE394D3A2486ADB500ED6E05 /* S7CheckoutCommand.h */,
 				BE394D3B2486ADB500ED6E05 /* S7CheckoutCommand.m */,
+				08F87A2387DF1D30CF80A55F /* S7WorktreeCommand.h */,
+				FA4B87D366C459D34FF47D03 /* S7WorktreeCommand.m */,
 				BEBE40C72576D0B900E39755 /* S7DeinitCommand.h */,
 				BEBE40C82576D0B900E39755 /* S7DeinitCommand.m */,
 				BE90D38E258F470900186E86 /* S7BootstrapCommand.h */,
@@ -572,6 +578,7 @@
 				6DD4A8332750E3070050F3FD /* S7Options.m in Sources */,
 				2465939C24CA336700EFC5A0 /* S7HelpPager.m in Sources */,
 				BE394D3C2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
+				92B296779A86EC9077B33EB6 /* S7WorktreeCommand.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -622,6 +629,7 @@
 				BE394D392486AD7D00ED6E05 /* checkoutTests.m in Sources */,
 				BEE1CD03246A9F6F00E2CC3B /* controlTests.m in Sources */,
 				BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
+				37CBB0F172037D4FFE4A0012 /* S7WorktreeCommand.m in Sources */,
 				CE5BB61F25FA63A8002596B9 /* gitPackedRefsTests.m in Sources */,
 				BE3A29E524604C10004A2B31 /* statusTests.m in Sources */,
 				6DD4A8392750E8A40050F3FD /* S7IniConfigOptions.m in Sources */,
