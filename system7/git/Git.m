@@ -224,11 +224,6 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         [arguments addObject:[NSString stringWithFormat: @"--filter=%@", kGitFilterBlobNone]];
     }
 
-    NSString *referencePath = [self referenceRepoPathForURL:url destinationPath:destinationPath];
-    if (referencePath) {
-        [arguments addObject:@"--reference-if-able"];
-        [arguments addObject:referencePath];
-    }
     
     if (branch.length > 0) {
         [arguments addObject:@"-b"];
@@ -253,64 +248,6 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
 
     return [[GitRepository alloc] initWithRepoPath:destinationPath bare:bare];
-}
-
-+ (nullable NSString *)referenceRepoPathForURL:(NSString *)url destinationPath:(NSString *)destinationPath {
-    NSString *absDestination = destinationPath;
-    if (NO == [absDestination hasPrefix:@"/"]) {
-        absDestination = [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:absDestination];
-    }
-    absDestination = [absDestination stringByStandardizingPath];
-
-    NSString *dotGitPath = [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:@".git"];
-    BOOL isDir = NO;
-    BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:dotGitPath isDirectory:&isDir];
-    if (NO == exists) {
-        return nil;
-    }
-
-    NSString *mainWorktreePath = nil;
-    if (exists && NO == isDir) {
-        NSString *content = [[NSString alloc] initWithContentsOfFile:dotGitPath encoding:NSUTF8StringEncoding error:nil];
-        if (content && [content hasPrefix:@"gitdir: "]) {
-            NSString *gitdir = [[content substringFromIndex:@"gitdir: ".length]
-                                stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-            if (NO == [gitdir hasPrefix:@"/"]) {
-                gitdir = [[[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:gitdir] stringByStandardizingPath];
-            }
-
-            NSString *commonDirFile = [gitdir stringByAppendingPathComponent:@"commondir"];
-            NSString *commonDirContent = [[NSString alloc] initWithContentsOfFile:commonDirFile encoding:NSUTF8StringEncoding error:nil];
-            if (commonDirContent) {
-                NSString *commonDir = [commonDirContent stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                if (NO == [commonDir hasPrefix:@"/"]) {
-                    commonDir = [[gitdir stringByAppendingPathComponent:commonDir] stringByStandardizingPath];
-                }
-                mainWorktreePath = [commonDir stringByDeletingLastPathComponent];
-            }
-        }
-    }
-
-    if (nil == mainWorktreePath) {
-        return nil;
-    }
-
-    NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
-    NSString *relativeSubrepoPath = absDestination;
-    if ([absDestination hasPrefix:cwd]) {
-        relativeSubrepoPath = [absDestination substringFromIndex:cwd.length];
-        if ([relativeSubrepoPath hasPrefix:@"/"]) {
-            relativeSubrepoPath = [relativeSubrepoPath substringFromIndex:1];
-        }
-    }
-
-    NSString *mainSubrepoPath = [mainWorktreePath stringByAppendingPathComponent:relativeSubrepoPath];
-    NSString *mainSubrepoGitPath = [mainSubrepoPath stringByAppendingPathComponent:@".git"];
-    if ([[NSFileManager defaultManager] fileExistsAtPath:mainSubrepoGitPath]) {
-        return mainSubrepoPath;
-    }
-
-    return nil;
 }
 
 + (nullable GitRepository *)initializeRepositoryAtPath:(NSString *)path

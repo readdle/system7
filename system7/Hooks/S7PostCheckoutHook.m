@@ -51,6 +51,42 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     BOOL configFileExists = [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName];
     if (NO == controlFileExists && configFileExists) {
         logInfo("\ns7: detected new worktree — running auto-init\n");
+
+        NSString *mainWorktreePath = [repo.commonGitDirPath stringByDeletingLastPathComponent];
+        if (NO == [mainWorktreePath isEqualToString:repo.absolutePath]) {
+            S7Config *config = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+            NSArray<S7SubrepoDescription *> *descs = config.subrepoDescriptions;
+
+            NSMutableSet<NSString *> *parentDirs = [NSMutableSet new];
+            for (S7SubrepoDescription *desc in descs) {
+                NSString *parent = [[repo.absolutePath stringByAppendingPathComponent:desc.path] stringByDeletingLastPathComponent];
+                [parentDirs addObject:parent];
+            }
+            for (NSString *dir in parentDirs) {
+                [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+            }
+
+            dispatch_apply(descs.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
+                S7SubrepoDescription *desc = descs[i];
+                NSString *src = [mainWorktreePath stringByAppendingPathComponent:desc.path];
+                NSString *dst = [repo.absolutePath stringByAppendingPathComponent:desc.path];
+                BOOL srcIsDir = NO;
+                if ([[NSFileManager defaultManager] fileExistsAtPath:src isDirectory:&srcIsDir] && srcIsDir) {
+                    NSError *copyError = nil;
+                    if ([[NSFileManager defaultManager] copyItemAtPath:src toPath:dst error:&copyError]) {
+                        logInfo("  copied '%s' from main worktree\n", desc.path.fileSystemRepresentation);
+                    }
+                }
+            });
+
+            NSString *substateContents = [[NSString alloc] initWithContentsOfFile:S7ConfigFileName
+                                                                        encoding:NSUTF8StringEncoding
+                                                                           error:nil];
+            if (substateContents) {
+                [substateContents writeToFile:S7ControlFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
+            }
+        }
+
         S7InitCommand *initCommand = [S7InitCommand new];
         return [initCommand runWithArguments:@[ @"--no-bootstrap" ] inRepo:repo];
     }
