@@ -8,6 +8,8 @@
 
 #import "S7PostCheckoutHook.h"
 
+#import <sys/clonefile.h>
+
 #import "S7Diff.h"
 #import "S7Utils.h"
 #import "S7InitCommand.h"
@@ -72,9 +74,14 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
                 NSString *dst = [repo.absolutePath stringByAppendingPathComponent:desc.path];
                 BOOL srcIsDir = NO;
                 if ([[NSFileManager defaultManager] fileExistsAtPath:src isDirectory:&srcIsDir] && srcIsDir) {
-                    NSError *copyError = nil;
-                    if ([[NSFileManager defaultManager] copyItemAtPath:src toPath:dst error:&copyError]) {
-                        logInfo("  copied '%s' from main worktree\n", desc.path.fileSystemRepresentation);
+                    if (0 == clonefile(src.fileSystemRepresentation, dst.fileSystemRepresentation, 0)) {
+                        logInfo("  cloned '%s' from main worktree\n", desc.path.fileSystemRepresentation);
+                    }
+                    else {
+                        NSError *copyError = nil;
+                        if ([[NSFileManager defaultManager] copyItemAtPath:src toPath:dst error:&copyError]) {
+                            logInfo("  copied '%s' from main worktree\n", desc.path.fileSystemRepresentation);
+                        }
                     }
                 }
             });
@@ -82,7 +89,11 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
             NSString *substateContents = [[NSString alloc] initWithContentsOfFile:S7ConfigFileName
                                                                         encoding:NSUTF8StringEncoding
                                                                            error:nil];
-            if (substateContents) {
+            NSString *mainSubstatePath = [mainWorktreePath stringByAppendingPathComponent:S7ConfigFileName];
+            NSString *mainSubstateContents = [[NSString alloc] initWithContentsOfFile:mainSubstatePath
+                                                                            encoding:NSUTF8StringEncoding
+                                                                               error:nil];
+            if (substateContents && [substateContents isEqualToString:mainSubstateContents ?: @""]) {
                 [substateContents writeToFile:S7ControlFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
             }
         }
