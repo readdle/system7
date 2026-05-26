@@ -53,11 +53,55 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 + (BOOL)envGitTraceEnabled {
     static dispatch_once_t onceToken;
     static BOOL traceEnabled;
-    
+
     dispatch_once(&onceToken, ^{
         traceEnabled = [[NSProcessInfo processInfo].environment[@"S7_TRACE_GIT"] intValue] != 0;
     });
     return traceEnabled;
+}
+
+// Gate for the GitHub PAT auth mode. Encapsulated in its own method so the
+// activation policy (currently: auto when both GH_USER and GH_TOKEN are set)
+// can later be swapped — e.g., to require an explicit `S7_USE_GH_TOKEN=1` —
+// with a one-line change here.
++ (BOOL)envGitHubTokenAuthEnabled {
+    static dispatch_once_t onceToken;
+    static BOOL enabled;
+    dispatch_once(&onceToken, ^{
+        NSDictionary<NSString *, NSString *> *const env = [NSProcessInfo processInfo].environment;
+        enabled = env[@"GH_USER"].length > 0 && env[@"GH_TOKEN"].length > 0;
+        s7TraceGit(@"s7: GitHub token auth: enabled=%@\n", enabled ? @"YES" : @"NO");
+    });
+    return enabled;
+}
+
+// Cached argv prefix to prepend to every `git` invocation when the auth
+// gate is on. Reads GH_USER / GH_TOKEN from the process environment once.
++ (NSArray<NSString *> *)gitHubTokenInsteadOfArguments {
+    static dispatch_once_t onceToken;
+    static NSArray<NSString *> *args;
+    dispatch_once(&onceToken, ^{
+        if (NO == [self envGitHubTokenAuthEnabled]) {
+            args = @[];
+            return;
+        }
+
+        NSDictionary<NSString *, NSString *> *const env = [NSProcessInfo processInfo].environment;
+        args = [self gitHubTokenInsteadOfArgumentsForUser:env[@"GH_USER"] token:env[@"GH_TOKEN"]];
+    });
+    return args;
+}
+
+// Internal trace-line builder used by `+runGitWithArguments:...`. Reads the
+// PAT from the current process environment when the gate is on; otherwise
+// just joins the argv as-is.
++ (NSString *)maskedTraceLineForArguments:(NSArray<NSString *> *)arguments {
+    NSString *const line = [arguments componentsJoinedByString:@" "];
+    if (NO == [self envGitHubTokenAuthEnabled]) {
+        return line;
+    }
+
+    return [self maskedTraceLine:line forToken:[NSProcessInfo processInfo].environment[@"GH_TOKEN"]];
 }
 
 #pragma mark - Initialization
@@ -325,9 +369,14 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
               stdErrOutput:(NSString * _Nullable __autoreleasing * _Nullable)ppStdErrOutput
       currentDirectoryPath:(NSString * _Nullable)currentDirectoryPath
 {
+    NSArray<NSString *> *const credentialArguments = [self gitHubTokenInsteadOfArguments];
+    NSArray<NSString *> *const finalArguments = credentialArguments.count > 0
+        ? [credentialArguments arrayByAddingObjectsFromArray:arguments]
+        : arguments;
+
     NSTask *task = [NSTask new];
     [task setLaunchPath:[self envGitExecutablePath]];
-    [task setArguments:arguments];
+    [task setArguments:finalArguments];
     if (currentDirectoryPath) {
         task.currentDirectoryURL = [NSURL fileURLWithPath:currentDirectoryPath];
     }
@@ -390,7 +439,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
         return 1;
     }
     
-    s7TraceGit(@"s7: git %@\n", [task.arguments componentsJoinedByString:@" "]);
+    s7TraceGit(@"s7: git %@\n", [self maskedTraceLineForArguments:task.arguments]);
 
     [task waitUntilExit];
 
@@ -1462,6 +1511,59 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 + (void)setTestRepoConfigureOnInitBlock:(void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
     _testRepoConfigureOnInitBlock = testRepoConfigureOnInitBlock;
+}
+
+#pragma mark - GitHub token auth helpers -
+
++ (NSString *)urlEscapeUserinfo:(NSString *)input {
+    static NSCharacterSet *unreserved;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        unreserved = [NSCharacterSet characterSetWithCharactersInString:
+                      @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"];
+    });
+    return [input stringByAddingPercentEncodingWithAllowedCharacters:unreserved];
+}
+
+// Build the `-c url.<HTTPS+token>.insteadOf=<SSH-base>` argument list that,
+// when injected before any `git` subcommand, transparently rewrites
+// SSH-style github.com URLs (`git@github.com:` and `ssh://git@github.com/`)
+// to HTTPS+PAT URLs. The rewrite happens only at network-resolution time —
+// the URL stored in `.git/config` after `clone` remains the original SSH form,
+// so the token never lands on disk.
+//
+// Returns an empty array when either credential is missing.
++ (NSArray<NSString *> *)gitHubTokenInsteadOfArgumentsForUser:(nullable NSString *)user
+                                                        token:(nullable NSString *)token
+{
+    if (0 == user.length || 0 == token.length) {
+        return @[];
+    }
+
+    NSString *const httpsBase = [NSString stringWithFormat:@"https://%@:%@@github.com/",
+                                 [self urlEscapeUserinfo:user],
+                                 [self urlEscapeUserinfo:token]];
+    return @[
+        @"-c", [NSString stringWithFormat:@"url.%@.insteadOf=git@github.com:", httpsBase],
+        @"-c", [NSString stringWithFormat:@"url.%@.insteadOf=ssh://git@github.com/", httpsBase],
+    ];
+}
+
+// Redact the PAT from a trace line so it doesn't leak into CI logs.
+// Replaces both the URL-encoded form (what actually appears in the argv)
+// and the raw form (defense-in-depth) with `***`.
++ (NSString *)maskedTraceLine:(NSString *)line forToken:(nullable NSString *)token {
+    if (0 == token.length || 0 == line.length) {
+        return line;
+    }
+
+    NSString *const encoded = [self urlEscapeUserinfo:token];
+    NSString *masked = [line stringByReplacingOccurrencesOfString:encoded withString:@"***"];
+    if (NO == [encoded isEqualToString:token]) {
+        masked = [masked stringByReplacingOccurrencesOfString:token withString:@"***"];
+    }
+
+    return masked;
 }
 
 - (BOOL)hasMergeConflict {
