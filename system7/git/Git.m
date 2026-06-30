@@ -60,6 +60,65 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return traceEnabled;
 }
 
+// Username for HTTPS subrepo auth. S7_GIT_TOKEN, falling back to GH_TOKEN.
++ (nullable NSString *)envGitAuthUser {
+    NSDictionary<NSString *, NSString *> *const env = NSProcessInfo.processInfo.environment;
+    NSString *const user = env[@"S7_GIT_USER"];
+    if (user.length > 0) {
+        return user;
+    }
+    NSString *const ghUser = env[@"GH_USER"];
+    return ghUser.length > 0 ? ghUser : nil;
+}
+
+// Token for HTTPS subrepo auth. S7_GIT_TOKEN, falling back to GH_TOKEN.
++ (nullable NSString *)envGitAuthToken {
+    NSDictionary<NSString *, NSString *> *const env = NSProcessInfo.processInfo.environment;
+    NSString *const token = env[@"S7_GIT_TOKEN"];
+    if (token.length > 0) {
+        return token;
+    }
+    NSString *const ghToken = env[@"GH_TOKEN"];
+    return ghToken.length > 0 ? ghToken : nil;
+}
+
+// HTTPS+token auth is auto-enabled when both credentials are present.
++ (BOOL)envGitHubTokenAuthEnabled {
+    return [self envGitAuthUser].length > 0 && [self envGitAuthToken].length > 0;
+}
+
+// GIT_CONFIG_* entries that authenticate github.com over HTTPS: insteadOf
+// rewrites SSH URLs to the clean https URL and an http.<url>.extraheader carries
+// the PAT as a Basic-auth header (see +gitHubTokenConfigEnvironmentForUser:...).
+// Delivered through the child's environment rather than `-c` argv, so the token
+// never appears in the process argument list (`ps`, /proc, crash reporters), and
+// — riding in a header, not a URL — nothing git echoes can leak it. `.git/config`
+// keeps the original SSH URL, so the token never lands on disk either.
++ (NSDictionary<NSString *, NSString *> *)gitHubTokenConfigEnvironment {
+    static dispatch_once_t onceToken;
+    static NSDictionary<NSString *, NSString *> *configEnvironment;
+    dispatch_once(&onceToken, ^{
+        NSDictionary<NSString *, NSString *> *const env = NSProcessInfo.processInfo.environment;
+        const NSInteger existingConfigCount = MAX(0, [env[@"GIT_CONFIG_COUNT"] integerValue]);
+        configEnvironment = [self gitHubTokenConfigEnvironmentForUser:[self envGitAuthUser]
+                                                                token:[self envGitAuthToken]
+                                                  existingConfigCount:existingConfigCount];
+    });
+    return configEnvironment;
+}
+
++ (void)logSelectedAuthPathOnce {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        if ([self envGitHubTokenAuthEnabled]) {
+            fprintf(stderr, "s7: subrepo network auth: HTTPS via token\n");
+        }
+        else {
+            s7TraceGit(@"s7: subrepo network auth: SSH (default)\n");
+        }
+    });
+}
+
 #pragma mark - Initialization
 
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath {
@@ -330,6 +389,18 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     [task setArguments:arguments];
     if (currentDirectoryPath) {
         task.currentDirectoryURL = [NSURL fileURLWithPath:currentDirectoryPath];
+    }
+
+    [self logSelectedAuthPathOnce];
+
+    // Inject the HTTPS auth config via the child's environment (see
+    // +gitHubTokenConfigEnvironment). Empty on the SSH path, so dev machines and
+    // any non-token use are completely unaffected (no task.environment override).
+    NSDictionary<NSString *, NSString *> *const credentialEnvironment = [self gitHubTokenConfigEnvironment];
+    if (credentialEnvironment.count > 0) {
+        NSMutableDictionary<NSString *, NSString *> *const environment = [NSProcessInfo.processInfo.environment mutableCopy];
+        [environment addEntriesFromDictionary:credentialEnvironment];
+        task.environment = environment;
     }
 
     // https://stackoverflow.com/questions/49184623/nstask-race-condition-with-readabilityhandler-block
@@ -1462,6 +1533,53 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 + (void)setTestRepoConfigureOnInitBlock:(void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
     _testRepoConfigureOnInitBlock = testRepoConfigureOnInitBlock;
+}
+
+// Pure builder for +gitHubTokenConfigEnvironment. Kept free of process-env reads
+// so tests can probe arbitrary inputs. Returns @{} when either credential is
+// missing.
+//
+// The PAT travels in an HTTP Authorization header, never in a URL:
+//   * insteadOf rewrites every SSH github.com shape to the CLEAN (credential-
+//     free) https URL, so nothing git echoes (errors, GIT_TRACE_CURL,
+//     remote.origin.url) can ever carry the token;
+//   * a github.com-scoped http.<url>.extraheader supplies "Basic base64(user:
+//     token)" — the same mechanism actions/checkout uses.
+// base64 swallows arbitrary token bytes, so no percent-encoding is needed.
+// Delivered via GIT_CONFIG_* env: off-disk, off-argv. New entries append past
+// existingConfigCount so a nested s7 (which inherits the parent's injected
+// GIT_CONFIG_COUNT) doesn't clobber it.
++ (NSDictionary<NSString *, NSString *> *)gitHubTokenConfigEnvironmentForUser:(nullable NSString *)user
+                                                                        token:(nullable NSString *)token
+                                                          existingConfigCount:(NSInteger)existingConfigCount
+{
+    if (0 == user.length || 0 == token.length) {
+        return @{};
+    }
+
+    NSString *const userColonToken = [NSString stringWithFormat:@"%@:%@", user, token];
+    NSString *const basic = [[userColonToken dataUsingEncoding:NSUTF8StringEncoding] base64EncodedStringWithOptions:0];
+
+    NSArray<NSString *> *const sshSources = @[
+        @"git@github.com:",
+        @"ssh://git@github.com/",
+    ];
+
+    NSMutableDictionary<NSString *, NSString *> *const result = [NSMutableDictionary new];
+    NSInteger index = MAX(0, existingConfigCount);
+    for (NSString *source in sshSources) {
+        // url.<base>.insteadOf is multi-valued: each index contributes one rule.
+        result[[NSString stringWithFormat:@"GIT_CONFIG_KEY_%ld", (long)index]] = @"url.https://github.com/.insteadOf";
+        result[[NSString stringWithFormat:@"GIT_CONFIG_VALUE_%ld", (long)index]] = source;
+        ++index;
+    }
+    // Scoped to github.com so the header is never attached to any other host.
+    result[[NSString stringWithFormat:@"GIT_CONFIG_KEY_%ld", (long)index]] = @"http.https://github.com/.extraheader";
+    result[[NSString stringWithFormat:@"GIT_CONFIG_VALUE_%ld", (long)index]] = [NSString stringWithFormat:@"Authorization: Basic %@", basic];
+    ++index;
+
+    result[@"GIT_CONFIG_COUNT"] = [NSString stringWithFormat:@"%ld", (long)index];
+    return result;
 }
 
 - (BOOL)hasMergeConflict {
