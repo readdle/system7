@@ -18,24 +18,24 @@
 #pragma mark - GIT_CONFIG_* env builder -
 
 - (void)testReturnsEmptyWhenUserNil {
-    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:nil token:@"abc" existingConfigCount:0]);
+    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:nil token:@"abc" processEnvironment:@{}]);
 }
 
 - (void)testReturnsEmptyWhenUserEmpty {
-    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:@"" token:@"abc" existingConfigCount:0]);
+    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:@"" token:@"abc" processEnvironment:@{}]);
 }
 
 - (void)testReturnsEmptyWhenTokenNil {
-    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:nil existingConfigCount:0]);
+    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:nil processEnvironment:@{}]);
 }
 
 - (void)testReturnsEmptyWhenTokenEmpty {
-    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"" existingConfigCount:0]);
+    XCTAssertEqualObjects(@{}, [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"" processEnvironment:@{}]);
 }
 
 - (void)testBuildsHeaderAuthEntriesFromZero {
     NSDictionary<NSString *, NSString *> *const env =
-        [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"abc123" existingConfigCount:0];
+        [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"abc123" processEnvironment:@{}];
 
     // base64("alice:abc123") == "YWxpY2U6YWJjMTIz"
     NSDictionary<NSString *, NSString *> *const expected = @{
@@ -54,7 +54,7 @@
     // A nested s7 inherits the parent's injected GIT_CONFIG_COUNT=3 and must not
     // clobber entries 0..2.
     NSDictionary<NSString *, NSString *> *const env =
-        [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"abc" existingConfigCount:3];
+        [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"abc" processEnvironment:@{@"GIT_CONFIG_COUNT": @"3"}];
 
     XCTAssertEqualObjects(@"6", env[@"GIT_CONFIG_COUNT"]);
     XCTAssertEqualObjects(@"url.https://github.com/.insteadOf", env[@"GIT_CONFIG_KEY_3"]);
@@ -68,11 +68,19 @@
     XCTAssertNil(env[@"GIT_CONFIG_VALUE_2"]);
 }
 
+- (void)testNegativeOrGarbageExistingCountClampsToZero {
+    NSDictionary<NSString *, NSString *> *const env =
+        [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"abc" processEnvironment:@{@"GIT_CONFIG_COUNT": @"-5"}];
+
+    XCTAssertEqualObjects(@"3", env[@"GIT_CONFIG_COUNT"]);
+    XCTAssertEqualObjects(@"url.https://github.com/.insteadOf", env[@"GIT_CONFIG_KEY_0"]);
+}
+
 - (void)testTokenNeverAppearsRawOnlyInBase64Header {
     NSString *const user = @"alice";
     NSString *const token = @"ghp_SuperSecret/@:%123";  // chars that would have needed URL-escaping
     NSDictionary<NSString *, NSString *> *const env =
-        [GitRepository gitHubTokenConfigEnvironmentForUser:user token:token existingConfigCount:0];
+        [GitRepository gitHubTokenConfigEnvironmentForUser:user token:token processEnvironment:@{}];
 
     NSString *const expectedBasic =
         [[[NSString stringWithFormat:@"%@:%@", user, token] dataUsingEncoding:NSUTF8StringEncoding]
@@ -88,7 +96,7 @@
 
 - (void)testGithubDotComOnly {
     NSDictionary<NSString *, NSString *> *const env =
-        [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"abc" existingConfigCount:0];
+        [GitRepository gitHubTokenConfigEnvironmentForUser:@"alice" token:@"abc" processEnvironment:@{}];
 
     NSString *const joined = [[env.allKeys arrayByAddingObjectsFromArray:env.allValues] componentsJoinedByString:@" "];
     XCTAssertFalse([joined containsString:@"gitlab"]);

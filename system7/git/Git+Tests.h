@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSDictionary<NSString *, NSString *> *)gitHubTokenConfigEnvironmentForUser:(nullable NSString *)user
                                                                         token:(nullable NSString *)token
-                                                          existingConfigCount:(NSInteger)existingConfigCount;
+                                                           processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment;
 
 @end
 
