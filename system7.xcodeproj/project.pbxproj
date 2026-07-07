@@ -97,6 +97,7 @@
 		BEE928A12456DA6500BD6B86 /* Git.m in Sources */ = {isa = PBXBuildFile; fileRef = BEE928A02456DA6500BD6B86 /* Git.m */; };
 		BEFAF7A125718AB7000D90C3 /* bootstrapTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BEFAF7A025718AB7000D90C3 /* bootstrapTests.m */; };
 		CE5BB61F25FA63A8002596B9 /* gitPackedRefsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CE5BB61E25FA63A8002596B9 /* gitPackedRefsTests.m */; };
+		A11C0CE526052600A0010001 /* gitGitHubTokenAuthTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A11C0CE526052600A0010002 /* gitGitHubTokenAuthTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -215,6 +216,7 @@
 		BEE928A02456DA6500BD6B86 /* Git.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Git.m; sourceTree = "<group>"; };
 		BEFAF7A025718AB7000D90C3 /* bootstrapTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = bootstrapTests.m; sourceTree = "<group>"; };
 		CE5BB61E25FA63A8002596B9 /* gitPackedRefsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = gitPackedRefsTests.m; sourceTree = "<group>"; };
+		A11C0CE526052600A0010002 /* gitGitHubTokenAuthTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = gitGitHubTokenAuthTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -351,6 +353,7 @@
 				BEE672CE2523B76500DB09BC /* iniParserTests.m */,
 				BEBE40C32576D04D00E39755 /* deinitTests.m */,
 				CE5BB61E25FA63A8002596B9 /* gitPackedRefsTests.m */,
+				A11C0CE526052600A0010002 /* gitGitHubTokenAuthTests.m */,
 			);
 			path = "system7-tests";
 			sourceTree = "<group>";
@@ -623,6 +626,7 @@
 				BEE1CD03246A9F6F00E2CC3B /* controlTests.m in Sources */,
 				BE394D3D2486ADB500ED6E05 /* S7CheckoutCommand.m in Sources */,
 				CE5BB61F25FA63A8002596B9 /* gitPackedRefsTests.m in Sources */,
+				A11C0CE526052600A0010001 /* gitGitHubTokenAuthTests.m in Sources */,
 				BE3A29E524604C10004A2B31 /* statusTests.m in Sources */,
 				6DD4A8392750E8A40050F3FD /* S7IniConfigOptions.m in Sources */,
 				BE8218892452C1DE00E878A8 /* configParserTests.m in Sources */,

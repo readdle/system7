@@ -96,6 +96,16 @@ void printHelp(void) {
     help_puts("    When provided, forces the merge driver to use a strategy that resolves conflicts in subrepo");
     help_puts("    references by favoring the branch specified in the variable, as well as retargeting \"their\"");
     help_puts("    added subrepos to the branch in question.");
+    help_puts("");
+    help_puts(" S7_GIT_USER / S7_GIT_TOKEN");
+    help_puts("    Make s7 authenticate github.com subrepo network operations (clone, fetch,");
+    help_puts("    push) over HTTPS with the given username and Personal Access Token instead");
+    help_puts("    of SSH. When both variables are set, s7 rewrites SSH github.com subrepo");
+    help_puts("    URLs to HTTPS and passes the token to git in an HTTP header; the token is");
+    help_puts("    never written to disk and never appears in process arguments. When either");
+    help_puts("    variable is missing, s7 leaves git alone (SSH keys as usual).");
+    help_puts("    GH_USER / GH_TOKEN are honored as a fallback when the S7_* variables are");
+    help_puts("    not set.");
 }
 
 Class commandClassByName(NSString *commandName) {
