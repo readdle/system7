@@ -80,30 +80,16 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return ghToken.length > 0 ? ghToken : nil;
 }
 
-// Full environment for the spawned git process when GitHub HTTPS token auth
-// is enabled (both credentials present); nil when it's off. Computed once: the
-// process environment plus GIT_CONFIG_* entries that authenticate github.com
-// over HTTPS — insteadOf rewrites SSH URLs to the clean https URL and an
-// http.<url>.extraheader carries the PAT as a Basic-auth header (see
-// +gitHubTokenConfigEnvironmentForUser:token:processEnvironment:).
-// Delivered through the child's environment rather than `-c` argv, so the token
-// never appears in the process argument list (`ps`, /proc, crash reporters), and
-// — riding in a header, not a URL — nothing git echoes can leak it. `.git/config`
-// keeps the original SSH URL, so the token never lands on disk either.
+// Cached-once front for +gitHubTokenAuthTaskEnvironmentForUser:token:processEnvironment:,
+// resolved against this process's credentials and environment. nil when token
+// auth is off (either credential missing).
 + (nullable NSDictionary<NSString *, NSString *> *)gitHubTokenAuthTaskEnvironment {
     static dispatch_once_t onceToken;
-    static NSDictionary<NSString *, NSString *> *taskEnvironment;
+    static NSDictionary<NSString *, NSString *> *taskEnvironment = nil;
     dispatch_once(&onceToken, ^{
-        NSDictionary<NSString *, NSString *> *const env = NSProcessInfo.processInfo.environment;
-        NSDictionary<NSString *, NSString *> *const configEnvironment =
-            [self gitHubTokenConfigEnvironmentForUser:[self envGitAuthUser]
-                                                token:[self envGitAuthToken]
-                                   processEnvironment:env];
-        if (configEnvironment.count > 0) {
-            NSMutableDictionary<NSString *, NSString *> *const merged = [env mutableCopy];
-            [merged addEntriesFromDictionary:configEnvironment];
-            taskEnvironment = [merged copy];
-        }
+        taskEnvironment = [self gitHubTokenAuthTaskEnvironmentForUser:[self envGitAuthUser]
+                                                                token:[self envGitAuthToken]
+                                                   processEnvironment:NSProcessInfo.processInfo.environment];
     });
     return taskEnvironment;
 }
@@ -1548,15 +1534,15 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 // Delivered via GIT_CONFIG_* env: off-disk, off-argv. New entries append past
 // any existing GIT_CONFIG_COUNT so a nested s7 (which inherits the parent's
 // injected GIT_CONFIG_COUNT) doesn't clobber it.
-+ (NSDictionary<NSString *, NSString *> *)gitHubTokenConfigEnvironmentForUser:(nullable NSString *)user
-                                                                        token:(nullable NSString *)token
-                                                           processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment
++ (nullable NSDictionary<NSString *, NSString *> *)gitHubTokenAuthTaskEnvironmentForUser:(nullable NSString *)user
+                                                                                   token:(nullable NSString *)token
+                                                                      processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment
 {
     if (0 == user.length || 0 == token.length) {
-        return @{};
+        return nil;
     }
 
-    NSMutableDictionary<NSString *, NSString *> *const result = [NSMutableDictionary new];
+    NSMutableDictionary<NSString *, NSString *> *const result = [processEnvironment mutableCopy];
     __block NSUInteger nextConfigPairIndex = (NSUInteger)MAX(0, [processEnvironment[@"GIT_CONFIG_COUNT"] integerValue]);
     __auto_type addConfigKV = ^ void (NSString *key, NSString *value) {
         result[[NSString stringWithFormat:@"GIT_CONFIG_KEY_%lu", (unsigned long)nextConfigPairIndex]] = key;

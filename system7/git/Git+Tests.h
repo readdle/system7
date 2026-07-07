@@ -20,9 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, class) void (^testRepoConfigureOnInitBlock)(GitRepository *repo);
 @property (nonatomic, readonly) BOOL hasMergeConflict;
 
-+ (NSDictionary<NSString *, NSString *> *)gitHubTokenConfigEnvironmentForUser:(nullable NSString *)user
-                                                                        token:(nullable NSString *)token
-                                                           processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment;
++ (nullable NSDictionary<NSString *, NSString *> *)gitHubTokenAuthTaskEnvironmentForUser:(nullable NSString *)user
+                                                                                   token:(nullable NSString *)token
+                                                                      processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment;
 
 @end
 
