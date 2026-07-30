@@ -46,13 +46,16 @@
         @"GIT_CONFIG_VALUE_1": @"ssh://git@github.com/",
         @"GIT_CONFIG_KEY_2": @"http.https://github.com/.extraheader",
         @"GIT_CONFIG_VALUE_2": @"Authorization: Basic YWxpY2U6YWJjMTIz",
+        @"S7_GIT_AUTH_INJECTED": @"1",
     };
     XCTAssertEqualObjects(expected, env);
 }
 
 - (void)testAppendsPastExistingConfigCount {
-    // A nested s7 inherits the parent's injected GIT_CONFIG_COUNT=3 and must not
-    // clobber entries 0..2.
+    // The caller's environment already carries foreign GIT_CONFIG_COUNT=3 (e.g.
+    // from a CI clone script). We must append past it and not clobber entries
+    // 0..2. (This is NOT a nested s7 — that case carries the injected marker and
+    // is covered by testReusesEnvironmentWhenAuthAlreadyInjected below.)
     NSDictionary<NSString *, NSString *> *const env =
         [GitRepository gitHubTokenAuthTaskEnvironmentForUser:@"alice" token:@"abc" processEnvironment:@{@"GIT_CONFIG_COUNT": @"3"}];
 
@@ -114,6 +117,49 @@
     NSString *const joined = [[env.allKeys arrayByAddingObjectsFromArray:env.allValues] componentsJoinedByString:@" "];
     XCTAssertFalse([joined containsString:@"gitlab"]);
     XCTAssertFalse([joined containsString:@"bitbucket"]);
+}
+
+#pragma mark - recursive (nested) subrepo cloning -
+
+// Counts how many GIT_CONFIG_VALUE_* entries carry an Authorization header.
+// git accumulates every http.<url>.extraheader value, so more than one here
+// means git would emit duplicate Authorization headers (GitHub → HTTP 400).
+static NSUInteger authHeaderCount(NSDictionary<NSString *, NSString *> *env) {
+    NSUInteger count = 0;
+    for (NSString *value in env.allValues) {
+        if ([value hasPrefix:@"Authorization: Basic "]) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+- (void)testReusesEnvironmentWhenAuthAlreadyInjected {
+    // A nested s7 inherits the parent's fully-formed auth environment (marker +
+    // GIT_CONFIG_*). It must reuse it verbatim, never appending a second header.
+    NSDictionary<NSString *, NSString *> *const inherited =
+        [GitRepository gitHubTokenAuthTaskEnvironmentForUser:@"alice" token:@"abc" processEnvironment:@{}];
+
+    NSDictionary<NSString *, NSString *> *const nested =
+        [GitRepository gitHubTokenAuthTaskEnvironmentForUser:@"alice" token:@"abc" processEnvironment:inherited];
+
+    XCTAssertEqualObjects(inherited, nested, @"nested s7 must not modify the inherited auth environment");
+    XCTAssertEqualObjects(@"3", nested[@"GIT_CONFIG_COUNT"]);
+    XCTAssertEqual((NSUInteger)1, authHeaderCount(nested));
+}
+
+- (void)testRecursiveCloningKeepsSingleAuthHeaderAcrossManyLevels {
+    // Reproduces the CI failure: rd2 → RDPDFKit → SPFlounder → Eigen. Each level
+    // inherits the level above's environment. Without the idempotency guard the
+    // extraheader would multiply per level and GitHub would answer HTTP 400.
+    NSDictionary<NSString *, NSString *> *env =
+        [GitRepository gitHubTokenAuthTaskEnvironmentForUser:@"alice" token:@"abc" processEnvironment:@{}];
+
+    for (NSUInteger level = 0; level < 4; ++level) {
+        env = [GitRepository gitHubTokenAuthTaskEnvironmentForUser:@"alice" token:@"abc" processEnvironment:env];
+        XCTAssertEqual((NSUInteger)1, authHeaderCount(env), @"duplicate Authorization header at nesting level %lu", (unsigned long)level);
+        XCTAssertEqualObjects(@"3", env[@"GIT_CONFIG_COUNT"]);
+    }
 }
 
 @end
