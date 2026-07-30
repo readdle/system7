@@ -1532,14 +1532,31 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 //     token)" — the same mechanism actions/checkout uses.
 // base64 swallows arbitrary token bytes, so no percent-encoding is needed.
 // Delivered via GIT_CONFIG_* env: off-disk, off-argv. New entries append past
-// any existing GIT_CONFIG_COUNT so a nested s7 (which inherits the parent's
-// injected GIT_CONFIG_COUNT) doesn't clobber it.
+// any existing GIT_CONFIG_COUNT so we don't clobber config the caller's
+// environment already carried (e.g. a CI clone script's own GIT_CONFIG_*).
+//
+// Recursive (nested) subrepo cloning: when s7 recurses into a subrepo that is
+// itself an s7 repo, the nested s7 is spawned by git (via that subrepo's
+// post-checkout hook) and inherits the very environment we build here. git
+// treats http.<url>.extraheader as MULTI-VALUED, so a naive append would hand
+// git a SECOND Authorization header; GitHub then rejects the request with
+// HTTP 400 ("Duplicate header: Authorization") and every nested clone/fetch
+// fails. To stay idempotent we stamp a marker on the built environment and, if
+// an ancestor s7 already stamped it, reuse that environment verbatim instead of
+// layering a duplicate header on top.
 + (nullable NSDictionary<NSString *, NSString *> *)gitHubTokenAuthTaskEnvironmentForUser:(nullable NSString *)user
                                                                                    token:(nullable NSString *)token
                                                                       processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment
 {
     if (0 == user.length || 0 == token.length) {
         return nil;
+    }
+
+    // An ancestor s7 already injected the auth config into the environment we
+    // inherited. Reuse it as-is — re-adding our github.com extraheader would
+    // make git send two Authorization headers (see the note above).
+    if ([processEnvironment[@"S7_GIT_AUTH_INJECTED"] isEqualToString:@"1"]) {
+        return processEnvironment;
     }
 
     NSMutableDictionary<NSString *, NSString *> *const result = [processEnvironment mutableCopy];
@@ -1560,6 +1577,9 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     addConfigKV(@"http.https://github.com/.extraheader", [NSString stringWithFormat:@"Authorization: Basic %@", basic]);
 
     result[@"GIT_CONFIG_COUNT"] = [NSString stringWithFormat:@"%lu", (unsigned long)nextConfigPairIndex];
+    // Marker so a nested s7 (spawned by git during a recursive checkout) knows
+    // auth is already in place and won't append a duplicate extraheader.
+    result[@"S7_GIT_AUTH_INJECTED"] = @"1";
     return result;
 }
 
