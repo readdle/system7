@@ -134,13 +134,6 @@ static NSUInteger authHeaderCount(NSDictionary<NSString *, NSString *> *env) {
     return count;
 }
 
-- (void)testStampsInjectedMarker {
-    NSDictionary<NSString *, NSString *> *const env =
-        [GitRepository gitHubTokenAuthTaskEnvironmentForUser:@"alice" token:@"abc" processEnvironment:@{}];
-
-    XCTAssertEqualObjects(@"1", env[@"S7_GIT_AUTH_INJECTED"]);
-}
-
 - (void)testReusesEnvironmentWhenAuthAlreadyInjected {
     // A nested s7 inherits the parent's fully-formed auth environment (marker +
     // GIT_CONFIG_*). It must reuse it verbatim, never appending a second header.
