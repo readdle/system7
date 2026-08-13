@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
                                                                                    token:(nullable NSString *)token
                                                                       processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment;
 
++ (BOOL)gitHubURLRewriteConfiguredInGitConfigOutput:(nullable NSString *)gitConfigOutput;
++ (NSString *)insteadOfRulesFromEffectiveGitConfig;
+
 @end
 
 NS_ASSUME_NONNULL_END

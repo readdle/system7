@@ -24,6 +24,10 @@ fprintf(stderr, "%s", [__trace cStringUsingEncoding:NSUTF8StringEncoding]); \
 
 static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
+// Stamped on the environment we hand to git, so a nested s7 that inherits it
+// recognizes our own auth config (see +gitHubTokenAuthTaskEnvironmentForUser:…).
+static NSString * const S7GitAuthInjectedEnvKey = @"S7_GIT_AUTH_INJECTED";
+
 #pragma mark - Environment
 
 + (NSString *)envGitExecutablePath {
@@ -80,16 +84,56 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return ghToken.length > 0 ? ghToken : nil;
 }
 
+// YES when github.com URL rewriting is already set up in the config git will
+// use — by the job that runs us (e.g. buildserver-utils' set-https-auth.sh,
+// which exports GIT_CONFIG_* before invoking anything), or by a git config file
+// on the machine. Cached: one `git config` per s7 process, and only on the
+// token path (see +gitHubTokenAuthTaskEnvironment).
++ (BOOL)gitHubURLRewriteAlreadyConfigured {
+    static dispatch_once_t onceToken;
+    static BOOL alreadyConfigured = NO;
+    dispatch_once(&onceToken, ^{
+        alreadyConfigured = [self gitHubURLRewriteConfiguredInGitConfigOutput:[self insteadOfRulesFromEffectiveGitConfig]];
+    });
+    return alreadyConfigured;
+}
+
 // Cached-once front for +gitHubTokenAuthTaskEnvironmentForUser:token:processEnvironment:,
-// resolved against this process's credentials and environment. nil when token
-// auth is off (either credential missing).
+// resolved against this process's credentials and environment. nil when we leave
+// git's config alone: no credentials, or the job has already set the rewrite up
+// itself.
 + (nullable NSDictionary<NSString *, NSString *> *)gitHubTokenAuthTaskEnvironment {
     static dispatch_once_t onceToken;
     static NSDictionary<NSString *, NSString *> *taskEnvironment = nil;
     dispatch_once(&onceToken, ^{
-        taskEnvironment = [self gitHubTokenAuthTaskEnvironmentForUser:[self envGitAuthUser]
-                                                                token:[self envGitAuthToken]
-                                                   processEnvironment:NSProcessInfo.processInfo.environment];
+        NSString *const user = [self envGitAuthUser];
+        NSString *const token = [self envGitAuthToken];
+        if (0 == user.length || 0 == token.length) {
+            // SSH as usual — no reason to ask git anything.
+            return;
+        }
+
+        NSDictionary<NSString *, NSString *> *const processEnvironment = NSProcessInfo.processInfo.environment;
+
+        // The job may have configured the GitHub URL rewrite before running us.
+        // Stacking a second rule on top of it would at best be redundant and at
+        // worst fight it: when the job's rewrite target carries credentials of
+        // its own (set-https-auth.sh builds https://user:token@github.com/), our
+        // github.com-scoped extraheader applies to that URL as well — git config
+        // matching ignores the userinfo part — and the request ends up with two
+        // different credentials on it. So we keep what's there and add nothing.
+        //
+        // A nested s7 is not that case: the rewrite it sees is the one an
+        // ancestor s7 injected, and reusing that environment verbatim (which the
+        // builder below does) keeps the marker in place for the level after it.
+        const BOOL injectedByAncestorS7 = [processEnvironment[S7GitAuthInjectedEnvKey] isEqualToString:@"1"];
+        if (NO == injectedByAncestorS7 && [self gitHubURLRewriteAlreadyConfigured]) {
+            return;
+        }
+
+        taskEnvironment = [self gitHubTokenAuthTaskEnvironmentForUser:user
+                                                                token:token
+                                                   processEnvironment:processEnvironment];
     });
     return taskEnvironment;
 }
@@ -99,6 +143,11 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     dispatch_once(&onceToken, ^{
         if (nil != [self gitHubTokenAuthTaskEnvironment]) {
             logInfo("s7: subrepo network auth: HTTPS via token\n");
+        }
+        else if ([self envGitAuthUser].length > 0 && [self envGitAuthToken].length > 0) {
+            // Credentials are set, yet we injected nothing: the only way that
+            // happens is a rewrite that was already in place.
+            logInfo("s7: subrepo network auth: GitHub URL rewrite is already configured – keeping it as is\n");
         }
         else {
             s7TraceGit(@"s7: subrepo network auth: SSH (default)\n");
@@ -1534,6 +1583,8 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 // Delivered via GIT_CONFIG_* env: off-disk, off-argv. New entries append past
 // any existing GIT_CONFIG_COUNT so we don't clobber config the caller's
 // environment already carried (e.g. a CI clone script's own GIT_CONFIG_*).
+// Whether we should be building this at all — the job may have set the GitHub
+// rewrite up itself — is decided by the caller (+gitHubTokenAuthTaskEnvironment).
 //
 // Recursive (nested) subrepo cloning: when s7 recurses into a subrepo that is
 // itself an s7 repo, the nested s7 is spawned by git (via that subrepo's
@@ -1555,7 +1606,7 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     // An ancestor s7 already injected the auth config into the environment we
     // inherited. Reuse it as-is — re-adding our github.com extraheader would
     // make git send two Authorization headers (see the note above).
-    if ([processEnvironment[@"S7_GIT_AUTH_INJECTED"] isEqualToString:@"1"]) {
+    if ([processEnvironment[S7GitAuthInjectedEnvKey] isEqualToString:@"1"]) {
         return processEnvironment;
     }
 
@@ -1579,8 +1630,77 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     result[@"GIT_CONFIG_COUNT"] = [NSString stringWithFormat:@"%lu", (unsigned long)nextConfigPairIndex];
     // Marker so a nested s7 (spawned by git during a recursive checkout) knows
     // auth is already in place and won't append a duplicate extraheader.
-    result[@"S7_GIT_AUTH_INJECTED"] = @"1";
+    result[S7GitAuthInjectedEnvKey] = @"1";
     return result;
+}
+
+// Asks git for the effective url.<base>.insteadOf rules. Deliberately NOT routed
+// through +runGitWithArguments: — that path consults the auth environment we are
+// in the middle of building (dispatch_once re-entry would deadlock), and it
+// echoes the child's output when S7_TRACE_GIT is on. The rules embed whatever
+// credentials the surrounding job configured, so the output is inspected and
+// dropped, never logged.
+//
+// No currentDirectoryURL and no environment override on purpose: the child sees
+// the very config s7's own git calls will see — this process's cwd (hence the
+// repo's local config) and its GIT_CONFIG_* env.
++ (NSString *)insteadOfRulesFromEffectiveGitConfig {
+    NSTask *const task = [NSTask new];
+    task.launchPath = [self envGitExecutablePath];
+    // The regexp matches the config KEY. git lowercases the variable name in its
+    // output, so `.insteadof` also matches config files spelling it `insteadOf`,
+    // while `pushInsteadOf` (push-only, fetches would still go over SSH) doesn't.
+    task.arguments = @[ @"config", @"--get-regexp", @"^url\\..*\\.insteadof$" ];
+
+    NSPipe *const outputPipe = [NSPipe new];
+    task.standardOutput = outputPipe;
+    // "no such key" and "not a git repository" are expected outcomes, not news.
+    task.standardError = [NSFileHandle fileHandleWithNullDevice];
+
+    NSError *error = nil;
+    if (NO == [task launchAndReturnError:&error]) {
+        return @"";
+    }
+
+    // The output is a handful of lines at most — read it fully, then reap.
+    NSData *const outputData = [outputPipe.fileHandleForReading readDataToEndOfFile];
+    [task waitUntilExit];
+
+    return [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding] ?: @"";
+}
+
+// Pure counterpart of +gitHubURLRewriteAlreadyConfigured: decides whether the
+// output of `git config --get-regexp ^url\..*\.insteadof$` shows a rewrite that
+// concerns github.com.
+//
+// Each line is "<key> <value>", e.g.
+//   url.https://ci:TOKEN@github.com/.insteadof git@github.com:
+// github.com may appear on either side (rewrite target, rewritten prefix, or
+// both), so — like the buildserver-utils check this mirrors — the whole line is
+// searched, case-insensitively. A rewrite for some other host says nothing about
+// GitHub auth and doesn't count. The key is re-checked here rather than trusted
+// from git's own filtering, so the rule holds for any caller.
++ (BOOL)gitHubURLRewriteConfiguredInGitConfigOutput:(nullable NSString *)gitConfigOutput {
+    __block BOOL configured = NO;
+    [gitConfigOutput enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        const NSRange keyValueSeparatorRange = [line rangeOfString:@" "];
+        if (NSNotFound == keyValueSeparatorRange.location) {
+            return;
+        }
+
+        NSString *const key = [line substringToIndex:keyValueSeparatorRange.location];
+        if (NO == [key hasPrefix:@"url."]
+            || NO == [[key lowercaseString] hasSuffix:@".insteadof"])
+        {
+            return;
+        }
+
+        if (NSNotFound != [line rangeOfString:@"github.com" options:NSCaseInsensitiveSearch].location) {
+            configured = YES;
+            *stop = YES;
+        }
+    }];
+    return configured;
 }
 
 - (BOOL)hasMergeConflict {

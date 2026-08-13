@@ -106,6 +106,9 @@ void printHelp(void) {
     help_puts("    variable is missing, s7 leaves git alone (SSH keys as usual).");
     help_puts("    GH_USER / GH_TOKEN are honored as a fallback when the S7_* variables are");
     help_puts("    not set.");
+    help_puts("    If github.com URL rewriting is already configured in the git config s7 sees");
+    help_puts("    (url.<base>.insteadOf – set up by the calling job or a git config file),");
+    help_puts("    then s7 keeps that configuration and adds nothing of its own.");
 }
 
 Class commandClassByName(NSString *commandName) {
