@@ -60,52 +60,6 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return traceEnabled;
 }
 
-+ (nullable NSString *)envGitAuthUser {
-    NSDictionary<NSString *, NSString *> *const env = NSProcessInfo.processInfo.environment;
-    NSString *const user = env[@"S7_GIT_USER"];
-    if (user.length > 0) {
-        return user;
-    }
-    NSString *const ghUser = env[@"GH_USER"];
-    return ghUser.length > 0 ? ghUser : nil;
-}
-
-+ (nullable NSString *)envGitAuthToken {
-    NSDictionary<NSString *, NSString *> *const env = NSProcessInfo.processInfo.environment;
-    NSString *const token = env[@"S7_GIT_TOKEN"];
-    if (token.length > 0) {
-        return token;
-    }
-    NSString *const ghToken = env[@"GH_TOKEN"];
-    return ghToken.length > 0 ? ghToken : nil;
-}
-
-// Cached-once front for +gitHubTokenAuthTaskEnvironmentForUser:token:processEnvironment:,
-// resolved against this process's credentials and environment. nil when token
-// auth is off (either credential missing).
-+ (nullable NSDictionary<NSString *, NSString *> *)gitHubTokenAuthTaskEnvironment {
-    static dispatch_once_t onceToken;
-    static NSDictionary<NSString *, NSString *> *taskEnvironment = nil;
-    dispatch_once(&onceToken, ^{
-        taskEnvironment = [self gitHubTokenAuthTaskEnvironmentForUser:[self envGitAuthUser]
-                                                                token:[self envGitAuthToken]
-                                                   processEnvironment:NSProcessInfo.processInfo.environment];
-    });
-    return taskEnvironment;
-}
-
-+ (void)logSelectedAuthPathOnce {
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        if (nil != [self gitHubTokenAuthTaskEnvironment]) {
-            logInfo("s7: subrepo network auth: HTTPS via token\n");
-        }
-        else {
-            s7TraceGit(@"s7: subrepo network auth: SSH (default)\n");
-        }
-    });
-}
-
 #pragma mark - Initialization
 
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath {
@@ -376,16 +330,6 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     [task setArguments:arguments];
     if (currentDirectoryPath) {
         task.currentDirectoryURL = [NSURL fileURLWithPath:currentDirectoryPath];
-    }
-
-    [self logSelectedAuthPathOnce];
-
-    // Inject the HTTPS auth config via the child's environment (see
-    // +gitHubTokenAuthTaskEnvironment). nil on the SSH path, so dev machines and
-    // any non-token use are completely unaffected (no task.environment override).
-    NSDictionary<NSString *, NSString *> *const environmentWithAuth = [self gitHubTokenAuthTaskEnvironment];
-    if (nil != environmentWithAuth) {
-        task.environment = environmentWithAuth;
     }
 
     // https://stackoverflow.com/questions/49184623/nstask-race-condition-with-readabilityhandler-block
@@ -1518,69 +1462,6 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
 
 + (void)setTestRepoConfigureOnInitBlock:(void (^)(GitRepository * _Nonnull))testRepoConfigureOnInitBlock {
     _testRepoConfigureOnInitBlock = testRepoConfigureOnInitBlock;
-}
-
-// Pure builder for +gitHubTokenAuthTaskEnvironment. The process environment
-// comes in as a parameter so tests can probe arbitrary inputs. Returns @{}
-// when either credential is missing.
-//
-// The PAT travels in an HTTP Authorization header, never in a URL:
-//   * insteadOf rewrites every SSH github.com shape to the CLEAN (credential-
-//     free) https URL, so nothing git echoes (errors, GIT_TRACE_CURL,
-//     remote.origin.url) can ever carry the token;
-//   * a github.com-scoped http.<url>.extraheader supplies "Basic base64(user:
-//     token)" — the same mechanism actions/checkout uses.
-// base64 swallows arbitrary token bytes, so no percent-encoding is needed.
-// Delivered via GIT_CONFIG_* env: off-disk, off-argv. New entries append past
-// any existing GIT_CONFIG_COUNT so we don't clobber config the caller's
-// environment already carried (e.g. a CI clone script's own GIT_CONFIG_*).
-//
-// Recursive (nested) subrepo cloning: when s7 recurses into a subrepo that is
-// itself an s7 repo, the nested s7 is spawned by git (via that subrepo's
-// post-checkout hook) and inherits the very environment we build here. git
-// treats http.<url>.extraheader as MULTI-VALUED, so a naive append would hand
-// git a SECOND Authorization header; GitHub then rejects the request with
-// HTTP 400 ("Duplicate header: Authorization") and every nested clone/fetch
-// fails. To stay idempotent we stamp a marker on the built environment and, if
-// an ancestor s7 already stamped it, reuse that environment verbatim instead of
-// layering a duplicate header on top.
-+ (nullable NSDictionary<NSString *, NSString *> *)gitHubTokenAuthTaskEnvironmentForUser:(nullable NSString *)user
-                                                                                   token:(nullable NSString *)token
-                                                                      processEnvironment:(NSDictionary<NSString *, NSString *> *)processEnvironment
-{
-    if (0 == user.length || 0 == token.length) {
-        return nil;
-    }
-
-    // An ancestor s7 already injected the auth config into the environment we
-    // inherited. Reuse it as-is — re-adding our github.com extraheader would
-    // make git send two Authorization headers (see the note above).
-    if ([processEnvironment[@"S7_GIT_AUTH_INJECTED"] isEqualToString:@"1"]) {
-        return processEnvironment;
-    }
-
-    NSMutableDictionary<NSString *, NSString *> *const result = [processEnvironment mutableCopy];
-    __block NSUInteger nextConfigPairIndex = (NSUInteger)MAX(0, [processEnvironment[@"GIT_CONFIG_COUNT"] integerValue]);
-    __auto_type addConfigKV = ^ void (NSString *key, NSString *value) {
-        result[[NSString stringWithFormat:@"GIT_CONFIG_KEY_%lu", (unsigned long)nextConfigPairIndex]] = key;
-        result[[NSString stringWithFormat:@"GIT_CONFIG_VALUE_%lu", (unsigned long)nextConfigPairIndex]] = value;
-        ++nextConfigPairIndex;
-    };
-
-    // url.<base>.insteadOf is multi-valued: each index contributes one rule.
-    addConfigKV(@"url.https://github.com/.insteadOf", @"git@github.com:");
-    addConfigKV(@"url.https://github.com/.insteadOf", @"ssh://git@github.com/");
-
-    NSString *const userColonToken = [NSString stringWithFormat:@"%@:%@", user, token];
-    NSString *const basic = [[userColonToken dataUsingEncoding:NSUTF8StringEncoding] base64EncodedStringWithOptions:0];
-    // Scoped to github.com so the header is never attached to any other host.
-    addConfigKV(@"http.https://github.com/.extraheader", [NSString stringWithFormat:@"Authorization: Basic %@", basic]);
-
-    result[@"GIT_CONFIG_COUNT"] = [NSString stringWithFormat:@"%lu", (unsigned long)nextConfigPairIndex];
-    // Marker so a nested s7 (spawned by git during a recursive checkout) knows
-    // auth is already in place and won't append a duplicate extraheader.
-    result[@"S7_GIT_AUTH_INJECTED"] = @"1";
-    return result;
 }
 
 - (BOOL)hasMergeConflict {
