@@ -23,7 +23,7 @@ assert git commit -m '"add ReaddleLib subrepo"'
 echo
 
 # test how s7 works with more modern command 'switch'
-if isGitVersionGreaterThan2_23
+if isGitVersionAtLeast 2.23
 then
     echo "modern Git"
     git switch -c experiment

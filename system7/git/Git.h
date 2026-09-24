@@ -16,6 +16,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
+// Returns YES if the installed `git` is at least `major.minor`.
+// The result is cached after the first call.
++ (BOOL)gitVersionAtLeastMajor:(NSInteger)major minor:(NSInteger)minor;
+
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath;
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath bare:(BOOL)bare NS_DESIGNATED_INITIALIZER;
 
@@ -120,6 +124,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<NSString *> *)logNotPushedCommitsFromRef:(NSString *)fromRef
                                                file:(nullable NSString *)file
                                          exitStatus:(int *)exitStatus;
+
+// Uses the `is-base` heuristic of `git for-each-ref` (introduced in Git 2.47) to detect
+// which remote-tracking branch the given `commit` is based on, and returns the tip revision
+// of that branch. This is used to find the start point of a freshly created branch that has
+// no remote counterpart yet.
+//
+// Returns nil if git is older than 2.47, if no base could be determined, or if the result
+// is ambiguous. Caller is expected to fall back to a broader check in that case.
+- (nullable NSString *)baseRemoteRevisionForCommit:(NSString *)commit;
 
 - (nullable NSString *)showFile:(NSString *)filePath atRevision:(NSString *)revision exitStatus:(int *)exitStatus;
 

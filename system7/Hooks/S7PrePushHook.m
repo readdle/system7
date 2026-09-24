@@ -180,6 +180,27 @@
                            localSha1ToPush:(NSString *)localSha1ToPush
                             subreposToPush:(NSMutableDictionary<NSString *,NSMutableArray<S7SubrepoDescription *> *> **)ppSubreposToPush
 {
+    if ([latestRemoteRevisionAtThisBranch isEqualToString:[GitRepository nullRevision]]) {
+        // This is a new branch – git doesn't tell us the remote revision to compare against,
+        // so historically we had to fall back to inspecting *all* not-yet-pushed commits.
+        //
+        // Since Git 2.47 we can ask git to guess the branch this one is based on using the
+        // `is-base` heuristic. If we find a base that is a proper ancestor of the commit being
+        // pushed, we can use the precise `base..local` comparison below instead of the fallback.
+        //
+        // If git is too old, `is-base` finds nothing, or the detected base is not an ancestor
+        // (unusual), we keep `latestRemoteRevisionAtThisBranch` as the null revision and fall
+        // back to the broad check – never risking a missed subrepo push.
+        NSString *baseRevision = [repo baseRemoteRevisionForCommit:localSha1ToPush];
+        if (baseRevision
+            && [repo isRevisionAnAncestor:baseRevision toRevision:localSha1ToPush])
+        {
+            logInfo(" detected branch start point %s\n",
+                    [baseRevision cStringUsingEncoding:NSUTF8StringEncoding]);
+            latestRemoteRevisionAtThisBranch = baseRevision;
+        }
+    }
+
     S7Config *lastPushedConfig = nil;
     int gitExitStatus = getConfig(repo, latestRemoteRevisionAtThisBranch, &lastPushedConfig);
     if (0 != gitExitStatus) {
