@@ -29,7 +29,7 @@ assert s7 rebind
 assert git checkout -- .s7substate
 assert test sqrt = `cat Dependencies/ReaddleLib/RDMath.h`
 
-if isGitVersionGreaterThan2_23
+if isGitVersionAtLeast 2.23
 then
     echo
     echo

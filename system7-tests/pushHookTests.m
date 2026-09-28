@@ -656,6 +656,71 @@
     }];
 }
 
+- (void)testNewBranchPushUsesBranchStartPointToLimitCheckedSubrepos {
+    // When pushing a brand new branch, git tells us nothing about the remote revision
+    // to compare against. Historically we fell back to inspecting *all* subrepos referenced
+    // in .s7substate. Since Git 2.47 the pre-push hook uses the `is-base` heuristic to detect
+    // the branch this one starts from, so only subrepos actually changed on the new branch
+    // are considered.
+    //
+    // This test checks both:
+    //  - the branch start point is detected (on Git >= 2.47);
+    //  - a new-branch push pushes the changed subrepo and never touches an unrelated,
+    //    not-rebound change in a subrepo that wasn't modified on this branch.
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *readdleLibSubrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sqrt", @"add geometry utils");
+
+        GitRepository *pdfKitSubrepoGit = s7add_stage(@"Dependencies/RDPDFKit", self.env.githubRDPDFKitRepo.absolutePath);
+        commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", @"/Type /Ink", @"ink annotations");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"add subrepos"];
+
+        // remember the tip of 'main' – this is the start point we expect to detect later
+        NSString *mainRevision = nil;
+        [repo getCurrentRevision:&mainRevision];
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+
+        // start a new branch and change ONLY ReaddleLib
+        [repo checkoutNewLocalBranch:@"experiment"];
+
+        NSString *readdleLibCommitExpectedToBePushed = commit(readdleLibSubrepoGit, @"RDGeometry.h", @"sin(Pi)", @"pi");
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"up ReaddleLib"];
+
+        NSString *newBranchRevision = nil;
+        [repo getCurrentRevision:&newBranchRevision];
+
+        // an unrelated, NOT rebound change in RDPDFKit – it must never be pushed
+        NSString *pdfKitCommitNotToBePushed = commit(pdfKitSubrepoGit, @"RDPDFAnnotation.h", @"WIP", @"unrelated bugfix");
+
+
+        // sanity: BEFORE the branch is pushed (i.e. while there's no remote counterpart yet,
+        // exactly as the pre-push hook sees it) the start point must resolve to 'main' tip.
+        // Older git that doesn't support `is-base` returns nil and the hook falls back to the
+        // broad check – still correct, just less precise, so we don't assert it there.
+        if ([GitRepository gitVersionAtLeastMajor:2 minor:47]) {
+            NSString *detectedStartPoint = [repo baseRemoteRevisionForCommit:newBranchRevision];
+            XCTAssertEqualObjects(detectedStartPoint,
+                                  mainRevision,
+                                  @"new branch 'experiment' starts from the pushed 'main' tip");
+        }
+
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+
+        XCTAssertTrue([self.env.githubReaddleLibRepo isRevisionAvailableLocally:readdleLibCommitExpectedToBePushed],
+                      @"the subrepo changed on the new branch must be pushed");
+        XCTAssertFalse([self.env.githubRDPDFKitRepo isRevisionAvailableLocally:pdfKitCommitNotToBePushed],
+                       @"an unrelated not-rebound change in an unchanged subrepo must not be pushed");
+    }];
+}
+
 - (void)testMainRepoBranchDeletePush {
     [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
         s7init_deactivateHooks();

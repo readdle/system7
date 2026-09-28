@@ -60,6 +60,56 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     return traceEnabled;
 }
 
++ (void)getGitVersionMajor:(NSInteger *)pMajor minor:(NSInteger *)pMinor {
+    static dispatch_once_t onceToken;
+    static NSInteger cachedMajor = 0;
+    static NSInteger cachedMinor = 0;
+
+    dispatch_once(&onceToken, ^{
+        NSString *stdOutOutput = nil;
+        const int exitStatus = [self runGitWithArguments:@[ @"--version" ]
+                                            stdOutOutput:&stdOutOutput
+                                            stdErrOutput:NULL
+                                    currentDirectoryPath:nil];
+        if (0 != exitStatus || 0 == stdOutOutput.length) {
+            return;
+        }
+
+        // `git --version` prints something like "git version 2.53.0",
+        // sometimes with a vendor suffix, e.g. "git version 2.39.5 (Apple Git-154)".
+        NSScanner *scanner = [NSScanner scannerWithString:stdOutOutput];
+        [scanner scanUpToCharactersFromSet:[NSCharacterSet decimalDigitCharacterSet] intoString:NULL];
+
+        NSInteger major = 0;
+        NSInteger minor = 0;
+        if ([scanner scanInteger:&major]) {
+            if ([scanner scanString:@"." intoString:NULL]) {
+                [scanner scanInteger:&minor];
+            }
+            cachedMajor = major;
+            cachedMinor = minor;
+        }
+    });
+
+    if (pMajor) {
+        *pMajor = cachedMajor;
+    }
+    if (pMinor) {
+        *pMinor = cachedMinor;
+    }
+}
+
++ (BOOL)gitVersionAtLeastMajor:(NSInteger)major minor:(NSInteger)minor {
+    NSInteger actualMajor = 0;
+    NSInteger actualMinor = 0;
+    [self getGitVersionMajor:&actualMajor minor:&actualMinor];
+
+    if (actualMajor != major) {
+        return actualMajor > major;
+    }
+    return actualMinor >= minor;
+}
+
 #pragma mark - Initialization
 
 - (nullable instancetype)initWithRepoPath:(NSString *)repoPath {
@@ -1222,6 +1272,49 @@ static void (^_testRepoConfigureOnInitBlock)(GitRepository *);
     }
     
     return [self runRevisionsCommand:command exitStatus:exitStatus];
+}
+
+- (nullable NSString *)baseRemoteRevisionForCommit:(NSString *)commit {
+    NSParameterAssert(commit.length > 0);
+
+    // The `is-base` atom for `git for-each-ref` was introduced in Git 2.47.
+    // https://alchemists.io/articles/git_for_each_ref
+    if (NO == [self.class gitVersionAtLeastMajor:2 minor:47]) {
+        return nil;
+    }
+
+    // For every remote-tracking ref, `is-base:<commit>` is non-empty only for the single
+    // ref that git considers the base of `commit`. We print that ref's object id, so a
+    // successful run yields exactly one line – the tip revision of the base branch.
+    //
+    // We deliberately look at `refs/remotes/` only: we compare against the already-pushed
+    // state, so the base must be something that exists on the remote.
+    NSString *format =
+    [NSString stringWithFormat:@"--format=%%(if)%%(is-base:%@)%%(then)%%(objectname)%%(end)", commit];
+
+    NSString *stdOutOutput = nil;
+    const int exitStatus = [self runGitWithArguments:@[ @"for-each-ref", format, @"refs/remotes/" ]
+                                        stdOutOutput:&stdOutOutput
+                                        stdErrOutput:NULL];
+    if (0 != exitStatus) {
+        return nil;
+    }
+
+    NSMutableArray<NSString *> *baseRevisions = [NSMutableArray new];
+    [stdOutOutput enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        if (trimmedLine.length > 0 && NO == [baseRevisions containsObject:trimmedLine]) {
+            [baseRevisions addObject:trimmedLine];
+        }
+    }];
+
+    // `is-base` is expected to mark a single ref, but stay on the safe side: if we get
+    // nothing or an ambiguous result, let the caller fall back to a broader check.
+    if (1 != baseRevisions.count) {
+        return nil;
+    }
+
+    return baseRevisions.firstObject;
 }
 
 - (NSArray<NSString *> *)runRevisionsCommand:(NSString *)command
