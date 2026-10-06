@@ -51,51 +51,65 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
     BOOL controlFileExists = [NSFileManager.defaultManager fileExistsAtPath:S7ControlFileName];
     BOOL configFileExists = [NSFileManager.defaultManager fileExistsAtPath:S7ConfigFileName];
-    if (NO == controlFileExists && configFileExists) {
+    BOOL isLinkedWorktree = NO == [repo.gitDirPath isEqualToString:repo.commonGitDirPath];
+    if (isLinkedWorktree && NO == controlFileExists && configFileExists) {
         logInfo("\ns7: detected new worktree — running auto-init\n");
 
         NSString *mainWorktreePath = [repo.commonGitDirPath stringByDeletingLastPathComponent];
-        if (NO == [mainWorktreePath isEqualToString:repo.absolutePath]) {
-            S7Config *config = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
-            NSArray<S7SubrepoDescription *> *descs = config.subrepoDescriptions;
+        S7Config *config = [[S7Config alloc] initWithContentsOfFile:S7ConfigFileName];
+        NSArray<S7SubrepoDescription *> *descs = config.subrepoDescriptions;
 
-            NSMutableSet<NSString *> *parentDirs = [NSMutableSet new];
-            for (S7SubrepoDescription *desc in descs) {
-                NSString *parent = [[repo.absolutePath stringByAppendingPathComponent:desc.path] stringByDeletingLastPathComponent];
-                [parentDirs addObject:parent];
-            }
-            for (NSString *dir in parentDirs) {
-                [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
-            }
+        NSMutableSet<NSString *> *parentDirs = [NSMutableSet new];
+        for (S7SubrepoDescription *desc in descs) {
+            NSString *parent = [[repo.absolutePath stringByAppendingPathComponent:desc.path] stringByDeletingLastPathComponent];
+            [parentDirs addObject:parent];
+        }
+        for (NSString *dir in parentDirs) {
+            [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+        }
 
-            dispatch_apply(descs.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
-                S7SubrepoDescription *desc = descs[i];
-                NSString *src = [mainWorktreePath stringByAppendingPathComponent:desc.path];
-                NSString *dst = [repo.absolutePath stringByAppendingPathComponent:desc.path];
-                BOOL srcIsDir = NO;
-                if ([[NSFileManager defaultManager] fileExistsAtPath:src isDirectory:&srcIsDir] && srcIsDir) {
-                    if (0 == clonefile(src.fileSystemRepresentation, dst.fileSystemRepresentation, 0)) {
-                        logInfo("  cloned '%s' from main worktree\n", desc.path.fileSystemRepresentation);
-                    }
-                    else {
-                        NSError *copyError = nil;
-                        if ([[NSFileManager defaultManager] copyItemAtPath:src toPath:dst error:&copyError]) {
-                            logInfo("  copied '%s' from main worktree\n", desc.path.fileSystemRepresentation);
-                        }
+        dispatch_apply(descs.count, DISPATCH_APPLY_AUTO, ^(size_t i) {
+            S7SubrepoDescription *desc = descs[i];
+            NSString *src = [mainWorktreePath stringByAppendingPathComponent:desc.path];
+            NSString *dst = [repo.absolutePath stringByAppendingPathComponent:desc.path];
+            BOOL srcIsDir = NO;
+            if ([[NSFileManager defaultManager] fileExistsAtPath:src isDirectory:&srcIsDir] && srcIsDir) {
+                BOOL copied = NO;
+                if (0 == clonefile(src.fileSystemRepresentation, dst.fileSystemRepresentation, 0)) {
+                    copied = YES;
+                    logInfo("  cloned '%s' from main worktree\n", desc.path.fileSystemRepresentation);
+                }
+                else {
+                    NSError *copyError = nil;
+                    if ([[NSFileManager defaultManager] copyItemAtPath:src toPath:dst error:&copyError]) {
+                        copied = YES;
+                        logInfo("  copied '%s' from main worktree\n", desc.path.fileSystemRepresentation);
                     }
                 }
-            });
 
-            NSString *substateContents = [[NSString alloc] initWithContentsOfFile:S7ConfigFileName
+                // The copy carries the main worktree's uncommitted changes. Drop them,
+                // so the new worktree starts clean and init can switch revisions.
+                // Checked on the source, as the copy's index stat info is stale.
+                if (copied && [[GitRepository repoAtPath:src] hasUncommitedChanges]) {
+                    GitRepository *subrepo = [GitRepository repoAtPath:dst];
+                    if (nil == subrepo || 0 != [subrepo resetLocalChanges]) {
+                        logError("failed to discard local changes copied into '%s'\n", desc.path.fileSystemRepresentation);
+                    }
+                }
+            }
+        });
+
+        NSString *substateContents = [[NSString alloc] initWithContentsOfFile:S7ConfigFileName
+                                                                    encoding:NSUTF8StringEncoding
+                                                                       error:nil];
+        // .s7control describes what is actually checked out in the main worktree,
+        // unlike .s7substate, which may be ahead of it.
+        NSString *mainControlPath = [mainWorktreePath stringByAppendingPathComponent:S7ControlFileName];
+        NSString *mainControlContents = [[NSString alloc] initWithContentsOfFile:mainControlPath
                                                                         encoding:NSUTF8StringEncoding
                                                                            error:nil];
-            NSString *mainSubstatePath = [mainWorktreePath stringByAppendingPathComponent:S7ConfigFileName];
-            NSString *mainSubstateContents = [[NSString alloc] initWithContentsOfFile:mainSubstatePath
-                                                                            encoding:NSUTF8StringEncoding
-                                                                               error:nil];
-            if (substateContents && [substateContents isEqualToString:mainSubstateContents ?: @""]) {
-                [substateContents writeToFile:S7ControlFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
-            }
+        if (substateContents && [substateContents isEqualToString:mainControlContents ?: @""]) {
+            [substateContents writeToFile:S7ControlFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
         }
 
         S7InitCommand *initCommand = [S7InitCommand new];
