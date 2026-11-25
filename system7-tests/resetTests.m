@@ -375,6 +375,107 @@
     }];
 }
 
+- (void)testResetDoesntFetchRevisionKnownAtRemoteBranch {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *subrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        NSString *pinnedRevision = commit(subrepoGit, @"RDGeometry.h", @"tabula rasa", @"add geometry utils");
+        XCTAssertEqual(0, [subrepoGit pushCurrentBranch]);
+
+        NSString *pinnedBranch = nil;
+        BOOL dummy = NO;
+        XCTAssertEqual(0, [subrepoGit getCurrentBranch:&pinnedBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy]);
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"add ReaddleLib"];
+
+        XCTAssertEqual(0, [subrepoGit checkoutNewLocalBranch:@"experiment"]);
+        commit(subrepoGit, @"RDGeometry.h", @"sqrt", @"experiment");
+
+        NSString *remotePath = self.env.githubReaddleLibRepo.absolutePath;
+        XCTAssertTrue([NSFileManager.defaultManager moveItemAtPath:remotePath
+                                                            toPath:[remotePath stringByAppendingString:@"-unreachable"]
+                                                             error:nil]);
+
+        S7ResetCommand *command = [S7ResetCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+
+        NSString *actualBranch = nil;
+        NSString *actualRevision = nil;
+        XCTAssertEqual(0, [subrepoGit getCurrentBranch:&actualBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy]);
+        XCTAssertEqual(0, [subrepoGit getCurrentRevision:&actualRevision]);
+        XCTAssertEqualObjects(actualBranch, pinnedBranch);
+        XCTAssertEqualObjects(actualRevision, pinnedRevision);
+    }];
+}
+
+- (void)testPushAfterResetWithoutFetchWhenRemoteBranchMovedAhead {
+    __block NSString *pinnedRevision = nil;
+    __block NSString *pinnedBranch = nil;
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *subrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        pinnedRevision = commit(subrepoGit, @"RDGeometry.h", @"tabula rasa", @"add geometry utils");
+        XCTAssertEqual(0, [subrepoGit pushCurrentBranch]);
+
+        BOOL dummy = NO;
+        XCTAssertEqual(0, [subrepoGit getCurrentBranch:&pinnedBranch isDetachedHEAD:&dummy isEmptyRepo:&dummy]);
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"add ReaddleLib"];
+    }];
+
+    int cloneExitStatus = 0;
+    GitRepository *nikReaddleLibGit = [GitRepository cloneRepoAtURL:self.env.githubReaddleLibRepo.absolutePath
+                                                    destinationPath:[self.env.root stringByAppendingPathComponent:@"nik/ReaddleLib"]
+                                                         exitStatus:&cloneExitStatus];
+    XCTAssertEqual(0, cloneExitStatus);
+    commit(nikReaddleLibGit, @"RDGeometry.h", @"sqrt", @"upstream change");
+    XCTAssertEqual(0, [nikReaddleLibGit pushCurrentBranch]);
+
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        GitRepository *subrepoGit = [GitRepository repoAtPath:@"Dependencies/ReaddleLib"];
+        XCTAssertEqual(0, [subrepoGit checkoutNewLocalBranch:@"experiment"]);
+        commit(subrepoGit, @"RDGeometry.h", @"pow", @"experiment");
+
+        S7ResetCommand *command = [S7ResetCommand new];
+        XCTAssertEqual(0, [command runWithArguments:@[ @"--all" ]]);
+
+        NSString *remoteTrackingRevision = nil;
+        XCTAssertEqual(0, [subrepoGit getLatestRemoteRevision:&remoteTrackingRevision atBranch:pinnedBranch]);
+        XCTAssertEqualObjects(remoteTrackingRevision, pinnedRevision);
+
+        XCTAssertEqual(0, s7push_currentBranch(repo));
+    }];
+}
+
+- (void)testResetFetchesRevisionUnknownAtRemoteBranch {
+    [self.env.pasteyRd2Repo run:^(GitRepository * _Nonnull repo) {
+        s7init_deactivateHooks();
+
+        GitRepository *subrepoGit = s7add_stage(@"Dependencies/ReaddleLib", self.env.githubReaddleLibRepo.absolutePath);
+        commit(subrepoGit, @"RDGeometry.h", @"tabula rasa", @"add geometry utils");
+        XCTAssertEqual(0, [subrepoGit pushCurrentBranch]);
+        commit(subrepoGit, @"RDGeometry.h", @"sqrt", @"not pushed");
+
+        s7rebind_with_stage();
+        [repo commitWithMessage:@"add ReaddleLib"];
+
+        XCTAssertEqual(0, [subrepoGit checkoutNewLocalBranch:@"experiment"]);
+        commit(subrepoGit, @"RDGeometry.h", @"pow", @"experiment");
+
+        NSString *remotePath = self.env.githubReaddleLibRepo.absolutePath;
+        XCTAssertTrue([NSFileManager.defaultManager moveItemAtPath:remotePath
+                                                            toPath:[remotePath stringByAppendingString:@"-unreachable"]
+                                                             error:nil]);
+
+        S7ResetCommand *command = [S7ResetCommand new];
+        XCTAssertEqual(S7ExitCodeGitOperationFailed, [command runWithArguments:@[ @"--all" ]]);
+    }];
+}
+
 - (void)testResetChangesInSubSubrepo {
     int cloneExitStatus = 0;
     GitRepository *pdfKitRepo = [GitRepository cloneRepoAtURL:self.env.githubRDPDFKitRepo.absolutePath destinationPath:[self.env.root stringByAppendingPathComponent:@"pastey/rdpdfkit"] exitStatus:&cloneExitStatus];
