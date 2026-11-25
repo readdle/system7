@@ -727,7 +727,11 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
     // If we notice that additional fetches become a problem, we will try to find a way to skip
     // fetch when possible. One option is to perform fetch only if local branch is ahead of remote.
     //
-//    if (NO == [subrepoGit isRevisionAvailableLocally:expectedSubrepoStateDesc.revision]) {
+    // UPD: fetch is skipped if the revision is already in the local origin/<branch>. The pre-push
+    // hook doesn't push such a subrepo, so the rejected push above can't happen. This also lets
+    // checkout/reset to a pushed revision work offline or with expired credentials (e.g. on CI).
+    //
+    if (NO == [subrepoGit isRevision:expectedSubrepoStateDesc.revision knownAtRemoteBranch:expectedSubrepoStateDesc.branch]) {
         logInfo("  fetching '%s'\n",
                 [expectedSubrepoStateDesc.path fileSystemRepresentation]);
 
@@ -750,7 +754,7 @@ static void (^_warnAboutDetachingCommitsHook)(NSString *topRevision, int numberO
 
             return S7ExitCodeInvalidSubrepoRevision;
         }
-//    }
+    }
 
     logInfo("  switching '%s' to %s\n",
             [expectedSubrepoStateDesc.path fileSystemRepresentation],
